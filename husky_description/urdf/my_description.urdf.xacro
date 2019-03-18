@@ -30,47 +30,12 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <xacro:include filename="$(find husky_description)/urdf/husky.urdf.xacro" />
 
   <!-- Insert customization below: sample provided  -->
-  <!--<xacro:include filename="$(find husky_description)/urdf/custom/test_red_hat.urdf.xacro"/>
-  <xacro:test_red_hat />-->
 
   <xacro:macro name="velodyne_lidar">
     <xacro:property name="M_PI" value="3.1415926535897931" />
 
-    <!--<xacro:include filename="$(find velodyne_description)/urdf/HDL-32E.urdf.xacro"/>
-    <HDL-32E parent="base_link"
-             name="velodyne2"
-             topic="/velodyne_points2"
-             hz="10"
-             samples ="2000"
-             lasers="40">
-      <origin xyz="0 0 0.6" rpy="0 0 0"/>
-    </HDL-32E>-->
-
-
     <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
-    <!--
-    samples="440"
-    lasers="16"
-    max_range ="130.0"
-    noise ="0.008"
-    -->
-    <!--For Hesai 40-Channel -->
 
-    <!--<VLP-16 parent="base_link"
-            name="velodyne"
-            topic="/velodyne_points"
-            hz="10"
-            samples="1000"
-            lasers="40"
-            collision_range ="0.3"
-            min_range ="0.3"
-            max_range ="200.0"
-            noise ="0.008"
-            min_angle="-${M_PI}"
-            max_angle="${M_PI}"
-            min_angle_ver="-16"
-            max_angle_ver="7"
-            >-->
 
       <!-- simplified lidar for quick launch-->
 
