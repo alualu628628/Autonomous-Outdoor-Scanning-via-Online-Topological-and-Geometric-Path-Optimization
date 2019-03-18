@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<!--
+Software License Agreement (BSD)
+
+\file      intxt.launch
+\authors   Pengdi Huang <alualu628628@163.com>
+\copyright Copyright (c) 2018, XXX, All rights reserved.
+
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WAR-
+RANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, IN-
+DIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<launch>
+
+<!-- hesai_time_modifier node in record_pointclouds pkg-->
+    <node name="path_finder" pkg="travelable_region" type="gp_insac" output="screen">
+
+    <!-- system parameters-->	
+        <param name="Output_path" type="string" value="/home/robot/" />
+        <param name="lidar_topic" type="string" value="/velodyne_cloud_registered" />
+    <!--input parameters-->	
+        <param name="sampling_number"  type="int" value="5" />
+        <param name="traj_topic" type="string" value="/integrated_to_init" />
+   <!-- GP-INSAC method parameters-->
+   <!-- getParam does not have float type--> 
+        <param name="sector_num" type="int" value="360"/>
+        <param name="seed_radius" type="double" value="4.9"/>
+        <param name="seed_lower" type="double" value="-1.5"/>
+        <param name="seed_upper" type="double" value="-0.8"/>
+        <param name="gp_lscale" type="double" value="28.01"/>
+        <param name="gp_sigmaF" type="double" value="1.76"/>
+        <param name="gp_sigmaN" type="double" value="0.12"/>
+        <param name="insac_model" type="double" value="0.2"/>
+        <param name="insac_data" type="double" value="0.8"/>
+
+    </node>
+
+</launch>

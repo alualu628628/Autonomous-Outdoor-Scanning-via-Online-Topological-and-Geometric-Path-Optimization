@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<!--
+Software License Agreement (BSD)
+\file      description.urdf.xacro
+\authors   Paul Bovbel <pbovbel@clearpathrobotics.com>, Devon Ash <dash@clearpathrobotics.com>
+\copyright Copyright (c) 2015, Clearpath Robotics, Inc., All rights reserved.
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+the following conditions are met:
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the
+   following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+   following disclaimer in the documentation and/or other materials provided with the distribution.
+ * Neither the name of Clearpath Robotics nor the names of its contributors may be used to endorse or promote
+   products derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WAR-
+RANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, IN-
+DIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<robot name="husky_robot" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:arg name="laser_enabled" default="$(optenv HUSKY_LMS1XX_ENABLED false)" />
+  <xacro:arg name="ur5_enabled" default="$(optenv HUSKY_UR5_ENABLED false)" />
+  <xacro:arg name="kinect_enabled" default="false" />
+  <xacro:arg name="hesai_lidar_enabled" default="true" />
+
+  <xacro:include filename="$(find husky_description)/urdf/husky.urdf.xacro" />
+
+  <!-- Insert customization below: sample provided  -->
+  <!--<xacro:include filename="$(find husky_description)/urdf/custom/test_red_hat.urdf.xacro"/>
+  <xacro:test_red_hat />-->
+
+  <xacro:macro name="velodyne_lidar">
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+
+    <!--<xacro:include filename="$(find velodyne_description)/urdf/HDL-32E.urdf.xacro"/>
+    <HDL-32E parent="base_link"
+             name="velodyne2"
+             topic="/velodyne_points2"
+             hz="10"
+             samples ="2000"
+             lasers="40">
+      <origin xyz="0 0 0.6" rpy="0 0 0"/>
+    </HDL-32E>-->
+
+
+    <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
+    <!--
+    samples="440"
+    lasers="16"
+    max_range ="130.0"
+    noise ="0.008"
+    -->
+    <!--For Hesai 40-Channel -->
+
+    <!--<VLP-16 parent="base_link"
+            name="velodyne"
+            topic="/velodyne_points"
+            hz="10"
+            samples="1000"
+            lasers="40"
+            collision_range ="0.3"
+            min_range ="0.3"
+            max_range ="200.0"
+            noise ="0.008"
+            min_angle="-${M_PI}"
+            max_angle="${M_PI}"
+            min_angle_ver="-16"
+            max_angle_ver="7"
+            >-->
+
+      <!-- simplified lidar for quick launch-->
+
+      <VLP-16 parent="base_link"
+              name="velodyne"
+              topic="/velodyne_points"
+              hz="8"
+              samples="1100"
+              lasers="36"
+              collision_range ="0.3"
+              min_range ="0.3"
+              max_range ="200.0"
+              noise ="0.1"
+              min_angle_hor="-${M_PI}"
+              max_angle_hor="${M_PI}"
+              min_angle_ver="-16"
+              max_angle_ver="7"
+              >
+      <origin xyz="0 0 0.4" rpy="0 0 0" />
+    </VLP-16>
+
+
+  </xacro:macro>
+  <xacro:velodyne_lidar />
+
+  <xacro:husky_robot />
+
+
+
+</robot>
