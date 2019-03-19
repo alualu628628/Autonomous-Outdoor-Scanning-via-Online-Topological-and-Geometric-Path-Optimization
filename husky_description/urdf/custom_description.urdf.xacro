@@ -103,17 +103,17 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <VLP-16 parent="top_plate_link"
               name="velodyne"
               topic="/velodyne_points"
-              hz="8"
+              hz="10"
               samples="1100"
-              lasers="36"
+              lasers="16"
               collision_range ="0.3"
               min_range ="0.3"
               max_range ="200.0"
-              noise ="0.1"
+              noise ="0.01"
               min_angle_hor="-${M_PI}"
               max_angle_hor="${M_PI}"
-              min_angle_ver="-16"
-              max_angle_ver="7"
+              min_angle_ver="-15"
+              max_angle_ver="15"
               >
       <origin xyz="-0.08 0 0.695" rpy="0 0 0" />
   </VLP-16>
