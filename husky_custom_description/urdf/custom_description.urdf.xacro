@@ -102,7 +102,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <!-- simplified lidar for quick launch-->
   <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
   <VLP-16 parent="sensorArch" name="velodyne_lidar" topic="/velodyne_points">
-    <origin xyz="-0.08 0 0.15" rpy="0 0 0" />
+    <origin xyz="-0.08 0 0.3" rpy="0 0 0" />
   </VLP-16>
 
   <!-- LMS151 Front Lidar -->

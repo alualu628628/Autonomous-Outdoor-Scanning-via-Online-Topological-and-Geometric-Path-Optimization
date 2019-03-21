@@ -8,6 +8,8 @@
     <param name="scanPeriod" value="$(arg scanPeriod)" />
 
     <remap from="/multi_scan_points" to="/velodyne_points" />
+    <!--in this simulation, imu is not necessary for SLAM-->
+    <remap from="/imu/data" to="/imu/noneed" />
   </node>
 
   <node pkg="loam_velodyne" type="laserOdometry" name="laserOdometry" output="screen" respawn="true">
@@ -21,8 +23,8 @@
   <node pkg="loam_velodyne" type="transformMaintenance" name="transformMaintenance" output="screen">
   </node>
 
-  <group if="$(arg rviz)">
+  <!--group if="$(arg rviz)">
     <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find loam_velodyne)/rviz_cfg/loam_velodyne.rviz" />
-  </group>
+  </group-->
 
 </launch>
