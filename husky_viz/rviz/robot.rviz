@@ -10,9 +10,8 @@ Panels:
         - /Sensing1/PointCloud21
         - /Navigation1
         - /Navigation1/Exploration1
-        - /Marker1
       Splitter Ratio: 0.494924
-    Tree Height: 577
+    Tree Height: 621
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -58,6 +57,15 @@ Visualization Manager:
       Collision Enabled: false
       Enabled: true
       Links:
+        /camera_init:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        /camera_init_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
@@ -67,6 +75,16 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        base_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_laser_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         base_link:
           Alpha: 1
           Show Axes: false
@@ -110,6 +128,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        sensorArch:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         top_chassis_link:
           Alpha: 1
           Show Axes: false
@@ -121,16 +144,6 @@ Visualization Manager:
           Show Trail: false
           Value: true
         user_rail_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        velodyne:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        velodyne_base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -209,8 +222,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 6.45816
-            Min Value: -0.718499
+            Max Value: 44.4102
+            Min Value: -43.2582
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -231,7 +244,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.01
           Style: Points
-          Topic: /velodyne_points
+          Topic: /velodyne_cloud_registered
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -364,7 +377,7 @@ Visualization Manager:
       Marker Topic: mesh_marker
       Name: mesh
       Namespaces:
-        basic_shapes: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -389,7 +402,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 30.6653
+      Distance: 19.9073
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -401,10 +414,10 @@ Visualization Manager:
         Z: -0.848712
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.904799
+      Pitch: 0.594799
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.01723
+      Yaw: 2.58723
     Saved: ~
 Window Geometry:
   Displays:
@@ -412,7 +425,7 @@ Window Geometry:
   Height: 834
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001e5000002edfc0200000005fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000007200fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000002ed000000fa00ffffff000000010000010f000002ddfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000043000002dd000000dc00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004a00000003efc0100000002fb0000000800540069006d00650000000000000004a00000050500fffffffb0000000800540069006d0065010000000000000450000000000000000000000455000002ed00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001e5000002fcfc0200000005fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000002fc000000dd00ffffff000000010000010f000002ddfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000043000002dd000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004a00000003efc0100000002fb0000000800540069006d00650000000000000004a0000002f600fffffffb0000000800540069006d0065010000000000000450000000000000000000000455000002fc00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -422,5 +435,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1600
-  X: 103
-  Y: 26
+  X: 178
+  Y: 140

@@ -7,6 +7,7 @@
     <param name="lidar" value="VLP-16" /> <!-- options: VLP-16  HDL-32  HDL-64E -->
     <param name="scanPeriod" value="$(arg scanPeriod)" />
 
+
     <remap from="/multi_scan_points" to="/velodyne_points" />
     <!--in this simulation, imu is not necessary for SLAM-->
     <remap from="/imu/data" to="/imu/noneed" />
@@ -14,13 +15,17 @@
 
   <node pkg="loam_velodyne" type="laserOdometry" name="laserOdometry" output="screen" respawn="true">
     <param name="scanPeriod" value="$(arg scanPeriod)" />
+    <remap from="/imu/data" to="/imu/noneed" />
   </node>
 
   <node pkg="loam_velodyne" type="laserMapping" name="laserMapping" output="screen">
     <param name="scanPeriod" value="$(arg scanPeriod)" />
+    <remap from="/imu/data" to="/imu/noneed" />
   </node>
 
   <node pkg="loam_velodyne" type="transformMaintenance" name="transformMaintenance" output="screen">
+     <remap from="/integrated_to_init" to="/odom" />
+     <remap from="/imu/data" to="/imu/noneed" />
   </node>
 
   <!--group if="$(arg rviz)">

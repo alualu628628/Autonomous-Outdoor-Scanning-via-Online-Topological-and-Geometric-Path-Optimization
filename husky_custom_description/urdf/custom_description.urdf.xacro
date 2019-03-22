@@ -99,11 +99,23 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <origin xyz="-0.08 0 0.695" rpy="0 0 1.5708"/>
   </joint-->
 
-  <!-- simplified lidar for quick launch-->
+  <!-- 3D LiDAR sensor, using a velodyne VLP-16 produce-->
   <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
-  <VLP-16 parent="sensorArch" name="velodyne_lidar" topic="/velodyne_points">
+  <VLP-16 parent="sensorArch" name="lidar_sensor" topic="/velodyne_points">
     <origin xyz="-0.08 0 0.3" rpy="0 0 0" />
   </VLP-16>
+
+  <!-- a virtual structure saving the camera_init framework generated in LOAM algorithm-->
+  <link name="camera_init">
+  </link>
+
+  <joint name="quanergy_to_arch_right" type="fixed">
+    <parent link="lidar_sensor" />
+    <child link="camera_init" />
+    <!--origin xyz="0.0 0.0 0.0" rpy="1.5708 0 1.5708"/-->
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+  </joint>
+
 
   <!-- LMS151 Front Lidar -->
   <!--link name="laser">
