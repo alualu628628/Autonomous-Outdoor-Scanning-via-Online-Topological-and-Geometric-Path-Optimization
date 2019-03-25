@@ -7,7 +7,6 @@
     <param name="lidar" value="VLP-16" /> <!-- options: VLP-16  HDL-32  HDL-64E -->
     <param name="scanPeriod" value="$(arg scanPeriod)" />
 
-
     <remap from="/multi_scan_points" to="/velodyne_points" />
     <!--in this simulation, imu is not necessary for SLAM-->
     <remap from="/imu/data" to="/imu/noneed" />
@@ -24,9 +23,24 @@
   </node>
 
   <node pkg="loam_velodyne" type="transformMaintenance" name="transformMaintenance" output="screen">
-     <remap from="/integrated_to_init" to="/odom" />
      <remap from="/imu/data" to="/imu/noneed" />
   </node>
+
+
+  <!--A node transposes LOAM output to the custom robot coordinate system-->
+  <include file="$(find slam_trans)/launch/publish_SLAM_res.launch">
+    <param name="lidar_topic" type="string" value="/velodyne_cloud_registered" />
+    <param name="traj_topic" type="string" value="/integrated_to_init" />
+
+    <param name="lidarout_topic" type="string" value="/slam_points" />
+    <param name="trajout_topic" type="string" value="/slam_odom" />
+
+    <param name="slam_parentframe" type="string" value="map" />
+    <param name="slam_childframe" type="string" value="camera_init" />
+
+    <!--param name="sampling_number"  type="int" value="1" /-->
+    <!--param name="slam_zoffset" type="double" value="0.0" /-->
+  </include>
 
   <!--group if="$(arg rviz)">
     <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find loam_velodyne)/rviz_cfg/loam_velodyne.rviz" />

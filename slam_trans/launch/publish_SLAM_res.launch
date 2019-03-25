@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<!--
+Software License Agreement (BSD)
+
+\file      intxt.launch
+\authors   Pengdi Huang <alualu628628@163.com>
+\copyright Copyright (c) 2018, XXX, All rights reserved.
+
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WAR-
+RANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, IN-
+DIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<launch>
+
+<!-- hesai_time_modifier node in record_pointclouds pkg-->
+    <node name="slam_transfor" pkg="slam_trans" type="slam_transfor" >
+
+    <!-- parameters-->	
+        <!-- define input topic name-->
+		<param name="lidar_topic" type="string" value="/velodyne_cloud_registered" />
+		<param name="traj_topic" type="string" value="/integrated_to_init" />
+        <!-- define output topic name-->
+	    <param name="lidarout_topic" type="string" value="/slam_points" />
+		<param name="trajout_topic" type="string" value="/slam_odom" />
+        <!-- frame id related-->
+	    <param name="slam_parentframe" type="string" value="map" />
+		<param name="slam_childframe" type="string" value="camera_init" />
+        <!-- sampling number-->
+	    <param name="sampling_number"  type="int" value="1" />
+	    <!-- height offset-->
+	    <param name="slam_zoffset" type="double" value="0.0" />
+
+	</node>
+
+</launch>

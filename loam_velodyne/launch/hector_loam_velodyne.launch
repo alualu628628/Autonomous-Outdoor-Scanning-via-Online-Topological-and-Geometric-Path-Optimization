@@ -27,4 +27,8 @@
     <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find loam_velodyne)/rviz_cfg/loam_velodyne.rviz" />
   </group>
 
+  <!--A node transposes LOAM output to the custom robot coordinate system-->
+  <include file="$(find slam_trans)/launch/publish_SLAM_res.launch">
+  </include>
+
 </launch>
