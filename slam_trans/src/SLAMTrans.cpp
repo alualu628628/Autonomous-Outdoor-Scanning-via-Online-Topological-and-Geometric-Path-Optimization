@@ -271,7 +271,7 @@ bool SLAMTrans::SetFrameIDs(ros::NodeHandle & private_node){
                      
     }else{
 
-      m_sSLAMParentN = "map";///<the reference frame
+      m_sSLAMParentN = "odom";///<the reference frame
       bKnownFlag = false;
 
   }//end if
@@ -384,7 +384,7 @@ void SLAMTrans::HandlePointClouds(const sensor_msgs::PointCloud2 & vLaserData)
       }
 
       pcl::toROSMsg(vTransposedCloud, vTransposedData);
-      vTransposedData.header.frame_id = m_sSLAMChildN;
+      vTransposedData.header.frame_id = m_sSLAMParentN;
       vTransposedData.header.stamp = vLaserData.header.stamp;
       m_oLaserPub.publish(vTransposedData);
 
@@ -425,11 +425,25 @@ void SLAMTrans::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
 
   //output in a txt file
   //
+  oTransposedOdom.header.stamp = oTrajectory.header.stamp;
+  oTransposedOdom.header.frame_id = m_sSLAMParentN;
+  oTransposedOdom.child_frame_id = m_sSLAMChildN;
+
   oTransposedOdom.pose.pose.position.x = oTrajectory.pose.pose.position.z; 
   oTransposedOdom.pose.pose.position.y = oTrajectory.pose.pose.position.x;
   oTransposedOdom.pose.pose.position.z = oTrajectory.pose.pose.position.y - m_fZOffset;
-  oTransposedOdom.header.stamp = oTrajectory.header.stamp;
-  oTransposedOdom.header.frame_id = m_sSLAMChildN;
+  oTransposedOdom.pose.pose.orientation.x = oTrajectory.pose.pose.orientation.z;
+  oTransposedOdom.pose.pose.orientation.y = oTrajectory.pose.pose.orientation.x;
+  oTransposedOdom.pose.pose.orientation.z = oTrajectory.pose.pose.orientation.y;
+  oTransposedOdom.pose.pose.orientation.w = oTrajectory.pose.pose.orientation.w;
+
+  oTransposedOdom.twist.twist.angular.x = oTrajectory.twist.twist.angular.x ;
+  oTransposedOdom.twist.twist.angular.y = oTrajectory.twist.twist.angular.y ;
+  oTransposedOdom.twist.twist.angular.z = oTrajectory.twist.twist.angular.z ;
+
+  oTransposedOdom.twist.twist.linear.x = oTrajectory.twist.twist.angular.x ;
+  oTransposedOdom.twist.twist.linear.y = oTrajectory.twist.twist.angular.y ;
+  oTransposedOdom.twist.twist.linear.z = oTrajectory.twist.twist.angular.z ;
 
   m_oOdomPub.publish(oTransposedOdom);
 

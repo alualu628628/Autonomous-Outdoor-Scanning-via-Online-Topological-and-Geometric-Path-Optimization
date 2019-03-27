@@ -29,7 +29,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 	    <param name="lidarout_topic" type="string" value="/slam_points" />
 		<param name="trajout_topic" type="string" value="/slam_odom" />
         <!-- frame id related-->
-	    <param name="slam_parentframe" type="string" value="map" />
+	    <param name="slam_parentframe" type="string" value="odom" />
 		<param name="slam_childframe" type="string" value="camera_init" />
         <!-- sampling number-->
 	    <param name="sampling_number"  type="int" value="1" />

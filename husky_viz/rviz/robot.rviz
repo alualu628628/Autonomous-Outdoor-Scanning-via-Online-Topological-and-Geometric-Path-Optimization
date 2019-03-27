@@ -10,6 +10,9 @@ Panels:
         - /Sensing1/PointCloud21
         - /Navigation1
         - /Navigation1/Exploration1
+        - /mesh1
+        - /Odometry1
+        - /Odometry2
       Splitter Ratio: 0.494924
     Tree Height: 621
   - Class: rviz/Selection
@@ -57,15 +60,6 @@ Visualization Manager:
       Collision Enabled: false
       Enabled: true
       Links:
-        /camera_init:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        /camera_init_base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
@@ -90,6 +84,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        camera_init:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         front_bumper_link:
           Alpha: 1
           Show Axes: false
@@ -113,6 +111,15 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        lidar_sensor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        lidar_sensor_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         rear_bumper_link:
           Alpha: 1
           Show Axes: false
@@ -222,8 +229,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 44.4102
-            Min Value: -43.2582
+            Max Value: 1.19428
+            Min Value: -1.52437
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -244,7 +251,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.01
           Style: Points
-          Topic: /velodyne_cloud_registered
+          Topic: /slam_points
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -380,6 +387,26 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+    - Angle Tolerance: 0.1
+      Class: rviz/Odometry
+      Color: 25; 255; 0
+      Enabled: true
+      Keep: 100
+      Length: 1
+      Name: Odometry
+      Position Tolerance: 0.1
+      Topic: /slam_odom
+      Value: true
+    - Angle Tolerance: 0.1
+      Class: rviz/Odometry
+      Color: 255; 25; 0
+      Enabled: true
+      Keep: 100
+      Length: 1
+      Name: Odometry
+      Position Tolerance: 0.1
+      Topic: /odometry/filtered
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -402,22 +429,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 19.9073
+      Distance: 24.8716
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.62908
-        Y: -0.0834703
-        Z: -0.848712
+        X: -4.6521
+        Y: 0.33332
+        Z: -3.35519
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.594799
+      Pitch: 1.3848
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.58723
+      Yaw: 2.43723
     Saved: ~
 Window Geometry:
   Displays:
@@ -435,5 +462,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1600
-  X: 178
-  Y: 140
+  X: 427
+  Y: 70
