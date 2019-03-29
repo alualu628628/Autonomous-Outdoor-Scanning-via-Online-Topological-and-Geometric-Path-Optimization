@@ -366,9 +366,9 @@ void GroundExtraction::HandlePointClouds(const sensor_msgs::PointCloud2 & vLaser
       for(int i = 0; i != vInputCloud.size(); ++i ){
          
          pcl::PointXYZ oArgPoint;
-         oArgPoint.x = vInputCloud.points[i].z;
-         oArgPoint.y = vInputCloud.points[i].x;
-         oArgPoint.z = vInputCloud.points[i].y;
+         oArgPoint.x = vInputCloud.points[i].x;
+         oArgPoint.y = vInputCloud.points[i].y;
+         oArgPoint.z = vInputCloud.points[i].z;
          vOneCloud->points.push_back(oArgPoint);
 
       }  
@@ -583,9 +583,9 @@ void GroundExtraction::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
   //save the into the memory
   //save the position of trajectory
   TrajectoryPoint oTrajPoint;
-  oTrajPoint.position.x = oTrajectory.pose.pose.position.z;//z in loam is x
-  oTrajPoint.position.y = oTrajectory.pose.pose.position.x;//x in loam is y
-  oTrajPoint.position.z = oTrajectory.pose.pose.position.y;//y in loam is z
+  oTrajPoint.position.x = oTrajectory.pose.pose.position.x;//z in loam is x
+  oTrajPoint.position.y = oTrajectory.pose.pose.position.y;//x in loam is y
+  oTrajPoint.position.z = oTrajectory.pose.pose.position.z;//y in loam is z
   //save record time
   oTrajPoint.oTimeStamp =  oTrajectory.header.stamp;
 

@@ -24,8 +24,10 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <arg name="lidarouttopic" default="/slam_points" />
     <arg name="trajouttopic" default="/husky_velocity_controller/odom" />
 
-    <arg name="slamparentframe" default="odom" />
-    <arg name="slamchildframe" default="camera_init" />
+    <arg name="odomtargetframe" default="odom" />
+    <arg name="odomrawframe" default="camera_init" />
+    <arg name="cloudstargetframe" default="odom"/>
+    <arg name="cloudsrawframe" default="camera_init"/>
 
     <arg name="samplingnumber"  default="1" />
     <!-- height offset-->
@@ -33,8 +35,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <arg name="odomzoffset" default="0.0"/> 
     <!-- this value is obtained by camera_init-base_link-(base_link-base_footprint)- -->
     <arg name="pointzoffset" default="0.451"/> 
-    	    
-
 
 <!-- slam_trans node in slam_transfor pkg-->
     <node name="slam_transfor" pkg="slam_trans" type="slam_transfor" output="screen">
@@ -49,8 +49,11 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 		<param name="trajout_topic" type="string" value="$(arg trajouttopic)" />
 		
         <!-- frame id related-->
-	    <param name="slam_parentframe" type="string" value="$(arg slamparentframe)" />
-		<param name="slam_childframe" type="string" value="$(arg slamchildframe)" />
+	    <param name="odom_targetframe" type="string" value="$(arg odomtargetframe)" />
+		<param name="odom_rawframe" type="string" value="$(arg odomrawframe)" />
+        <param name="clouds_targetframe" type="string" value="$(arg cloudstargetframe)"/>
+        <param name="clouds_rawframe" type="string" value="$(arg cloudsrawframe)"/>
+
         <!-- sampling number-->
 	    <param name="sampling_number"  type="int" value="$(arg samplingnumber)" />
 

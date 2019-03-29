@@ -18,7 +18,8 @@ Others: the HandlePointClouds is the kernel function
 *************************************************/
 SLAMTrans::SLAMTrans(ros::NodeHandle & node, 
                         ros::NodeHandle & private_node)
-                        :m_bFileNmFlag(false),
+                        :m_pTFListener(new tf::TransformListener),
+                         m_bFileNmFlag(false),
                          m_iFrames(-1),
                          m_iTrajPointNum(-1){
 
@@ -231,7 +232,6 @@ bool SLAMTrans::SetOutTopics(ros::NodeHandle & private_node){
 
       m_sOdomOutTopic = sOdomOutTopic;
 
-      return true;
                      
     }else{
 
@@ -253,41 +253,73 @@ Called By: SLAMTrans
 Table Accessed: none
 Table Updated: none
 Input: node class with a private node object
-Output: m_sSLAMParentN
-        m_sSLAMChildN
+Output: m_sOdomTargetFrame
+        m_sOdomRawFrame
+        m_sPointTargetFrame
+        m_sPointRawFrame
 Return: none
 Others: none
 *************************************************/
 bool SLAMTrans::SetFrameIDs(ros::NodeHandle & private_node){
 
+  
   bool bKnownFlag = true;
 
-  std::string sSLAMParentN; 
+  //set the related frame id of odometry topic
+  std::string sOdomTargetFrame; 
 
-  if(private_node.getParam("slam_parentframe", sSLAMParentN)){
+  if(private_node.getParam("odom_targetframe", sOdomTargetFrame)){
 
-      m_sSLAMParentN = sSLAMParentN;
+      m_sOdomTargetFrame = sOdomTargetFrame;
 
                      
     }else{
 
-      m_sSLAMParentN = "odom";///<the reference frame
+      m_sOdomTargetFrame = "odom";///<the reference frame
       bKnownFlag = false;
 
   }//end if
 
 
-  std::string sSLAMChildN; 
+  std::string sOdomRawFrame; 
 
-  if(private_node.getParam("slam_childframe", sSLAMChildN)){
+  if(private_node.getParam("odom_rawframe", sOdomRawFrame)){
 
-      m_sSLAMChildN = sSLAMChildN;
+      m_sOdomRawFrame = sOdomRawFrame;
 
-      return true;
                      
     }else{
 
-      m_sSLAMChildN = "camera_init";///<the target frame indicats where the slam locates
+      m_sOdomRawFrame = "camera_init";///<the target frame indicats where the slam locates
+      bKnownFlag = false;
+
+  }//end if
+
+
+  //set the related frame id of laser point cloud topic
+  std::string sPointTargetFrame; 
+
+  if(private_node.getParam("clouds_targetframe", sPointTargetFrame)){
+
+      m_sPointTargetFrame = sPointTargetFrame;
+
+                     
+    }else{
+
+      m_sPointTargetFrame = "odom";///<the target frame indicats where the slam locates
+      bKnownFlag = false;
+
+  }//end if
+
+  std::string sPointRawFrame; 
+
+  if(private_node.getParam("clouds_rawframe", sPointRawFrame)){
+
+      m_sPointRawFrame = sPointRawFrame;
+                     
+    }else{
+
+      m_sPointRawFrame = "camera_init";///<the target frame indicats where the slam locates
       bKnownFlag = false;
 
   }//end if
@@ -348,6 +380,7 @@ Output: a transposed point clouds which are almost the same with raw point
 Return: none
 Others: none
 *************************************************/
+/***************************************************************
 void SLAMTrans::HandlePointClouds(const sensor_msgs::PointCloud2 & vLaserData)
 {
   
@@ -387,13 +420,46 @@ void SLAMTrans::HandlePointClouds(const sensor_msgs::PointCloud2 & vLaserData)
       }
 
       pcl::toROSMsg(vTransposedCloud, vTransposedData);
-      vTransposedData.header.frame_id = m_sSLAMParentN;
+      vTransposedData.header.frame_id = m_sOdomRawFrame;
       vTransposedData.header.stamp = vLaserData.header.stamp;
       m_oLaserPub.publish(vTransposedData);
 
   }//end if
 
+
 }
+**********************************************************************/
+
+
+void SLAMTrans::HandlePointClouds(const sensor_msgs::PointCloud2 & vLaserData)
+{
+  
+  //count input frames
+  m_iFrames++;
+
+  //ROS_ERROR_STREAM("m_fPointZOffset: " << m_fPointZOffset);
+  if(!(m_iFrames%m_iSampleNum)){
+
+    // wait for transform from source framework to target framework
+    m_pTFListener->waitForTransform(m_sPointTargetFrame, vLaserData.header.frame_id, ros::Time::now(), ros::Duration(5.0));  
+  
+    // Create a container for the data.  
+    sensor_msgs::PointCloud2 vTransposedData(vLaserData);
+
+    //converted point clouds, where PC means the point clouds
+    pcl_ros::transformPointCloud(m_sPointTargetFrame, vLaserData, vTransposedData, *m_pTFListener);  
+
+    //set frame and time
+    vTransposedData.header.frame_id = m_sPointTargetFrame;
+    vTransposedData.header.stamp = vLaserData.header.stamp;//timestmap is the same with the input
+
+    //set output
+    m_oLaserPub.publish(vTransposedData);
+
+  }//end if
+
+}
+
 
 
 
@@ -422,8 +488,8 @@ void SLAMTrans::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
   //output in a txt file
   //
   oTransposedOdom.header.stamp = oTrajectory.header.stamp;
-  oTransposedOdom.header.frame_id = m_sSLAMParentN;
-  oTransposedOdom.child_frame_id = m_sSLAMChildN;
+  oTransposedOdom.header.frame_id = m_sOdomTargetFrame;
+  oTransposedOdom.child_frame_id = m_sOdomRawFrame;
 
   oTransposedOdom.pose.pose.position.x = oTrajectory.pose.pose.position.z; 
   oTransposedOdom.pose.pose.position.y = oTrajectory.pose.pose.position.x;

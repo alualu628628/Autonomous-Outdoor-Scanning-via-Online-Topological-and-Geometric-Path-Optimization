@@ -22,11 +22,11 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <node name="path_finder" pkg="travelable_region" type="gp_insac" output="screen">
 
     <!-- system parameters-->	
-        <param name="Output_path" type="string" value="/home/robot/" />
-        <param name="lidar_topic" type="string" value="/velodyne_cloud_registered" />
+        <param name="Output_path" type="string" value="/home/ludy/" />
+        <param name="lidar_topic" type="string" value="/slam_points" />
     <!--input parameters-->	
         <param name="sampling_number"  type="int" value="5" />
-        <param name="traj_topic" type="string" value="/integrated_to_init" />
+        <param name="traj_topic" type="string" value="/odometry/filtered" />
    <!-- GP-INSAC method parameters-->
    <!-- getParam does not have float type--> 
         <param name="sector_num" type="int" value="360"/>

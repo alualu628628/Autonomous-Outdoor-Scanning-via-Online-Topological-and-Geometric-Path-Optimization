@@ -7,13 +7,18 @@
 #include <string>
 
 #include <ros/ros.h>
+#include <sensor_msgs/Imu.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PointStamped.h>
+
+#include <tf/transform_listener.h>
+#include <tf/transform_datatypes.h>
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 
+#include "pcl_ros/transforms.h"  
 
 class SLAMTrans{
 
@@ -21,6 +26,13 @@ public:
     
     SLAMTrans(ros::NodeHandle & node, 
                 ros::NodeHandle & private_node);                      
+
+
+    ~SLAMTrans(){
+
+        delete m_pTFListener;
+
+    }
 
     ////**performance function**////
     //set path of output file where you want to put on
@@ -52,6 +64,9 @@ public:
 
 private:
 
+    //the subscirber hearing the structure information and current transformation of TF (given by ros system itself)
+    tf::TransformListener * m_pTFListener;
+
     //the subscirber below is to hear (record) point clouds produced by the Hesai devices
     ros::Subscriber m_oLaserSuber;//
     ros::Subscriber m_oOdomSuber;
@@ -67,8 +82,10 @@ private:
     std::string m_sOdomOutTopic;///<transposed odom output topic name
     std::string m_sLaserOutTopic;///<transposed point cloud topic name
 
-    std::string m_sSLAMChildN;///<slam child frame name 
-    std::string m_sSLAMParentN;///<slam parent frame name
+    std::string m_sOdomTargetFrame;///<slam child frame name 
+    std::string m_sOdomRawFrame;///<slam parent frame name
+    std::string m_sPointTargetFrame;
+    std::string m_sPointRawFrame;
 
     //output file name
     std::string m_sFileHead;
