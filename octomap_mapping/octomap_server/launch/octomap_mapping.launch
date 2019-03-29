@@ -11,7 +11,7 @@
 		<param name="resolution" value="0.1" />
 
 		<!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
-		<param name="frame_id" type="string" value="odom" />
+		<param name="frame_id" type="string" value="/slam_odom" />
 		<!--param name="frame_id" type="string" value="/integrated_to_init" /-->
 
 		<!-- maximum range to integrate (speedup!) -->
@@ -19,7 +19,7 @@
 
 		<!-- data source to integrate (PointCloud2) -->
 		<!--remap from="cloud_in" to="/velodyne_cloud_registered" /-->
-		<remap from="cloud_in" to="/velodyne_points" />
+		<remap from="cloud_in" to="/slam_points" />
 
 	</node>
 </launch>

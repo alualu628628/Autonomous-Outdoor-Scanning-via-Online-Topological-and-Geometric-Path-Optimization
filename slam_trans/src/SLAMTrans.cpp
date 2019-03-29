@@ -305,21 +305,32 @@ Called By: SLAMTrans
 Table Accessed: none
 Table Updated: none
 Input: node class with a private node object
-Output: m_fZOffset
+Output: m_fOdomZOffset - odometry height value offset
+        m_fPointZOffset - slam obtaned point height value offset
 Return: none
 Others: none
 *************************************************/
 bool SLAMTrans::GetHeightOffset(ros::NodeHandle & private_node){
 
-    double dZOffset;
+    double dOdomZOffset;
 
-    if(private_node.getParam("slam_zoffset", dZOffset))
+    if(private_node.getParam("odom_zoffset", dOdomZOffset))
         
-       m_fZOffset = float(dZOffset);
+       m_fOdomZOffset = float(dOdomZOffset);
 
     else
 
-       m_fZOffset = 0.0;
+       m_fOdomZOffset = 0.0;
+
+    double dPointZOffset;
+
+    if(private_node.getParam("point_zoffset", dPointZOffset))
+        
+       m_fPointZOffset = float(dPointZOffset);
+
+    else
+
+       m_fPointZOffset = 0.0;
 
 }
 
@@ -340,23 +351,15 @@ Others: none
 void SLAMTrans::HandlePointClouds(const sensor_msgs::PointCloud2 & vLaserData)
 {
   
- // if(!m_bFileNmFlag){
 
-    //set the current time stamp as a file name
-    //full name 
-  //  m_sOutPCFileName << m_sFileHead << "_PC_" << vLaserData.header.stamp << ".txt"; 
-
-  //  m_bFileNmFlag = true;
-  //}
   
   //count input frames
   m_iFrames++;
-  
+
+  //ROS_ERROR_STREAM("m_fPointZOffset: " << m_fPointZOffset);
+
 
   if(!(m_iFrames%m_iSampleNum)){
-
-      std::ofstream oRecordedFile;
-      oRecordedFile.open(m_sOutPCFileName.str(), std::ios::out | std::ios::app);
 
       //fresh the LiDAR time to be consistent with the recording time IF necessary
       //ros::Time oCurrenTime = ros::Time::now();
@@ -379,7 +382,7 @@ void SLAMTrans::HandlePointClouds(const sensor_msgs::PointCloud2 & vLaserData)
          //the storage type of output file is x y z time frames right/left_sensor
          vTransposedCloud.points[i].x = vRawCloud.points[i].z;
          vTransposedCloud.points[i].y = vRawCloud.points[i].x;
-         vTransposedCloud.points[i].z = vRawCloud.points[i].y;
+         vTransposedCloud.points[i].z = vRawCloud.points[i].y + m_fPointZOffset;
 
       }
 
@@ -409,15 +412,8 @@ Others: none
 *************************************************/
 void SLAMTrans::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
 {
-  
-  //if(m_iTrajPointNum < 0){
 
-    //set the current time stamp as a file name
-    //full name 
-   // m_sOutTrajFileName << m_sFileHead << "_Traj_" << oTrajectory.header.stamp << ".txt"; 
-
-  //}
-  
+  //ROS_ERROR_STREAM("m_fOdomZOffset: "<< m_fOdomZOffset);
 
   nav_msgs::Odometry oTransposedOdom;
   //count input frames
@@ -431,7 +427,7 @@ void SLAMTrans::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
 
   oTransposedOdom.pose.pose.position.x = oTrajectory.pose.pose.position.z; 
   oTransposedOdom.pose.pose.position.y = oTrajectory.pose.pose.position.x;
-  oTransposedOdom.pose.pose.position.z = oTrajectory.pose.pose.position.y - m_fZOffset;
+  oTransposedOdom.pose.pose.position.z = oTrajectory.pose.pose.position.y - m_fOdomZOffset;
   oTransposedOdom.pose.pose.orientation.x = oTrajectory.pose.pose.orientation.z;
   oTransposedOdom.pose.pose.orientation.y = oTrajectory.pose.pose.orientation.x;
   oTransposedOdom.pose.pose.orientation.z = oTrajectory.pose.pose.orientation.y;

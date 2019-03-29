@@ -85,7 +85,8 @@ private:
     int m_iSampleNum;
     
     //a offset perhaps is useful in computing the actual pose of robot  
-    float m_fZOffset;
+    float m_fOdomZOffset;
+    float m_fPointZOffset;
 
 };
 

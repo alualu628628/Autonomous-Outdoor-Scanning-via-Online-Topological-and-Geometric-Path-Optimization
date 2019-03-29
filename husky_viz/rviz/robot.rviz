@@ -12,7 +12,6 @@ Panels:
         - /Navigation1/Exploration1
         - /mesh1
         - /Odometry1
-        - /Odometry2
       Splitter Ratio: 0.494924
     Tree Height: 621
   - Class: rviz/Selection
@@ -229,8 +228,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.19428
-            Min Value: -1.52437
+            Max Value: 0.91509
+            Min Value: -0.872803
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -389,16 +388,6 @@ Visualization Manager:
       Value: true
     - Angle Tolerance: 0.1
       Class: rviz/Odometry
-      Color: 25; 255; 0
-      Enabled: true
-      Keep: 100
-      Length: 1
-      Name: Odometry
-      Position Tolerance: 0.1
-      Topic: /slam_odom
-      Value: true
-    - Angle Tolerance: 0.1
-      Class: rviz/Odometry
       Color: 255; 25; 0
       Enabled: true
       Keep: 100
@@ -425,26 +414,27 @@ Visualization Manager:
     - Class: rviz/PublishPoint
       Single click: false
       Topic: /clicked_point
+    - Class: rviz/Measure
   Value: true
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 24.8716
+      Distance: 14.0452
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -4.6521
-        Y: 0.33332
-        Z: -3.35519
+        X: -3.7723
+        Y: 2.59328
+        Z: -3.27757
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.3848
+      Pitch: 0.9498
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.43723
+      Yaw: 4.38223
     Saved: ~
 Window Geometry:
   Displays:
@@ -462,5 +452,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1600
-  X: 427
-  Y: 70
+  X: 173
+  Y: 202

@@ -29,17 +29,17 @@
 
   <!--A node transposes LOAM output to the custom robot coordinate system-->
   <include file="$(find slam_trans)/launch/publish_SLAM_res.launch">
-    <param name="lidar_topic" type="string" value="/velodyne_cloud_registered" />
-    <param name="traj_topic" type="string" value="/integrated_to_init" />
-
-    <param name="lidarout_topic" type="string" value="/slam_points" />
-    <param name="trajout_topic" type="string" value="/slam_odom" />
-
-    <param name="slam_parentframe" type="string" value="map" />
-    <param name="slam_childframe" type="string" value="camera_init" />
-
-    <!--param name="sampling_number"  type="int" value="1" /-->
-    <!--param name="slam_zoffset" type="double" value="0.0" /-->
+    <arg name="lidartopic" value="/velodyne_cloud_registered" />
+    <arg name="trajtopic" value="/integrated_to_init" />
+    <arg name="lidarouttopic" value="/slam_points" />
+    <arg name="trajouttopic" value="/husky_velocity_controller/odom" />
+    <arg name="slamparentframe" value="odom" />
+    <arg name="slamchildframe" value="camera_init" />
+    <arg name="samplingnumber"  default="1" />
+    <!-- height offset-->
+    <arg name="odomzoffset" value="0.0"/> 
+    <!-- this value is obtained by camera_init-base_link-(base_link-base_footprint)- -->
+    <arg name="pointzoffset" value="0.451"/> 
   </include>
 
   <!--group if="$(arg rviz)">

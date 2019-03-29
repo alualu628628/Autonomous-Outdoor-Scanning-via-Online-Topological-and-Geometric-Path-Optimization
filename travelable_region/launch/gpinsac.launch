@@ -30,7 +30,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
    <!-- GP-INSAC method parameters-->
    <!-- getParam does not have float type--> 
         <param name="sector_num" type="int" value="360"/>
-        <param name="seed_radius" type="double" value="4.9"/>
+        <param name="seed_radius" type="double" value="4.2"/>
         <param name="seed_lower" type="double" value="-1.5"/>
         <param name="seed_upper" type="double" value="-0.8"/>
         <param name="gp_lscale" type="double" value="28.01"/>
