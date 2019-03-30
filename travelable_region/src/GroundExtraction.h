@@ -50,6 +50,9 @@ public:
     //set path of output file where you want to put on
     bool GetOutputPath(ros::NodeHandle & private_node);
 
+    //set whether output txt file
+    bool GetTxtOutputFlag(ros::NodeHandle & private_node);
+
     //set sampling value
     bool GetSamplingNum(ros::NodeHandle & private_node);
     
@@ -106,6 +109,8 @@ private:
   
      //whether the outfile got a full name or not 
     bool m_bFileNmFlag;
+    bool m_bTxtOutFlag;
+
     //the frame number of input
     int m_iFrames;
     int m_iTrajPointNum;

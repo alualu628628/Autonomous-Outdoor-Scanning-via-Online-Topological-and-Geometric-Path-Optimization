@@ -158,7 +158,7 @@ void Boundary::ComputeBoundary(){
 					    m_vBoundIdx.push_back(m_vGroundIdx[i]);
 					    //to the next query point
 					    break;
-				             }//if m_iNoiseNum
+				        }//if m_iNoiseNum
 				}//end if NearBoundary	
 			}//end for j
 		}//end if radius 

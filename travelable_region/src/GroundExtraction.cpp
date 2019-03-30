@@ -68,7 +68,7 @@ bool GroundExtraction::GetOutputPath(ros::NodeHandle & private_node){
         
     std::string sFileHead;
 
-    if(private_node.getParam("Output_path", sFileHead)){
+    if(private_node.getParam("output_path", sFileHead)){
 
       m_sFileHead = sFileHead;
 
@@ -84,6 +84,38 @@ bool GroundExtraction::GetOutputPath(ros::NodeHandle & private_node){
 
 }
 
+/*************************************************
+Function: GetTxtOutputFlag
+Description: inital function for m_sTxtOutFlag
+Calls: Launch file maybe
+Called By: GroundExtraction
+Table Accessed: none
+Table Updated: none
+Input: node class with a private node object
+Output: m_sTxtOutFlag
+Return: none
+Others: none
+*************************************************/
+
+bool GroundExtraction::GetTxtOutputFlag(ros::NodeHandle & private_node){
+        
+   bool bTxtOutFlag;
+
+    if(private_node.getParam("txtoutput_flag", bTxtOutFlag)){
+
+      m_bTxtOutFlag = bTxtOutFlag;
+
+      return true;
+                     
+      }else{
+
+      m_bTxtOutFlag = false;///<don't output result in txt
+
+      return false;
+
+    }//end if
+
+}
 
 /*************************************************
 Function: GetLaserTopic
@@ -240,6 +272,7 @@ void GroundExtraction::GetGPINSACThrs(ros::NodeHandle & private_node){
         m_oGPThrs.fDataThr = float(fDataThr);
 
 }
+
 /*************************************************
 Function: OutputGroundPoints
 Description: output the result of point clouds in a txt file
@@ -255,22 +288,26 @@ Others: none
 *************************************************/
 void GroundExtraction::OutputGroundPoints(pcl::PointCloud<pcl::PointXYZ> & vCloud, const ros::Time & oStamp){
   
-  //if this is the first time of calling this function
-  if(!m_bFileNmFlag){
+
+  if(m_bTxtOutFlag){
+    
+    //if this is the first time of calling this function
+    if(!m_bFileNmFlag && m_bTxtOutFlag){
 
     //set the current time stamp as a file name
     //full name 
     m_sOutPCFileName << m_sFileHead << "_PC_" << oStamp << ".txt"; 
 
     m_bFileNmFlag = true;
-  }
+
+    }
 
 
-  //output
-  std::ofstream oRecordedFile;
-  oRecordedFile.open(m_sOutPCFileName.str(), std::ios::out | std::ios::app);
+    //output
+    std::ofstream oRecordedFile;
+    oRecordedFile.open(m_sOutPCFileName.str(), std::ios::out | std::ios::app);
 
-  for(int i = 0; i != vCloud.size(); ++i ){
+    for(int i = 0; i != vCloud.size(); ++i ){
 
       //output in a txt file
       //the storage type of output file is x y z time frames right/left_sensor
@@ -279,9 +316,11 @@ void GroundExtraction::OutputGroundPoints(pcl::PointCloud<pcl::PointXYZ> & vClou
                     << vCloud.points[i].z << " " 
                     << oStamp << " "
                     << std::endl;
-  }//end for         
+    }//end for         
 
-  oRecordedFile.close();
+     oRecordedFile.close();
+
+  }//end if(m_bTxtOutFlag)
 
 }
 
@@ -304,34 +343,37 @@ void GroundExtraction::OutputAllPoints(const pcl::PointCloud<pcl::PointXYZ>::Ptr
                                           const std::vector<int> & vRes,
                                           const ros::Time & oStamp){
   
-  //if this is the first time of calling this function
-  if(!m_bFileNmFlag){
+  if(m_bTxtOutFlag){
 
-    //set the current time stamp as a file name
-    //full name 
-    m_sOutPCFileName << m_sFileHead << "_PC_" << oStamp << ".txt"; 
+     //if this is the first time of calling this function
+     if(!m_bFileNmFlag){
 
-    m_bFileNmFlag = true;
-  }
+       //set the current time stamp as a file name
+       //full name 
+       m_sOutPCFileName << m_sFileHead << "_PC_" << oStamp << ".txt"; 
 
+       m_bFileNmFlag = true;
+     }
 
-  //output
-  std::ofstream oRecordedFile;
-  oRecordedFile.open(m_sOutPCFileName.str(), std::ios::out | std::ios::app);
+     //output
+     std::ofstream oRecordedFile;
+     oRecordedFile.open(m_sOutPCFileName.str(), std::ios::out | std::ios::app);
 
-  for(int i = 0; i != pCloud->points.size(); ++i ){
+     for(int i = 0; i != pCloud->points.size(); ++i ){
 
-      //output in a txt file
-      //the storage type of output file is x y z time frames right/left_sensor
-      oRecordedFile << pCloud->points[i].x << " "
-                    << pCloud->points[i].y << " "
-                    << pCloud->points[i].z << " " 
-                    << vRes[i] << " "
-                    << oStamp << " "
-                    << std::endl;
-  }//end for         
+         //output in a txt file
+         //the storage type of output file is x y z time frames right/left_sensor
+         oRecordedFile << pCloud->points[i].x << " "
+                       << pCloud->points[i].y << " "
+                       << pCloud->points[i].z << " " 
+                       << vRes[i] << " "
+                       << oStamp << " "
+                       << std::endl;
+      }//end for         
 
-  oRecordedFile.close();
+      oRecordedFile.close();
+
+  }//end if m_bTxtOutFlag
 
 }
 /*************************************************
@@ -528,19 +570,19 @@ void GroundExtraction::HandlePointClouds(const sensor_msgs::PointCloud2 & vLaser
 
        //publish ground points
        pcl::toROSMsg(vGroundCloud, vGroundPub);
-       vGroundPub.header.frame_id = "camera_init";
+       vGroundPub.header.frame_id = "odom";
        vGroundPub.header.stamp = vLaserData.header.stamp;
        m_oGroundPub.publish(vGroundPub);
 
        //publish ground points
        pcl::toROSMsg(vBoundCloud, vBoundPub);
-       vBoundPub.header.frame_id = "camera_init";
+       vBoundPub.header.frame_id = "odom";
        vBoundPub.header.stamp = vLaserData.header.stamp;
        m_oBoundPub.publish(vBoundPub);
 
        //publish obstacle points
        pcl::toROSMsg(vObstacleCloud, vObstaclePub);
-       vObstaclePub.header.frame_id = "camera_init";
+       vObstaclePub.header.frame_id = "odom";
        vObstaclePub.header.stamp =vLaserData.header.stamp;
        m_oObstaclePub.publish(vObstaclePub);
 
@@ -569,7 +611,7 @@ Others: none
 void GroundExtraction::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
 {
   
-  if(m_iTrajPointNum < 0){
+  if(m_iTrajPointNum < 0 && m_bTxtOutFlag){
 
     //set the current time stamp as a file name
     //full name 
@@ -590,6 +632,23 @@ void GroundExtraction::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
   oTrajPoint.oTimeStamp =  oTrajectory.header.stamp;
 
   vTrajHistory.push(oTrajPoint);
+
+  if(m_bTxtOutFlag){
+
+     //output
+     std::ofstream oTrajFile;
+     oTrajFile.open(m_sOutTrajFileName.str(), std::ios::out | std::ios::app);
+
+     //output in a txt file
+     oTrajFile << oTrajPoint.position.x << " "
+              << oTrajPoint.position.y << " "
+              << oTrajPoint.position.z << " " 
+              << oTrajPoint.oTimeStamp << " "
+              << m_iTrajPointNum << " "
+              << std::endl;
+     oTrajFile.close();
+
+  }//if m_bTxtOutFlag
 
 }
 

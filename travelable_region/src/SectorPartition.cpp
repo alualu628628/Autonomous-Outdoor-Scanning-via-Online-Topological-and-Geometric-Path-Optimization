@@ -102,7 +102,7 @@ std::vector<std::vector<GroundFeature> > DivideSector::ComputePointSectorIdxs(pc
 	for (int i = 0; i != vPointSecIdx.size(); ++i){
 		vPointSecIdx[i].reserve(EachSecPNum);
 		vGroundFeatures[i].reserve(EachSecPNum);
-             }
+    }
 	//***************************************//
 	//traversal
 	for (int i = 0; i != vCloud.points.size(); ++i) {

@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv){
 
-  ros::init(argc, argv, "path_finder");
+  ros::init(argc, argv, "driving_area");
   ros::NodeHandle node;
   ros::NodeHandle privateNode("~");
  
