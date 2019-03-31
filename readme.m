@@ -53,7 +53,7 @@ sh $(rospack find husky_custom_gazebo)/env-hooks/50.husky_custom_gazebo.sh
 ## Running
 setup the environment variables
 Run `source devel/setup.bash` in project root in order to .
-instead, We strongly recommend writing the variables into `~/.bashrc` so that you don't need to without repeating the declaration.
+Instead, We strongly recommend writing the variables into `~/.bashrc` so that you don't need to set up environment variables any more when you run this project.
 
 launches customized husky gazebo (`gazebo`).
 ```
