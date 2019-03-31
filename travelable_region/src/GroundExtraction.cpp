@@ -26,6 +26,9 @@ GroundExtraction::GroundExtraction(ros::NodeHandle & node,
     //system parameters
     GetOutputPath(private_node);
     
+    //check output file or not
+    GetTxtOutputFlag(private_node);
+
     //point cloud related
     GetSamplingNum(private_node);
     
@@ -292,7 +295,7 @@ void GroundExtraction::OutputGroundPoints(pcl::PointCloud<pcl::PointXYZ> & vClou
   if(m_bTxtOutFlag){
     
     //if this is the first time of calling this function
-    if(!m_bFileNmFlag && m_bTxtOutFlag){
+    if(!m_bFileNmFlag){
 
     //set the current time stamp as a file name
     //full name 
@@ -604,13 +607,16 @@ Called By: TransformLaserInOdom, which is the construction function
 Table Accessed: none
 Table Updated: none
 Input: rawpoint, a 3d point with pcl point type
-Output: a point clouds are almost the same with raw point clouds but only their timestamp values are modified
+Output: a point clouds are almost the same with raw point clouds but timestamp values 
 Return: none
 Others: none
 *************************************************/
 void GroundExtraction::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
 {
   
+  
+  //std::cout << "m_bTxtOutFlag value: " << m_bTxtOutFlag << std::endl;
+
   if(m_iTrajPointNum < 0 && m_bTxtOutFlag){
 
     //set the current time stamp as a file name

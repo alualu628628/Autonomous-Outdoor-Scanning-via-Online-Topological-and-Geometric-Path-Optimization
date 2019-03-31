@@ -19,7 +19,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 <launch>
 
     <arg name="outputpath" default="/home/ludy/" />
-    <arg name="txtoutputflag" default="true" />
+    <arg name="txtoutputflag" default="false" />
 
     <!--input parameters--> 
     <arg name="samplingnumber" default="5" />
@@ -41,25 +41,23 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <arg name="insacmodel" default="0.2"/>
     <arg name="insacdata" default="0.8"/>
 
-
-
     <!-- driving_area node in travelable_region pkg-->
     <node name="driving_area" pkg="travelable_region" type="gp_insac" output="screen">
 
-    <!-- system parameters-->	
+        <!-- system parameters-->	
         <param name="output_path" type="string" value="$(arg outputpath)" />
         <param name="txtoutput_flag" type="bool" value="$(arg txtoutputflag)" />
 
         <param name="sampling_number"  type="int" value="$(arg samplingnumber)"  />
-    <!--input parameters-->	
+        <!--input parameters-->	
         <param name="traj_topic" type="string" value="$(arg trajtopic)" />
         <param name="lidar_topic" type="string" value="$(arg lidartopic)" />
-    <!-- GP-INSAC method parameters-->
-    <!-- getParam does not have float type--> 
+        <!-- GP-INSAC method parameters-->
+        <!-- getParam does not have float type--> 
         <param name="sector_num" type="int" value="$(arg sectornum)"/>
         <param name="seed_radius" type="double" value="$(arg seedradius)"/>
-    <!-- this arrange is arround the height between base_link and base_footprint-->
-    <!-- -0.132 is suggested by using rosrun tf tf_echo base_link base_footprint-->
+        <!-- this arrange is arround the height between base_link and base_footprint-->
+        <!-- -0.132 is suggested by using rosrun tf tf_echo base_link base_footprint-->
         <param name="seed_lower" type="double" value="$(arg seedlower)"/>
         <param name="seed_upper" type="double" value="$(arg seedupper)"/>
 

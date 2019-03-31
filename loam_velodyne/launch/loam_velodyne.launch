@@ -45,6 +45,34 @@
           
   </include>
 
+  <!--A node which estimates the ground, obstacle and boundary points using gp-insac algorithm-->
+  <include file="$(find travelable_region)/launch/gpinsac.launch">
+
+    <arg name="outputpath" default="/home/ludy/" />
+    <arg name="txtoutputflag" default="false" />
+
+    <!--input parameters--> 
+    <arg name="samplingnumber" default="5" />
+
+    <arg name="lidartopic" default="/slam_points" />
+    <arg name="trajtopic" default="/odometry/filtered" />
+    <!-- GP-INSAC method parameters-->
+    <!-- getParam does not have float type--> 
+    <arg name="sectornum" default="360"/>
+    <arg name="seedradius" default="4.2"/>
+    <!-- this arrange is arround the height between base_link and base_footprint-->
+    <!-- -0.132 is suggested by using rosrun tf tf_echo base_link base_footprint-->
+    <arg name="seedlower" default="-0.2"/>
+    <arg name="seedupper" default="-0.05"/>
+
+    <arg name="gplscale" default="28.01"/>
+    <arg name="gpsigmaF" default="1.76"/>
+    <arg name="gpsigmaN" default="0.12"/>
+    <arg name="insacmodel" default="0.2"/>
+    <arg name="insacdata" default="0.8"/>
+
+  </include>
+
   <!--group if="$(arg rviz)">
     <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find loam_velodyne)/rviz_cfg/loam_velodyne.rviz" />
   </group-->

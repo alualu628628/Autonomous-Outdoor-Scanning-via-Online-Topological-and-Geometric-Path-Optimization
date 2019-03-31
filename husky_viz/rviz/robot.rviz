@@ -13,7 +13,6 @@ Panels:
         - /mesh1
         - /Odometry1
         - /OccupancyMap1
-        - /OccupancyMap1/Status1
         - /OccupancyGrid1
         - /MarkerArray1
       Splitter Ratio: 0.494924
@@ -232,8 +231,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 0.0206931
-            Min Value: -0.187645
+            Max Value: 0.0405398
+            Min Value: -0.183348
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -450,22 +449,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 14.3674
+      Distance: 31.5643
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 4.40379
-        Y: -6.51699
-        Z: -1.68257
+        X: 1.33703
+        Y: -2.71816
+        Z: -2.04101
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.3248
+      Pitch: 0.6998
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.76223
+      Yaw: 3.48723
     Saved: ~
 Window Geometry:
   Displays:
@@ -483,5 +482,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1600
-  X: 167
-  Y: 261
+  X: 148
+  Y: 232
