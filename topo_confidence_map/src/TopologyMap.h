@@ -1,27 +1,32 @@
-/*
- * OctomapToGridmapDemo.hpp
- *
- *  Created on: May 03, 2017
- *      Author: Jeff Delmerico
- *   Institute: University of Zürich, Robotics and Perception Group
- */
 
-#pragma once
-
-// ROS
-#include <ros/ros.h>
-
-#include <grid_map_ros/grid_map_ros.hpp>
-
+#ifndef TOPOLOGYMAP_H
+#define TOPOLOGYMAP_H
+#include <cmath>
 #include <string>
 
-namespace grid_map_demos {
+//ros related
+#include <ros/ros.h>
+
+//octomap related
+#include <octomap_msgs/Octomap.h>
+#include <octomap/octomap.h>
+#include <octomap_msgs/conversions.h>
+#include <octomap_msgs/GetOctomap.h>
+
+//grid_map related
+#include <grid_map_ros/grid_map_ros.hpp>
+#include <grid_map_msgs/GridMap.h>
+#include <grid_map_octomap/GridMapOctomapConverter.hpp>//transfor octomap to grid
+
+using namespace grid_map;
+
+namespace topology_map{
 
 /*!
  * Receives a volumetric OctoMap and converts it to a grid map with an elevation layer.
  * The grid map is published and can be viewed in Rviz.
  */
-class OctomapToGridmapDemo
+class TopologyMap
 {
  public:
 
@@ -29,25 +34,23 @@ class OctomapToGridmapDemo
    * Constructor.
    * @param nodeHandle the ROS node handle.
    */
-  OctomapToGridmapDemo(ros::NodeHandle& nodeHandle);
+  TopologyMap(ros::NodeHandle & node,
+              ros::NodeHandle& nodeHandle);
 
   /*!
    * Destructor.
    */
-  virtual ~OctomapToGridmapDemo();
+  virtual ~TopologyMap();
 
   /*!
   * Reads and verifies the ROS parameters.
   * @return true if successful.
   */
-  bool readParameters();
+  bool readParameters(ros::NodeHandle & nodeHandle);
 
   void convertAndPublishMap();
 
  private:
-
-  //! ROS nodehandle.
-  ros::NodeHandle& nodeHandle_;
 
   //! Grid map publisher.
   ros::Publisher gridMapPublisher_;
@@ -74,3 +77,6 @@ class OctomapToGridmapDemo
 };
 
 } /* namespace */
+
+
+#endif

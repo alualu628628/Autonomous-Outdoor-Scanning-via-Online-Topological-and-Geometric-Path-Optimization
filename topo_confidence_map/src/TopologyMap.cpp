@@ -1,50 +1,55 @@
-/*
- * OctomapToGridmapDemo.cpp
- *
- *  Created on: May 03, 2017
- *      Author: Jeff Delmerico
- *   Institute: University of Zürich, Robotics and Perception Group
- */
+#include "TopologyMap.h"
 
-#include "grid_map_demos/OctomapToGridmapDemo.hpp"
 
-#include <grid_map_octomap/GridMapOctomapConverter.hpp>
+/*************************************************
+Function: TopologyMap
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+       privare node
+       flag of generating output file
+       original frame value
+Output: none
+Return: none
+Others: the HandlePointClouds is the kernel function
+*************************************************/
 
-#include <octomap_msgs/Octomap.h>
-#include <octomap/octomap.h>
-#include <octomap_msgs/conversions.h>
-#include <octomap_msgs/GetOctomap.h>
+namespace topology_map{
 
-namespace grid_map_demos {
 
-OctomapToGridmapDemo::OctomapToGridmapDemo(ros::NodeHandle& nodeHandle)
-    : nodeHandle_(nodeHandle),
-      map_(grid_map::GridMap({"elevation"}))
+
+
+TopologyMap::TopologyMap(ros::NodeHandle & node,
+                         ros::NodeHandle & nodeHandle)
+                                     :map_(grid_map::GridMap({"elevation"}))
 {
-  readParameters();
-  client_ = nodeHandle_.serviceClient<octomap_msgs::GetOctomap>(octomapServiceTopic_);
+  readParameters(nodeHandle);
+  client_ = nodeHandle.serviceClient<octomap_msgs::GetOctomap>(octomapServiceTopic_);
   map_.setBasicLayers({"elevation"});
-  gridMapPublisher_ = nodeHandle_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
-  octomapPublisher_ = nodeHandle_.advertise<octomap_msgs::Octomap>("octomap", 1, true);
+  gridMapPublisher_ = nodeHandle.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
+  octomapPublisher_ = nodeHandle.advertise<octomap_msgs::Octomap>("octomap", 1, true);
 }
 
-OctomapToGridmapDemo::~OctomapToGridmapDemo()
+TopologyMap::~TopologyMap()
 {
 }
 
-bool OctomapToGridmapDemo::readParameters()
+bool TopologyMap::readParameters(ros::NodeHandle & nodeHandle)
 {
-  nodeHandle_.param("octomap_service_topic", octomapServiceTopic_, std::string("/octomap_binary"));
-  nodeHandle_.param("min_x", minX_, NAN);
-  nodeHandle_.param("max_x", maxX_, NAN);
-  nodeHandle_.param("min_y", minY_, NAN);
-  nodeHandle_.param("max_y", maxY_, NAN);
-  nodeHandle_.param("min_z", minZ_, NAN);
-  nodeHandle_.param("max_z", maxZ_, NAN);
+  nodeHandle.param("octomap_service_topic", octomapServiceTopic_, std::string("/octomap_binary"));
+  nodeHandle.param("min_x", minX_, NAN);
+  nodeHandle.param("max_x", maxX_, NAN);
+  nodeHandle.param("min_y", minY_, NAN);
+  nodeHandle.param("max_y", maxY_, NAN);
+  nodeHandle.param("min_z", minZ_, NAN);
+  nodeHandle.param("max_z", maxZ_, NAN);
   return true;
 }
 
-void OctomapToGridmapDemo::convertAndPublishMap()
+void TopologyMap::convertAndPublishMap()
 {
   octomap_msgs::GetOctomap srv;
   if (!client_.call(srv)) {
@@ -98,3 +103,5 @@ void OctomapToGridmapDemo::convertAndPublishMap()
 }
 
 } /* namespace */
+
+

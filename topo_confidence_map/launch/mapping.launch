@@ -1,0 +1,16 @@
+<launch>
+  <rosparam command="load" file="$(find grid_map_demos)/config/octomap_to_gridmap_demo.yaml" />
+
+  <!-- Load the octomap -->
+  <include file="$(find octomap_server)/launch/octomap_mapping.launch">
+  </include>
+
+  <!-- Launch the octomap conversion node -->
+  <node pkg="topo_confidence_map" type="topo_confidence_map" name="topology_map" output="screen" />
+
+  <!-- Launch the grid map visualizer -->
+  <!-- node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen" /-->
+
+  <!-- Launch RViz with the demo configuration -->
+  <!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find grid_map_demos)/rviz/octomap_to_gridmap_demo.rviz" /-->
+</launch>
