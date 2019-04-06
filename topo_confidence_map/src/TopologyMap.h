@@ -69,7 +69,7 @@ class TopologyMap{
   void ConvertAndPublishMap();
 
 
-  void CircleNeighboringGrids();
+  void CircleNeighboringGrids(pcl::PointXYZ & oRobotPoint);
 
  private:
 

@@ -4,9 +4,9 @@
  // Modified on: April 3, 2019, Author: Pengdi Huang
  =====================================================================*/
 
-#include "grid_map_octomap/GridOctoConverter.hpp"
+#include "OctoGrid.h"
 
-namespace TopologyMap {
+namespace topology_map{
 
 GridOctoConverter::GridOctoConverter()
 {
@@ -16,7 +16,7 @@ GridOctoConverter::~GridOctoConverter()
 {
 }
 
-std::vector<int> GridOctoConverter::FromOctomap(const octomap::OcTree& octomap,
+bool GridOctoConverter::FromOctomap(const octomap::OcTree& octomap,
                                                       const std::string& layer,
                                                     grid_map::GridMap& gridMap,
                    std::vector<std::vector<std::vector<int>>> & vMapPointIndex,
@@ -91,9 +91,10 @@ std::vector<int> GridOctoConverter::FromOctomap(const octomap::OcTree& octomap,
   vMapPointIndex.clear();
   vCloud.clear();
 
-  vMapPointIndex.resize(grid_map.getSize()(0));
-  for(int i = 0; i != vMapPointIndex.size(); ++i){
-     vMapPointIndex[i].resize(grid_map.getSize()(1));
+  //set the point index vector with same sizes
+  std::vector<std::vector<int>> vColGridVec(gridMap.getSize()(1));
+  for(int i = 0; i != gridMap.getSize()(0); ++i){
+     vMapPointIndex.push_back(vColGridVec);
   }
 
   int iNodePointCount = 0;
@@ -115,13 +116,13 @@ std::vector<int> GridOctoConverter::FromOctomap(const octomap::OcTree& octomap,
       oNodePoint.y = octoPos.y();
       oNodePoint.z = octoPos.z();
 
-      //get the index of corresponding grid
+      //get the 2d index of corresponding grid
       grid_map::Index index;
       gridMap.getIndex(position, index);
 
-      //get the index of point
+      //get the 1d index of point
       vCloud.push_back(oNodePoint);
-      vMapPointIndex[index(0))][index(1)].push_back(iNodePointCount);
+      vMapPointIndex[index(0)][index(1)].push_back(iNodePointCount);
       iNodePointCount++;
 
       // If no elevation has been set, use current elevation.

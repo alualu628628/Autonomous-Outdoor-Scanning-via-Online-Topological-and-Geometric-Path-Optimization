@@ -33,6 +33,8 @@ find_package(catkin REQUIRED COMPONENTS
              filters
 )
 
+message(STATUS "Found Octomap (version ${octomap_VERSION}): ${OCTOMAP_INCLUDE_DIRS}")
+
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES record_odomlaser
@@ -40,16 +42,21 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
-
-
-
-include_directories(
-  include ${catkin_INCLUDE_DIRS}
-# include
-  ${catkin_INCLUDE_DIRS}
-  ${OCTOMAP_INCLUDE_DIRS}
-  src
-)
+## Specify additional locations of header files
+if(${octomap_VERSION} VERSION_LESS 1.8) # ROS Indigo and Jade.
+  add_definitions(-DOCTOMAP_VERSION_BEFORE_ROS_KINETIC)
+  include_directories(
+    include
+    ${catkin_INCLUDE_DIRS}
+    ${OCTOMAP_INCLUDE_DIR}
+  )
+else() # ROS Kinetic and above.
+  include_directories(
+    include
+    ${catkin_INCLUDE_DIRS}
+    ${OCTOMAP_INCLUDE_DIRS}
+  )
+endif()
 
 
 ###### build ########
@@ -59,3 +66,4 @@ add_executable(topo_confidence_map
 
 
 target_link_libraries(topo_confidence_map ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OCTOMAP_LIBRARIES})
+

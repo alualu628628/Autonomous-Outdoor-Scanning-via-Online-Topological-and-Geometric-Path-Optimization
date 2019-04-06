@@ -38,7 +38,7 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
   m_oOctoMapClient = nodeHandle.serviceClient<octomap_msgs::GetOctomap>(m_oOctomapServiceTopic);
 
   //subscribe (hear) the odometry information
-  m_oOdomSuber = nodeHandle.subscribe(m_sOdomTopic, 0, &HandleTrajectory, this);
+  m_oOdomSuber = nodeHandle.subscribe(m_sOdomTopic, 1, &TopologyMap::HandleTrajectory, this);
 
   //publish topic
   m_oGridMapPublisher = nodeHandle.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
@@ -87,7 +87,7 @@ bool TopologyMap::ReadParameters(ros::NodeHandle & nodeHandle)
 {
   //input topic
   nodeHandle.param("octomap_service_topic", m_oOctomapServiceTopic, std::string("/octomap_binary"));
-  nodeHandle.param("odom_in_topic", m_oOdomTopic, std::string("/odometry/filtered"));
+  nodeHandle.param("odom_in_topic", m_sOdomTopic, std::string("/odometry/filtered"));
 
   //frequncy
   nodeHandle.param("odometry_rawfreq", m_dOdomRawHz, 50.0);
@@ -166,7 +166,7 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
   //if the frame count touches the least common multiple of m_iOdomSampingNum and 
   if( bUpdateFlag && bSamplingFlag ){
 
-    std::count<< "m_iTrajFrameNum: " << m_iTrajFrameNum << std::endl;
+    std::cout<< "m_iTrajFrameNum: " << m_iTrajFrameNum << std::endl;
     m_iTrajFrameNum = 0;
   }
 
