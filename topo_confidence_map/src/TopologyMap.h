@@ -2,7 +2,10 @@
 #ifndef TOPOLOGYMAP_H
 #define TOPOLOGYMAP_H
 #include <cmath>
+#include <queue>
+#include <vector>
 #include <string>
+
 
 //ros related
 #include <ros/ros.h>
@@ -46,7 +49,7 @@ class TopologyMap{
    * @param nodeHandle the ROS node handle.
    */
   TopologyMap(ros::NodeHandle & node,
-              ros::NodeHandle& nodeHandle);
+              ros::NodeHandle & nodeHandle);
 
   /*!
    * Destructor.
@@ -88,7 +91,6 @@ class TopologyMap{
   //**service related**
   //the name of source octomap service
   std::string m_oOctomapServiceTopic;
-
   //Octomap service client
   ros::ServiceClient m_oOctoMapClient;//m_oOctoMapClient<->oOctomapServerVec<->m_oOctomapServiceTopic
 
@@ -109,7 +111,7 @@ class TopologyMap{
 
   //**point cloud related**
   //the positions of robot
-  pcl::PointCloud<pcl::PointXYZ> m_vOdomCloud;//I dont think it is necessary to use a circle vector
+  std::queue<pcl::PointXYZ> m_vOdomCloud;//I dont think it is necessary to use a circle vector
   
   //! Bounding box of octomap to convert.
   float m_fMinBoundX;

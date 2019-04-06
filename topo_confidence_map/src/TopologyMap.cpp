@@ -23,19 +23,24 @@ namespace topology_map{
 
 
 TopologyMap::TopologyMap(ros::NodeHandle & node,
-                         ros::NodeHandle & nodeHandle)
-                                     :m_oFeatureMap(grid_map::GridMap({"elevation"})){
+                         ros::NodeHandle & nodeHandle):m_oFeatureMap(grid_map::GridMap({"elevation"})),
+                                                                                     m_iTrajFrameNum(0),
+                                                                                     m_iOdomSampingNum(25),
+                                                                                     m_iMapFreshNum(50){
 
   //read parameters
   ReadParameters(nodeHandle);
    
   m_oFeatureMap.setBasicLayers({"elevation"});
+  
 
+  //subscribe topic 
   m_oOctoMapClient = nodeHandle.serviceClient<octomap_msgs::GetOctomap>(m_oOctomapServiceTopic);
 
   //subscribe (hear) the odometry information
-  m_oOdomSuber = nodeHandle.subscribe(m_sOdomTopic, 2, &HandleTrajectory, this);
+  m_oOdomSuber = nodeHandle.subscribe(m_sOdomTopic, 0, &HandleTrajectory, this);
 
+  //publish topic
   m_oGridMapPublisher = nodeHandle.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
 
   m_oOctomapPublisher = nodeHandle.advertise<octomap_msgs::Octomap>("octomap", 1, true);
@@ -80,13 +85,32 @@ Others: the HandlePointClouds is the kernel function
 
 bool TopologyMap::ReadParameters(ros::NodeHandle & nodeHandle)
 {
+  //input topic
   nodeHandle.param("octomap_service_topic", m_oOctomapServiceTopic, std::string("/octomap_binary"));
-  nodeHandle.param("min_x", m_minBoundX, NAN);
-  nodeHandle.param("max_x", m_maxBoundX, NAN);
-  nodeHandle.param("min_y", m_minBoundY, NAN);
-  nodeHandle.param("max_y", m_maxBoundY, NAN);
-  nodeHandle.param("min_z", m_minBoundZ, NAN);
-  nodeHandle.param("max_z", m_maxBoundZ, NAN);
+  nodeHandle.param("odom_in_topic", m_oOdomTopic, std::string("/odometry/filtered"));
+
+  //frequncy
+  nodeHandle.param("odometry_rawfreq", m_dOdomRawHz, 50.0);
+  nodeHandle.param("odomsampling_freq", m_dSamplingHz, 2.0);
+
+  m_iOdomSampingNum = int(m_dOdomRawHz / m_dSamplingHz); 
+
+  nodeHandle.param("freshoctomap_freq", m_dOctomapFreshHz, 1.0);
+  
+  m_iMapFreshNum = int(m_dOdomRawHz / m_dSamplingHz); 
+
+  //input map 
+  nodeHandle.param("min_x", m_fMinBoundX, NAN);
+  nodeHandle.param("max_x", m_fMaxBoundX, NAN);
+  nodeHandle.param("min_y", m_fMinBoundY, NAN);
+  nodeHandle.param("max_y", m_fMaxBoundY, NAN);
+  nodeHandle.param("min_z", m_fMinBoundZ, NAN);
+  nodeHandle.param("max_z", m_fMaxBoundZ, NAN);
+
+  //confidence map
+  //neighboring region size
+  nodeHandle.param("robot_local_r", m_dRbtLocalRadius, 5.0);
+
   return true;
 }
 
@@ -107,36 +131,77 @@ Others: none
 void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
 {
   
-  
+  bool bUpdateFlag = false;
+  bool bSamplingFlag = false;
 
-  oTrajPoint.position.x = oTrajectory.pose.pose.position.x;//z in loam is x
-  oTrajPoint.position.y = oTrajectory.pose.pose.position.y;//x in loam is y
-  oTrajPoint.position.z = oTrajectory.pose.pose.position.z;//y in loam is z
-  //save record time
-  oTrajPoint.oTimeStamp =  oTrajectory.header.stamp;
+  //receive the global map to obtain the newest environment information
+  if(!(m_iTrajFrameNum % m_iMapFreshNum)){
+    std::cout<<"debug 1"<<std::endl;
+    ConvertAndPublishMap();
+
+  }                                                                                     
+
+  //record the robot position and update its neighboring map
+  if(!(m_iTrajFrameNum % m_iOdomSampingNum)){
+
+    bUpdateFlag = true;
+
+    //save the odom value
+    pcl::PointXYZ oOdomPoint;
+    oOdomPoint.x = oTrajectory.pose.pose.position.x;//z in loam is x
+    oOdomPoint.y = oTrajectory.pose.pose.position.y;//x in loam is y
+    oOdomPoint.z = oTrajectory.pose.pose.position.z;//y in loam is z
+
+    //make the sequence size smaller than a value
+    if(m_vOdomCloud.size()>10000)
+       m_vOdomCloud.pop();
+
+    std::cout<<"debug 2"<<std::endl;
+
+    CircleNeighboringGrids(m_vOdomCloud.back());
 
 
-
-}
-void IteratorsDemo::demoCircleIterator()
-{
-  ROS_INFO("Running circle iterator demo.");
-  map_.clearAll();
-  publish();
-
-  Position center(0.0, -0.15);
-  double radius = 0.4;
-
-  for (grid_map::CircleIterator iterator(map_, center, radius);
-      !iterator.isPastEnd(); ++iterator) {
-    map_.at("type", *iterator) = 1.0;
-    publish();
-    ros::Duration duration(0.02);
-    duration.sleep();
   }
 
-  ros::Duration duration(1.0);
-  duration.sleep();
+  //if the frame count touches the least common multiple of m_iOdomSampingNum and 
+  if( bUpdateFlag && bSamplingFlag ){
+
+    std::count<< "m_iTrajFrameNum: " << m_iTrajFrameNum << std::endl;
+    m_iTrajFrameNum = 0;
+  }
+
+  m_iTrajFrameNum++;
+
+}
+
+/*************************************************
+Function: TopologyMap
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+       privare node
+       flag of generating output file
+       original frame value
+Output: none
+Return: none
+Others: the HandlePointClouds is the kernel function
+*************************************************/
+
+void TopologyMap::CircleNeighboringGrids(pcl::PointXYZ & oRobotPoint)
+{
+  ROS_INFO("Running circle iterator demo.");
+
+  Position oRobotPos(oRobotPoint.x, oRobotPoint.y);
+
+  for (grid_map::CircleIterator iterator(m_oFeatureMap, oRobotPos, m_dRbtLocalRadius);
+      !iterator.isPastEnd(); ++iterator) {
+       m_oFeatureMap.at("elevation", *iterator) = 2.0;
+
+  }
+
 }
 
 
@@ -180,20 +245,31 @@ void TopologyMap::ConvertAndPublishMap(){
   pOctomap->getMetricMin(min_bound(0), min_bound(1), min_bound(2));
   pOctomap->getMetricMax(max_bound(0), max_bound(1), max_bound(2));
 
-  if(!std::isnan(m_minBoundX))
-    min_bound(0) = m_minBoundX;
-  if(!std::isnan(m_maxBoundX))
-    max_bound(0) = m_maxBoundX;
-  if(!std::isnan(m_minBoundY))
-    min_bound(1) = m_minBoundY;
-  if(!std::isnan(m_maxBoundY))
-    max_bound(1) = m_maxBoundY;
-  if(!std::isnan(m_minBoundZ))
-    min_bound(2) = m_minBoundZ;
-  if(!std::isnan(m_maxBoundZ))
-    max_bound(2) = m_maxBoundZ;
+  if(!std::isnan(m_fMinBoundX))
+    min_bound(0) = m_fMinBoundX;
+  if(!std::isnan(m_fMaxBoundX))
+    max_bound(0) = m_fMaxBoundX;
+  if(!std::isnan(m_fMinBoundY))
+    min_bound(1) = m_fMinBoundY;
+  if(!std::isnan(m_fMaxBoundY))
+    max_bound(1) = m_fMaxBoundY;
+  if(!std::isnan(m_fMinBoundZ))
+    min_bound(2) = m_fMinBoundZ;
+  if(!std::isnan(m_fMaxBoundZ))
+    max_bound(2) = m_fMaxBoundZ;
 
-  bool bConverterRes = grid_map::GridMapOctomapConverter::fromOctomap(*pOctomap, "elevation", m_oFeatureMap, &min_bound, &max_bound);
+  std::vector<std::vector<std::vector<int>>> vMapPointIndex;
+  pcl::PointCloud<pcl::PointXYZ> vCloud;
+
+  bool bConverterRes = GridOctoConverter::FromOctomap(*pOctomap, 
+                                                    "elevation", 
+                                                  m_oFeatureMap, 
+                                                 vMapPointIndex,
+                                                         vCloud,
+                                                     &min_bound,
+                                                     &max_bound);
+
+
   if (!bConverterRes) {
     ROS_ERROR("Failed to call convert Octomap.");
     return;
@@ -215,106 +291,3 @@ void TopologyMap::ConvertAndPublishMap(){
 
 } /* namespace */
 
-
-IteratorsDemo::IteratorsDemo(ros::NodeHandle& nodeHandle)
-    : nodeHandle_(nodeHandle),
-      map_(vector<string>({"type"}))
-{
-  ROS_INFO("Grid map iterators demo node started.");
-  gridMapPublisher_ = nodeHandle_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
-  polygonPublisher_ = nodeHandle_.advertise<geometry_msgs::PolygonStamped>("polygon", 1, true);
-
-  // Setting up map.
-  map_.setGeometry(Length(1.0, 1.0), 0.05, Position(0.0, 0.0));
-  map_.setFrameId("map");
-
-  publish();
-  ros::Duration duration(2.0);
-  duration.sleep();
-
-  demoGridMapIterator();
-  demoSubmapIterator();
-  demoCircleIterator();
-  demoEllipseIterator();
-  demoSpiralIterator();
-  demoLineIterator();
-  demoPolygonIterator();
-  demoSlidingWindowIterator();
-}
-
-IteratorsDemo::~IteratorsDemo() {}
-
-void IteratorsDemo::demoGridMapIterator()
-{
-  ROS_INFO("Running grid map iterator demo.");
-  map_.clearAll();
-  publish();
-
-  // Note: In this example we locally store a reference to the map data
-  // for improved performance. See `iterator_benchmark.cpp` and the
-  // README.md for a comparison and more information.
-  grid_map::Matrix& data = map_["type"];
-  for (grid_map::GridMapIterator iterator(map_); !iterator.isPastEnd(); ++iterator) {
-    const int i = iterator.getLinearIndex();
-    data(i) = 1.0;
-    publish();
-    ros::Duration duration(0.01);
-    duration.sleep();
-  }
-
-  ros::Duration duration(1.0);
-  duration.sleep();
-}
-
-void IteratorsDemo::demoSubmapIterator()
-{
-  ROS_INFO("Running submap iterator demo.");
-  map_.clearAll();
-  publish();
-
-  Index submapStartIndex(3, 5);
-  Index submapBufferSize(12, 7);
-
-  for (grid_map::SubmapIterator iterator(map_, submapStartIndex, submapBufferSize);
-      !iterator.isPastEnd(); ++iterator) {
-    map_.at("type", *iterator) = 1.0;
-    publish();
-    ros::Duration duration(0.02);
-    duration.sleep();
-  }
-
-  ros::Duration duration(1.0);
-  duration.sleep();
-}
-
-void IteratorsDemo::demoCircleIterator()
-{
-  ROS_INFO("Running circle iterator demo.");
-  map_.clearAll();
-  publish();
-
-  Position center(0.0, -0.15);
-  double radius = 0.4;
-
-  for (grid_map::CircleIterator iterator(map_, center, radius);
-      !iterator.isPastEnd(); ++iterator) {
-    map_.at("type", *iterator) = 1.0;
-    publish();
-    ros::Duration duration(0.02);
-    duration.sleep();
-  }
-
-  ros::Duration duration(1.0);
-  duration.sleep();
-}
-
-
-
-void IteratorsDemo::publish()
-{
-  map_.setTimestamp(ros::Time::now().toNSec());
-  grid_map_msgs::GridMap message;
-  grid_map::GridMapRosConverter::toMessage(map_, message);
-  gridMapPublisher_.publish(message);
-  ROS_DEBUG("Grid map (timestamp %f) published.", message.info.header.stamp.toSec());
-}

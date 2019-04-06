@@ -1,27 +1,29 @@
 /*====================================================================
- // Modified by the GridMapOctomapConverter.cpp
+ // Modified by the GridOctoConverter.cpp
  // Created on: May 1, 2017, Author: Jeff Delmerico, Peter Fankhauser,  University of Zürich
  // Modified on: April 3, 2019, Author: Pengdi Huang
  =====================================================================*/
 
-#include "grid_map_octomap/GridMapOctomapConverter.hpp"
+#include "grid_map_octomap/GridOctoConverter.hpp"
 
 namespace TopologyMap {
 
-GridMapOctomapConverter::GridMapOctomapConverter()
+GridOctoConverter::GridOctoConverter()
 {
 }
 
-GridMapOctomapConverter::~GridMapOctomapConverter()
+GridOctoConverter::~GridOctoConverter()
 {
 }
 
-std::vector<int> GridMapOctomapConverter::fromOctomap(const octomap::OcTree& octomap,
-                                          const std::string& layer,
-                                          grid_map::GridMap& gridMap,
-                                          const grid_map::Position3* minPoint,
-                                          const grid_map::Position3* maxPoint)
-{
+std::vector<int> GridOctoConverter::FromOctomap(const octomap::OcTree& octomap,
+                                                      const std::string& layer,
+                                                    grid_map::GridMap& gridMap,
+                   std::vector<std::vector<std::vector<int>>> & vMapPointIndex,
+                                       pcl::PointCloud<pcl::PointXYZ> & vCloud,
+                                           const grid_map::Position3* minPoint,
+                                           const grid_map::Position3* maxPoint){
+
   if (octomap.getTreeType() != "OcTree") {
     std::cerr << "Octomap conversion only implemented for standard OcTree type." << std::endl;
     return false;
@@ -86,17 +88,42 @@ std::vector<int> GridMapOctomapConverter::fromOctomap(const octomap::OcTree& oct
   gridMap.add(layer);
   gridMap.setBasicLayers({layer});
 
+  vMapPointIndex.clear();
+  vCloud.clear();
+
+  vMapPointIndex.resize(grid_map.getSize()(0));
+  for(int i = 0; i != vMapPointIndex.size(); ++i){
+     vMapPointIndex[i].resize(grid_map.getSize()(1));
+  }
+
+  int iNodePointCount = 0;
+
   // For each voxel, if its elevation is higher than the existing value for the
   // corresponding grid map cell, overwrite it.
   // std::cout << "Iterating from " << min_bbx << " to " << max_bbx << std::endl;
   grid_map::Matrix& gridMapData = gridMap[layer];
   for(octomap::OcTree::leaf_bbx_iterator it = octomapCopy.begin_leafs_bbx(minBbx, maxBbx),
           end = octomapCopy.end_leafs_bbx(); it != end; ++it) {
+
     if (octomapCopy.isNodeOccupied(*it)) {
       octomap::point3d octoPos = it.getCoordinate();
       grid_map::Position position(octoPos.x(), octoPos.y());
+
+      //get the point position
+      pcl::PointXYZ oNodePoint;
+      oNodePoint.x = octoPos.x();
+      oNodePoint.y = octoPos.y();
+      oNodePoint.z = octoPos.z();
+
+      //get the index of corresponding grid
       grid_map::Index index;
       gridMap.getIndex(position, index);
+
+      //get the index of point
+      vCloud.push_back(oNodePoint);
+      vMapPointIndex[index(0))][index(1)].push_back(iNodePointCount);
+      iNodePointCount++;
+
       // If no elevation has been set, use current elevation.
       if (!gridMap.isValid(index)) {
         gridMapData(index(0), index(1)) = octoPos.z();
