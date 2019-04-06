@@ -8,16 +8,7 @@ int main(int argc, char** argv){
  
   topology_map::TopologyMap TopologyMapping(node,privateNode);
 
-  ros::Duration(2.0).sleep();
-
-  ros::Rate r(0.1); // 1 hz
-  while (ros::ok())
-  {
-    TopologyMapping.convertAndPublishMap();
-    ros::spinOnce();
-    r.sleep();
-  }
-  //ros::spin();
+  ros::spin();
 
   return 0;
 }

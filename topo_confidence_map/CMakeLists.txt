@@ -44,6 +44,7 @@ catkin_package(
 
 
 include_directories(
+  include ${catkin_INCLUDE_DIRS}
 # include
   ${catkin_INCLUDE_DIRS}
   ${OCTOMAP_INCLUDE_DIRS}
@@ -52,7 +53,8 @@ include_directories(
 
 
 ###### build ########
-add_executable(topo_confidence_map src/TopologyMap.cpp src/main.cpp)
+add_executable(topo_confidence_map
+  src/OctoGrid.cpp src/TopologyMap.cpp src/main.cpp)
 
 
 

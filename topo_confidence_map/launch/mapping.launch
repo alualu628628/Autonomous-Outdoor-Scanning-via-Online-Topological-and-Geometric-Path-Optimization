@@ -5,12 +5,29 @@
   <include file="$(find octomap_server)/launch/octomap_mapping.launch">
   </include>
 
+  <arg name="odometryrawfreq" default="50.0" />
+  <arg name="odomsamplingfreq" default="2.0" />
+  <arg name="freshoctomapfreq" default="1.0" />
+  <arg name="robotlocalr" default="5.0"/>
+  <arg name="odomintopic" default="/odometry/filtered"/>
+
   <!-- Launch the octomap conversion node -->
-  <node pkg="topo_confidence_map" type="topo_confidence_map" name="topology_map" output="screen" />
+  <node pkg="topo_confidence_map" type="topo_confidence_map" name="topology_map" output="screen" >
+
+     <param name="odom_in_topic" type="string" value="$(arg odomintopic)" />
+     <!--Sampling of odometry points -->
+     <param name="odometry_rawfreq" type="double" value="$(arg odometryrawfreq)" />
+     <param name="odomsampling_freq" type="double" value="$(arg odomsamplingfreq)" />
+     <param name="freshoctomap_freq" type="double" value="$(arg freshoctomapfreq)" />
+
+     <!--the local neighboring radius of robot to compute local confidence map-->
+     <param name="robot_local_r" type="double" value="$(arg robotlocalr)" />
+  </node>
 
   <!-- Launch the grid map visualizer -->
   <!-- node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen" /-->
 
   <!-- Launch RViz with the demo configuration -->
   <!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find grid_map_demos)/rviz/octomap_to_gridmap_demo.rviz" /-->
+  
 </launch>
