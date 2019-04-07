@@ -113,10 +113,10 @@ class TopologyMap{
   //the positions of robot
   std::queue<pcl::PointXYZ> m_vOdomCloud;//I dont think it is necessary to use a circle vector
   //record the octree node point clouds (it can be seems as the down sampling of scanning point clouds)
-  pcl::PointCloud<pcl::PointXYZ> vNodeCloud;
+  pcl::PointCloud<pcl::PointXYZ> m_vNodeCloud;
   //record the point index in grid map cells
   //grid cell x<grid cell y < node point id in vNodeCloud>>
-  std::vector<std::vector<std::vector<int> > > vMapPointIndex;
+  std::vector<std::vector<std::vector<int> > > m_vMapPointIndex;
   
   //! Bounding box of octomap to convert.
   float m_fMinBoundX;

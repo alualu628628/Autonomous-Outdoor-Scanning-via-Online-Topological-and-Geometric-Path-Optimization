@@ -207,9 +207,17 @@ void TopologyMap::CircleNeighboringGrids(pcl::PointXYZ & oRobotPoint)
 
   Position oRobotPos(oRobotPoint.x, oRobotPoint.y);
 
-  for (grid_map::CircleIterator pIterator(m_oFeatureMap, oRobotPos, m_dRbtLocalRadius);
-      !pIterator.isPastEnd(); ++pIterator) {
-       m_oFeatureMap.at("elevation", *pIterator) = 2.0;
+  pcl::PointCloud<pcl::PointXYZ> vCloud;
+
+  for (grid_map::CircleIterator oIterator(m_oFeatureMap, oRobotPos, m_dRbtLocalRadius);
+      !oIterator.isPastEnd(); ++oIterator) {
+       m_oFeatureMap.at("elevation", *oIterator) = 2.0;
+      for(int i = 0; i != m_vMapPointIndex[(*oIterator)(0)][(*oIterator)(1)].size(); ++i){
+
+          int iNPCIdx = m_vMapPointIndex[(*oIterator)(0)][(*oIterator)(1)][i];
+          vCloud.push_back(m_vNodeCloud.points[iNPCIdx]);
+
+      }
 
   }
   
@@ -218,7 +226,7 @@ void TopologyMap::CircleNeighboringGrids(pcl::PointXYZ & oRobotPoint)
   sensor_msgs::PointCloud2 vCloudData;
   pcl::toROSMsg(vCloud, vCloudData);
   vCloudData.header.frame_id = "odom";
-  vCloudData.header.stamp = oOctomapMessage.header.stamp;
+  vCloudData.header.stamp =  ros::Time::now();
   m_oCloudPublisher.publish(vCloudData);
 
 }
@@ -276,9 +284,6 @@ void TopologyMap::ConvertAndPublishMap(){
     min_bound(2) = m_fMinBoundZ;
   if(!std::isnan(m_fMaxBoundZ))
     max_bound(2) = m_fMaxBoundZ;
-
-  std::vector<std::vector<std::vector<int>>> vMapPointIndex;
-  pcl::PointCloud<pcl::PointXYZ> vCloud;
  
   bool bConverterRes = GridOctoConverter::FromOctomap(*pOctomap, 
                                                     "elevation", 
