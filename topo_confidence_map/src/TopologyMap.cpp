@@ -26,7 +26,8 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
                          ros::NodeHandle & nodeHandle):m_oFeatureMap(grid_map::GridMap({"elevation"})),
                                                                                      m_iTrajFrameNum(0),
                                                                                      m_iOdomSampingNum(25),
-                                                                                     m_iMapFreshNum(50){
+                                                                                     m_iMapFreshNum(50),
+                                                                                     m_bGridMapReadyFlag(false){
 
   //read parameters
   ReadParameters(nodeHandle);
@@ -44,6 +45,8 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
   m_oGridMapPublisher = nodeHandle.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
 
   m_oOctomapPublisher = nodeHandle.advertise<octomap_msgs::Octomap>("octomap", 1, true);
+
+  m_oCloudPublisher = nodeHandle.advertise<sensor_msgs::PointCloud2>("test_clouds", 1, true);
 
 }
 
@@ -94,11 +97,14 @@ bool TopologyMap::ReadParameters(ros::NodeHandle & nodeHandle)
   nodeHandle.param("odomsampling_freq", m_dSamplingHz, 2.0);
 
   m_iOdomSampingNum = int(m_dOdomRawHz / m_dSamplingHz); 
+  ROS_INFO("Set odometry down sampling times as [%d]",m_iOdomSampingNum);
 
-  nodeHandle.param("freshoctomap_freq", m_dOctomapFreshHz, 1.0);
+  //
+  nodeHandle.param("freshoctomap_freq", m_dOctomapFreshHz, 0.5);
   
-  m_iMapFreshNum = int(m_dOdomRawHz / m_dSamplingHz); 
-
+  m_iMapFreshNum = int(m_dOdomRawHz / m_dOctomapFreshHz); 
+  ROS_INFO("Set updating octomap times as [%d]",m_iMapFreshNum);
+  
   //input map 
   nodeHandle.param("min_x", m_fMinBoundX, NAN);
   nodeHandle.param("max_x", m_fMaxBoundX, NAN);
@@ -131,42 +137,47 @@ Others: none
 void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
 {
   
-  bool bUpdateFlag = false;
+  bool bMapUpdateFlag = false;
   bool bSamplingFlag = false;
 
   //receive the global map to obtain the newest environment information
   if(!(m_iTrajFrameNum % m_iMapFreshNum)){
-    std::cout<<"debug 1"<<std::endl;
-    ConvertAndPublishMap();
+    //std::cout<<"debug 1"<<std::endl;
+
+    bMapUpdateFlag = true;
+
+   ConvertAndPublishMap();
 
   }                                                                                     
 
   //record the robot position and update its neighboring map
   if(!(m_iTrajFrameNum % m_iOdomSampingNum)){
 
-    bUpdateFlag = true;
+    bSamplingFlag = true;
 
     //save the odom value
     pcl::PointXYZ oOdomPoint;
     oOdomPoint.x = oTrajectory.pose.pose.position.x;//z in loam is x
     oOdomPoint.y = oTrajectory.pose.pose.position.y;//x in loam is y
     oOdomPoint.z = oTrajectory.pose.pose.position.z;//y in loam is z
+    m_vOdomCloud.push(oOdomPoint);
 
     //make the sequence size smaller than a value
-    if(m_vOdomCloud.size()>10000)
+    if(m_vOdomCloud.size() > 10000)
        m_vOdomCloud.pop();
 
-    std::cout<<"debug 2"<<std::endl;
+    //std::cout<<"debug 2"<<std::endl;
 
+    if(m_bGridMapReadyFlag)
     CircleNeighboringGrids(m_vOdomCloud.back());
 
 
   }
 
   //if the frame count touches the least common multiple of m_iOdomSampingNum and 
-  if( bUpdateFlag && bSamplingFlag ){
-
-    std::cout<< "m_iTrajFrameNum: " << m_iTrajFrameNum << std::endl;
+  if( bMapUpdateFlag && bSamplingFlag ){
+    
+    //ROS_INFO("loop touches [%d] and reset at 0.", m_iTrajFrameNum);
     m_iTrajFrameNum = 0;
   }
 
@@ -192,15 +203,23 @@ Others: the HandlePointClouds is the kernel function
 
 void TopologyMap::CircleNeighboringGrids(pcl::PointXYZ & oRobotPoint)
 {
-  ROS_INFO("Running circle iterator demo.");
+  ROS_INFO("Running circle iterator demo."); 
 
   Position oRobotPos(oRobotPoint.x, oRobotPoint.y);
 
-  for (grid_map::CircleIterator iterator(m_oFeatureMap, oRobotPos, m_dRbtLocalRadius);
-      !iterator.isPastEnd(); ++iterator) {
-       m_oFeatureMap.at("elevation", *iterator) = 2.0;
+  for (grid_map::CircleIterator pIterator(m_oFeatureMap, oRobotPos, m_dRbtLocalRadius);
+      !pIterator.isPastEnd(); ++pIterator) {
+       m_oFeatureMap.at("elevation", *pIterator) = 2.0;
 
   }
+  
+
+  //publish obstacle points
+  sensor_msgs::PointCloud2 vCloudData;
+  pcl::toROSMsg(vCloud, vCloudData);
+  vCloudData.header.frame_id = "odom";
+  vCloudData.header.stamp = oOctomapMessage.header.stamp;
+  m_oCloudPublisher.publish(vCloudData);
 
 }
 
@@ -228,7 +247,7 @@ void TopologyMap::ConvertAndPublishMap(){
     ROS_ERROR_STREAM("Failed to call service: " << m_oOctomapServiceTopic);
     return;
   }
-
+  
   // creating octree
   octomap::OcTree* pOctomap = nullptr;
   octomap::AbstractOcTree* pOCTree = octomap_msgs::msgToMap(oOctomapServerVec.response.map);
@@ -260,21 +279,22 @@ void TopologyMap::ConvertAndPublishMap(){
 
   std::vector<std::vector<std::vector<int>>> vMapPointIndex;
   pcl::PointCloud<pcl::PointXYZ> vCloud;
-
+ 
   bool bConverterRes = GridOctoConverter::FromOctomap(*pOctomap, 
                                                     "elevation", 
                                                   m_oFeatureMap, 
-                                                 vMapPointIndex,
-                                                         vCloud,
+                                               m_vMapPointIndex,
+                                                   m_vNodeCloud,
                                                      &min_bound,
                                                      &max_bound);
 
+  m_bGridMapReadyFlag = m_bGridMapReadyFlag | bConverterRes;
 
   if (!bConverterRes) {
     ROS_ERROR("Failed to call convert Octomap.");
     return;
   }
-
+  
   m_oFeatureMap.setFrameId(oOctomapServerVec.response.map.header.frame_id);
 
   // Publish as grid map.
@@ -287,6 +307,8 @@ void TopologyMap::ConvertAndPublishMap(){
   octomap_msgs::fullMapToMsg(*pOctomap, oOctomapMessage);
   oOctomapMessage.header.frame_id = m_oFeatureMap.getFrameId();
   m_oOctomapPublisher.publish(oOctomapMessage);
+
+
 }
 
 } /* namespace */
