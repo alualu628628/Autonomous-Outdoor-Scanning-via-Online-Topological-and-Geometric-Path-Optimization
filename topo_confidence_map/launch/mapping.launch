@@ -1,22 +1,44 @@
 <launch>
-  <rosparam command="load" file="$(find grid_map_demos)/config/octomap_to_gridmap_demo.yaml" />
-
-  <!-- Load the octomap -->
-  <include file="$(find octomap_server)/launch/octomap_mapping.launch">
-  </include>
-
+  
   <arg name="odomintopic" default="/odometry/filtered"/>
   <!--please enrostopic hz topicname (e.g., /odometry/filtered) to inquire raw frequency of odometry /-->
   <arg name="odometryrawfreq" default="50.0" />
   <arg name="odomsamplingfreq" default="2.0" />
   <arg name="freshoctomapfreq" default="0.5" />
   <arg name="robotlocalr" default="5.0"/>
-  
+  <arg name="mapmaxrange" default="150.0" />
+  <arg name="mapminz" default="-3.0" />
+  <arg name="mapmaxz" default="7.0" />
+  <arg name="mapresolution" default="0.1" />
+  <!-- Load the octomap -->
+  <include file="$(find octomap_server)/launch/octomap_mapping.launch">
+    <!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
+    <param name="frame_id" type="string" value="odom" />
+    <!--param name="frame_id" type="string" value="/integrated_to_init" /-->
+
+    <!-- maximum range to integrate (speedup!) -->
+    <param name="sensor_model/max_range" value="$(arg mapmaxrange)" />
+    <!-- max/min height for occupancy map, should be in meters --> 
+    <param name="pointcloud_max_z" value="$(arg mapmaxz)" />
+    <param name="pointcloud_min_z" value="$(arg mapminz)" /> 
+
+    <param name="resolution" value="(arg mapresolution)" />
+    <!-- data source to integrate (PointCloud2) -->
+    <!--remap from="cloud_in" to="/velodyne_cloud_registered" /-->
+    <remap from="cloud_in" to="/slam_points" />
+  </include>
 
   <!-- Launch the octomap conversion node -->
   <node pkg="topo_confidence_map" type="topo_confidence_map" name="topology_map" output="screen" >
 
      <param name="odom_in_topic" type="string" value="$(arg odomintopic)" />
+
+     <!--parameters of map-->
+     <param name="gridmap_maxrange" type="double" value="$(arg mapmaxrange)" />
+     <param name="gridmap_minz" type="double" value="$(arg mapminz)" />
+     <param name="gridmap_maxz" type="double" value="$(arg mapmaxz)" />
+     <param name="gridmap_resolution" type="double" value="$(arg mapresolution)" />
+
      <!--Sampling of odometry points -->
      <param name="odometry_rawfreq" type="double" value="$(arg odometryrawfreq)" />
      <param name="odomsampling_freq" type="double" value="$(arg odomsamplingfreq)" />
@@ -33,3 +55,6 @@
   <!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find grid_map_demos)/rviz/octomap_to_gridmap_demo.rviz" /-->
   
 </launch>
+
+
+

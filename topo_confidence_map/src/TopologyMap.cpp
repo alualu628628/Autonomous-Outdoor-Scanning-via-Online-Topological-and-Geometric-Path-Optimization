@@ -1,24 +1,7 @@
 #include "TopologyMap.h"
 
 
-/*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
-Table Accessed: none
-Table Updated: none
-Input: global node,
-       privare node
-       flag of generating output file
-       original frame value
-Output: none
-Return: none
-Others: the HandlePointClouds is the kernel function
-*************************************************/
-
 namespace topology_map{
-
 
 
 
@@ -31,9 +14,6 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 
   //read parameters
   ReadParameters(nodeHandle);
-   
-  m_oFeatureMap.setBasicLayers({"elevation"});
-  
 
   //subscribe topic 
   m_oOctoMapClient = nodeHandle.serviceClient<octomap_msgs::GetOctomap>(m_oOctomapServiceTopic);
@@ -68,6 +48,66 @@ Others: the HandlePointClouds is the kernel function
 
 TopologyMap::~TopologyMap()
 {
+}
+
+
+
+/*************************************************
+Function: TopologyMap
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+       privare node
+       flag of generating output file
+       original frame value
+Output: none
+Return: none
+Others: the HandlePointClouds is the kernel function
+*************************************************/
+
+void TopologyMap::InitializeGridMap(const float & fRobotX,
+                                    const float & fRobotY){
+
+  //set feature layer
+  m_oFeatureMap.add("traversability");
+  m_oFeatureMap.add("boundary");
+  m_oFeatureMap.add("observability");
+  m_oFeatureMap.add("confidence");
+  m_oFeatureMap.setBasicLayers({"elevation"});
+
+  //corner of map's bounding box
+  m_oMinCorner(0) = fRobotX - float(m_dMapMaxRange);
+ 
+  m_oMaxCorner(0) = fRobotX + float(m_dMapMaxRange);
+  
+  m_oMinCorner(1) = fRobotY - float(m_dMapMaxRange);
+  
+  m_oMaxCorner(1) = fRobotY + float(m_dMapMaxRange);
+
+  //build the map
+  m_oFeatureMap.setGeometry(Length(2.0*m_dMapMaxRange , 2.0*m_dMapMaxRange), 
+                                                              m_dResolution, 
+                                                Position(fRobotX, fRobotY));
+
+   //set the point index vector with same sizes
+  std::vector<int> vOneGridIdx;
+  std::vector<std::vector<int>> vColGridVec;
+
+  for(int i = 0; i != m_oFeatureMap.getSize()(1); ++i)
+    vColGridVec.push_back(vOneGridIdx);
+
+  for(int i = 0; i != m_oFeatureMap.getSize()(0); ++i)
+    m_vMapPointIndex.push_back(vColGridVec);
+
+  //dispaly
+  ROS_INFO("Initialized map with size %f x %f m (%i x %i cells).", m_oFeatureMap.getLength().x(), 
+           m_oFeatureMap.getLength().y(), m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1));
+
+  m_bGridMapReadyFlag = true;
+
 }
 
 /*************************************************
@@ -105,16 +145,25 @@ bool TopologyMap::ReadParameters(ros::NodeHandle & nodeHandle)
   m_iMapFreshNum = int(m_dOdomRawHz / m_dOctomapFreshHz); 
   ROS_INFO("Set updating octomap times as [%d]",m_iMapFreshNum);
   
-  //input map 
-  nodeHandle.param("min_x", m_fMinBoundX, NAN);
-  nodeHandle.param("max_x", m_fMaxBoundX, NAN);
-  nodeHandle.param("min_y", m_fMinBoundY, NAN);
-  nodeHandle.param("max_y", m_fMaxBoundY, NAN);
-  nodeHandle.param("min_z", m_fMinBoundZ, NAN);
-  nodeHandle.param("max_z", m_fMaxBoundZ, NAN);
+  //map parameters
+  //map range/map size
+  nodeHandle.param("gridmap_maxrange", m_dMapMaxRange, 250.0);
+  if(m_dMapMaxRange <= 0)//defend a zero input
+     m_dMapMaxRange = 50.0;
 
-  //confidence map
-  //neighboring region size
+  //map limited height
+  double dMinMapZ;
+  nodeHandle.param("min_mapz", dMinMapZ, -2.0);
+  m_oMinCorner(2) = dMinMapZ;
+
+  double dMaxMapZ;
+  nodeHandle.param("max_mapz", dMaxMapZ, 7.0);
+  m_oMaxCorner(2) = dMaxMapZ;
+
+  //map cell size
+  nodeHandle.param("gridmap_resolution", m_dResolution, 0.1);
+
+  //map neighboring region size
   nodeHandle.param("robot_local_r", m_dRbtLocalRadius, 5.0);
 
   return true;
@@ -140,19 +189,28 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
   bool bMapUpdateFlag = false;
   bool bSamplingFlag = false;
 
+  if(!m_bGridMapReadyFlag)
+    //initial the grid map based on the odometry center
+    InitializeGridMap(oTrajectory.pose.pose.position.x,
+                      oTrajectory.pose.pose.position.y);
+
+
+  if(!m_bGridMapReadyFlag)
+    return;
+
   //receive the global map to obtain the newest environment information
   if(!(m_iTrajFrameNum % m_iMapFreshNum)){
+    ROS_INFO("Debug 2."); 
     //std::cout<<"debug 1"<<std::endl;
-
     bMapUpdateFlag = true;
 
-   ConvertAndPublishMap();
+      ConvertAndPublishMap();
 
   }                                                                                     
 
   //record the robot position and update its neighboring map
   if(!(m_iTrajFrameNum % m_iOdomSampingNum)){
-
+    ROS_INFO("Debug 3."); 
     bSamplingFlag = true;
 
     //save the odom value
@@ -193,7 +251,7 @@ Called By: main function of project
 Table Accessed: none
 Table Updated: none
 Input: global node,
-       privare node
+       privare nodem_dMapMaxRange
        flag of generating output file
        original frame value
 Output: none
@@ -206,12 +264,15 @@ void TopologyMap::CircleNeighboringGrids(pcl::PointXYZ & oRobotPoint)
   ROS_INFO("Running circle iterator demo."); 
 
   Position oRobotPos(oRobotPoint.x, oRobotPoint.y);
-
+  
+   
   pcl::PointCloud<pcl::PointXYZ> vCloud;
 
   for (grid_map::CircleIterator oIterator(m_oFeatureMap, oRobotPos, m_dRbtLocalRadius);
       !oIterator.isPastEnd(); ++oIterator) {
-       m_oFeatureMap.at("elevation", *oIterator) = 2.0;
+
+      //m_oFeatureMap.at("elevation", *oIterator) = 2.0;
+
       for(int i = 0; i != m_vMapPointIndex[(*oIterator)(0)][(*oIterator)(1)].size(); ++i){
 
           int iNPCIdx = m_vMapPointIndex[(*oIterator)(0)][(*oIterator)(1)][i];
@@ -220,7 +281,10 @@ void TopologyMap::CircleNeighboringGrids(pcl::PointXYZ & oRobotPoint)
       }
 
   }
+
+  int test = vCloud.size();
   
+  ROS_INFO("result point size is [%d].", test);
 
   //publish obstacle points
   sensor_msgs::PointCloud2 vCloudData;
@@ -228,6 +292,7 @@ void TopologyMap::CircleNeighboringGrids(pcl::PointXYZ & oRobotPoint)
   vCloudData.header.frame_id = "odom";
   vCloudData.header.stamp =  ros::Time::now();
   m_oCloudPublisher.publish(vCloudData);
+  ROS_INFO("Debug 4."); 
 
 }
 
@@ -266,34 +331,15 @@ void TopologyMap::ConvertAndPublishMap(){
     return;
   }
 
-  grid_map::Position3 min_bound;
-  grid_map::Position3 max_bound;
-
-  pOctomap->getMetricMin(min_bound(0), min_bound(1), min_bound(2));
-  pOctomap->getMetricMax(max_bound(0), max_bound(1), max_bound(2));
-
-  if(!std::isnan(m_fMinBoundX))
-    min_bound(0) = m_fMinBoundX;
-  if(!std::isnan(m_fMaxBoundX))
-    max_bound(0) = m_fMaxBoundX;
-  if(!std::isnan(m_fMinBoundY))
-    min_bound(1) = m_fMinBoundY;
-  if(!std::isnan(m_fMaxBoundY))
-    max_bound(1) = m_fMaxBoundY;
-  if(!std::isnan(m_fMinBoundZ))
-    min_bound(2) = m_fMinBoundZ;
-  if(!std::isnan(m_fMaxBoundZ))
-    max_bound(2) = m_fMaxBoundZ;
- 
-  bool bConverterRes = GridOctoConverter::FromOctomap(*pOctomap, 
-                                                    "elevation", 
-                                                  m_oFeatureMap, 
-                                               m_vMapPointIndex,
-                                                   m_vNodeCloud,
-                                                     &min_bound,
-                                                     &max_bound);
-
-  m_bGridMapReadyFlag = m_bGridMapReadyFlag | bConverterRes;
+  ROS_INFO("Debug 5."); 
+  //copy node points within query bounding box (oMinCorner - oMaxCorner) to grid map
+  bool bConverterRes = GridOctoConverter::UpdateFromOctomap(*pOctomap, 
+                                                          "elevation", 
+                                                        m_oFeatureMap, 
+                                                     m_vMapPointIndex,
+                                                         m_vNodeCloud,
+                                                        &m_oMinCorner,
+                                                        &m_oMaxCorner);
 
   if (!bConverterRes) {
     ROS_ERROR("Failed to call convert Octomap.");
@@ -313,7 +359,7 @@ void TopologyMap::ConvertAndPublishMap(){
   oOctomapMessage.header.frame_id = m_oFeatureMap.getFrameId();
   m_oOctomapPublisher.publish(oOctomapMessage);
 
-
+  
 }
 
 } /* namespace */

@@ -60,13 +60,13 @@ class GridOctoConverter{
    * @param[in] maxPoint (optional) maximum coordinate for bounding box.
    * @return true if successful, false otherwise.
    */
-  static bool FromOctomap(const octomap::OcTree& octomap,
-                          const std::string& layer,
-                          grid_map::GridMap& gridMap,
-                          std::vector<std::vector<std::vector<int>>> & vMapPointIndex,
-                          pcl::PointCloud<pcl::PointXYZ> & vCloud,
-                          const grid_map::Position3* minPoint = nullptr,
-                          const grid_map::Position3* maxPoint = nullptr);
+  static bool UpdateFromOctomap(const octomap::OcTree& octomap,
+                                      const std::string& layer,
+                                    grid_map::GridMap& gridMap,
+ std::vector<std::vector<std::vector<int> > > & vMapPointIndex,
+                       pcl::PointCloud<pcl::PointXYZ> & vCloud,
+                           const grid_map::Position3* minPoint,
+                           const grid_map::Position3* maxPoint);
 
 };
 

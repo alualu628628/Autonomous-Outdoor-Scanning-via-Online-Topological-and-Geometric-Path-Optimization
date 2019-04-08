@@ -62,6 +62,9 @@ class TopologyMap{
   */
   bool ReadParameters(ros::NodeHandle & nodeHandle);
 
+  //Initialize a fixed Grid Map
+  void InitializeGridMap(const float & fRobotX, const float & fRobotY);
+
 
   void HandleTrajectory(const nav_msgs::Odometry & oTrajectory);
 
@@ -118,21 +121,26 @@ class TopologyMap{
   //grid cell x<grid cell y < node point id in vNodeCloud>>
   std::vector<std::vector<std::vector<int> > > m_vMapPointIndex;
   
-  //! Bounding box of octomap to convert.
-  float m_fMinBoundX;
-  float m_fMaxBoundX;
-  float m_fMinBoundY;
-  float m_fMaxBoundY;
-  float m_fMinBoundZ;
-  float m_fMaxBoundZ;
+
 
 
   double m_dRbtLocalRadius;
 
 
   //! Grid map data.
-  grid_map::GridMap m_oFeatureMap;
+  //construted maximum range of map 
+  //note that the map size is fixed, thus it must be initialied large enough to pick the scene 
+  double m_dMapMaxRange;///<it indicates the half length of bounding box (map)
+  
+  //Bounding box of octomap to convert.
+  grid_map::Position3 m_oMinCorner;
+  grid_map::Position3 m_oMaxCorner;
 
+  //resolution of map pixels/cells 
+  double m_dResolution;
+  //the map - main body 
+  grid_map::GridMap m_oFeatureMap;
+  //the grid map initialization flag indicates whether the map has been simply established
   bool m_bGridMapReadyFlag;
 
 
