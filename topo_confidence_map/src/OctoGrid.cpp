@@ -99,7 +99,7 @@ bool GridOctoConverter::UpdateFromOctomap(const octomap::OcTree& octomap,
   // For each voxel, if its elevation is higher than the existing value for the
   // corresponding grid map cell, overwrite it.
   // std::cout << "Iterating from " << min_bbx << " to " << max_bbx << std::endl;
-  // grid_map::Matrix& gridMapData = oGridMap[layer];
+  grid_map::Matrix& gridMapData = oGridMap[layer];
   for(octomap::OcTree::leaf_bbx_iterator it = octomapCopy.begin_leafs_bbx(oQueryMinBbx, oQueryMaxBbx),
           end = octomapCopy.end_leafs_bbx(); it != end; ++it) {
 
@@ -124,15 +124,17 @@ bool GridOctoConverter::UpdateFromOctomap(const octomap::OcTree& octomap,
       iNodePointCount++;
       
       // If no elevation has been set, use current elevation.
-      //if (!oGridMap.isValid(index)) {
-      //  gridMapData(index(0), index(1)) = octoPos.z();
-      //}
+      if (!oGridMap.isValid(index)) {
+        gridMapData(index(0), index(1)) = octoPos.z();
+      
       // Check existing elevation, keep higher.
-      //else {
-      //  if (gridMapData(index(0), index(1)) < octoPos.z()) {
-      //    gridMapData(index(0), index(1)) = octoPos.z();
-      //  }
-      //}
+      }else {
+
+        if (gridMapData(index(0), index(1)) < octoPos.z())
+          gridMapData(index(0), index(1)) = octoPos.z();
+
+      }//end else
+
     }//end if
 
   }//end for
