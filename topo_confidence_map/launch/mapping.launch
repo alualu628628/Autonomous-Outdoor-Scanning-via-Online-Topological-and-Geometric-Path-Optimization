@@ -9,7 +9,7 @@
   <arg name="odometryrawfreq" default="50.0" />
   <arg name="odomsamplingfreq" default="2.0" />
   <!--arg name="freshoctomapfreq" default="0.5" /-->
-  <arg name="pointframesmpl" default="3" />
+  <arg name="pointframesmpl" default="5" />
 
   <arg name="robotlocalr" default="5.0"/>
   <arg name="mapmaxrange" default="50" />

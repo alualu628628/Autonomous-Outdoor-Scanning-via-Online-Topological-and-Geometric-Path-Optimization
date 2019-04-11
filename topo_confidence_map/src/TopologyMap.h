@@ -30,82 +30,132 @@
 
 #include "OctoGrid.h"
 
-
-
 using namespace grid_map;
 
 namespace topology_map{
 
-struct MapIndex{
+//status
+struct Confidence{
 
-  grid_map::Index oTwoIndex;
-  int iOneIdx;
+	//distance based term
+	float travelTerm;
+	//visibility based term
+	float visiTerm;
+	//quality
+	float qualTerm;
+	//Weighted total of those two terms above
+	float totalValue;
+
+	//labels of obstacle, travelable region and boundary
+	//0 nothing 
+	//1 obstacles
+	//2 ground points
+	//3 boundary
+	short label;
+
+	//travelable or not (can the robot reaches this grid right now)
+	//-1 indicates it is an unknown grid
+	//0 indicates this grid is ground but not reachable now
+	//1 indicates this grid is a travelable region grid
+	//2 is the new scanned grids (input) without growing
+	//3 indicates the grid has been computed
+	//4 indicates this grid is a off groud grid (not reachable forever)
+	short travelable;
+
+	//quality computed flag
+	bool qualFlag;
+	//minimum computed flag
+	bool nodeGenFlag;
+	//center point of a map grid 
+	pcl::PointXYZ oCenterPoint;
+
+	//constructor
+	Confidence() {
+
+		travelTerm = 1.0;//start with 1, which means no need to go there
+		visiTerm = 0.0;
+		qualTerm = 0.0;
+		totalValue = 1.0;//start with 1, which means no need to go there
+		label = 0;//start with nothing
+		travelable = -1;//start with unknown
+		nodeGenFlag = false;	//start with undone	
+		qualFlag = true;//start with undone
+		oCenterPoint.x = 0.0;//start from 0, which will be re-define in InitializeGridMap
+		oCenterPoint.y = 0.0;//start from 0
+		oCenterPoint.z = 0.0;//start from 0
+
+	};
 
 };
 
+//index of grid cell
+struct MapIndex{
 
+  //2D index 
+  grid_map::Index oTwoIndex;//cell index in a matrix
+  //1D index
+  int iOneIdx; //cell index in a sequance
 
+};
 
-/*!
- * Receives a volumetric OctoMap and converts it to a grid map with an elevation layer.
- * The grid map is published and can be viewed in Rviz.
- */
+//this class below is to compute topological guidance map for SLAM
 class TopologyMap{
 
  public:
 
-  /*!
-   * Constructor.
-   * @param nodeHandle the ROS node handle.
-   */
+  //*************Initialization function*************
+  //Constructor
   TopologyMap(ros::NodeHandle & node,
               ros::NodeHandle & nodeHandle);
 
-  /*!
-   * Destructor.
-   */
+  //Destructor
   virtual ~TopologyMap();
 
-  /*!
-  * Reads and verifies the ROS parameters.
-  * @return true if successful.
-  */
+  //Reads and verifies the ROS parameters.
   bool ReadParameters(ros::NodeHandle & nodeHandle);
 
   //Initialize a fixed Grid Map
   void InitializeGridMap(const float & fRobotX, const float & fRobotY);
 
-  inline bool CheckInSidePoint(const pcl::PointXYZ & oPoint);
-  //handle the trajectory information
-  //confidence calculation is triggered as soon as receving odom data
-  void HandleTrajectory(const nav_msgs::Odometry & oTrajectory);
-
-  void HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRosData);
-
-  void HandleBoundClouds(const sensor_msgs::PointCloud2 & vBoundRosData);
-
-  void HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacleRosData);
-
-  //update octomap octree nodes
-  void UpdatingOctomapNodes();
-
+  //generate local neighboring index (generate a mask)
   void GenerateCircleMask();
-
+  //*************Traversing / retrieving function*************
+  //check inside points
+  inline bool CheckInSidePoint(const pcl::PointXYZ & oPoint);
+  //transform point position to 1 Dimension index
   int PointoOneDIdx(pcl::PointXYZ & oPoint);
-
+  //transform point position to 1D and 2D indexes
+  MapIndex PointoAllTypeIdx(pcl::PointXYZ & oPoint);
+  //transform 2D index to 1D index
   int TwotoOneDIdx(const grid_map::Index & oIndex);
-
+  //transform 1D index to 2D indexes
   void OneDtoTwoDIdx(grid_map::Index & oTwoDIdx,const int & iOneDIdx);
-
-  void ComputeTravelFeature(const pcl::PointXYZ & oRobot);
 
   //search neighboring grids within a circle region
   void CircleNeighborhood(std::vector<MapIndex> & vNearbyGrids,
                           const pcl::PointXYZ & oRobotPoint);
-   
 
-  //**output function**
+  //*************handler function*************
+  //handle the trajectory information
+  //confidence calculation is triggered as soon as receving odom data
+  void HandleTrajectory(const nav_msgs::Odometry & oTrajectory);
 
+  //handle the ground point clouds topic
+  void HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRosData);
+
+  //handle the boundary point cloud topic
+  void HandleBoundClouds(const sensor_msgs::PointCloud2 & vBoundRosData);
+
+  //handle the obstacle point cloud topic
+  void HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacleRosData);
+
+  //update octomap octree nodes
+  //void UpdatingOctomapNodes();
+
+  //*************Feature calculation function (Subject function)*************
+  void ComputeTravelFeature(const pcl::PointXYZ & oRobot);
+  
+  //*************Output function*************
   //publish grid map
   void PublishGridMap();
 
@@ -175,7 +225,6 @@ class TopologyMap{
   //the positions of robot
   std::queue<pcl::PointXYZ> m_vOdomCloud;//I dont think it is necessary to use a circle vector
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr m_vGroundCloud;//ground point clouds
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_vBoundCloud;//boundary point clouds
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_vObstacleCloud;//obstacle point clouds
 
@@ -186,7 +235,7 @@ class TopologyMap{
   //grid cell x<grid cell y < node point id in vNodeCloud>>
   //std::vector<std::vector<std::vector<int> > > m_vMapPointIndex;//record the point index in grid map cells
 
-  std::vector<std::vector<int> > m_vGroundPntMapIdx;//ground point index in grid map
+  //std::vector<std::vector<int> > m_vGroundPntMapIdx;//ground point index in grid map
   std::vector<std::vector<int> > m_vBoundPntMapIdx;//boundary point index in grid map
   std::vector<std::vector<int> > m_vObstlPntMapIdx;//obstacle point index in grid map
 
@@ -205,14 +254,18 @@ class TopologyMap{
   grid_map::Position3 m_oMaxCorner; //Bounding box maximum corner of map.
 
   double m_dResolution; //resolution of map pixels/cells 
+
   //the map - main body 
   grid_map::GridMap m_oFeatureMap;//grid map
+
+  std::vector<Confidence> m_vConfidenceMap;//confidence value map
+
   //the grid map initialization flag indicates whether the map has been simply established
   bool m_bGridMapReadyFlag;
 
+  //main body of data
   std::vector<MapIndex> m_vSearchMask;
-  //
-
+  
 };
 
 } /* namespace */
@@ -221,3 +274,20 @@ class TopologyMap{
 #endif
 
 
+//************details of grid label value in m_vMapGridLabel
+// cover means rewrite if new sematic object appears in this grid
+// 0 nothing or unknown (0 is covered by 1)
+// 1 obstacles (1 is covered by 2)
+// 2 ground points (2 is covered by 3)
+// 3 boundary 
+// for example, boundary grid can not be defined as another classification, but obstacle can be recovered by ground or obstacles 
+// the "-" negetive means the grid has been computed in node generation
+
+//************details of grid status value in m_vMapGridTravel
+//status indicates whether the gird is travelable or not (can the robot reaches this grid right now)
+// -1 indicates it is an unknown grid
+// 0 indicates this grid is ground but not reachable now
+// 1 indicates this grid is a travelable region grid
+// 2 is the new scanned grids (input) without growing
+// 3 indicates the grid has been computed
+// 4 indicates this grid is a off groud grid (not reachable forever)
