@@ -128,6 +128,7 @@ class TopologyMap{
   MapIndex PointoAllTypeIdx(pcl::PointXYZ & oPoint);
   //transform 2D index to 1D index
   int TwotoOneDIdx(const grid_map::Index & oIndex);
+  int TwotoOneDIdx(const int & iIndexX, const int & iIndexY);
   //transform 1D index to 2D indexes
   void OneDtoTwoDIdx(grid_map::Index & oTwoDIdx,const int & iOneDIdx);
 

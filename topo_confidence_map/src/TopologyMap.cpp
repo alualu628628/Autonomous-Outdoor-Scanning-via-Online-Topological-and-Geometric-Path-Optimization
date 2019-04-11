@@ -229,8 +229,6 @@ void TopologyMap::InitializeGridMap(const float & fRobotX,
 			oGridIdx(1) = j;
 			int iGridIdx = TwotoOneDIdx(oGridIdx);
 
-			ROS_INFO("i=[%d],j=[%d],idx=[%d].",i,j,iGridIdx);
-
 			//find the 1d and 2d index
 			Position oGridPos;
 			m_oFeatureMap.getPosition(oGridIdx, oGridPos);
@@ -379,7 +377,7 @@ Return: none
 Others: the HandlePointClouds is the kernel function
 *************************************************/
 
-MapIndex TopologyMap::PointoAllTypeIdx(pcl::PointXYZ & oPoint) {
+inline MapIndex TopologyMap::PointoAllTypeIdx(pcl::PointXYZ & oPoint) {
 
 	MapIndex oAllTypeIdx;
 
@@ -412,7 +410,7 @@ Return: none
 Others: the HandlePointClouds is the kernel function
 *************************************************/
 
-int TopologyMap::TwotoOneDIdx(const grid_map::Index & oIndex) {
+inline int TopologyMap::TwotoOneDIdx(const grid_map::Index & oIndex) {
 
 	//get the 1d index of point
 	//function: ix * size(cols) + iy
@@ -420,6 +418,12 @@ int TopologyMap::TwotoOneDIdx(const grid_map::Index & oIndex) {
 
 }
 
+//reload TwotoOneDIdx function
+inline int TopologyMap::TwotoOneDIdx(const int & iIndexX, const int & iIndexY){
+    //function: ix * size(cols) + iy
+	return iIndexX * m_iGridRawNum + iIndexY;
+
+}
 /*************************************************
 Function: TopologyMap
 Description: constrcution function for TopologyMap class
@@ -436,7 +440,7 @@ Return: none
 Others: the HandlePointClouds is the kernel function
 *************************************************/
 
-void TopologyMap::OneDtoTwoDIdx(grid_map::Index & oTwoDIdx,
+inline void TopologyMap::OneDtoTwoDIdx(grid_map::Index & oTwoDIdx,
 	const int & iOneDIdx) {
 
 	oTwoDIdx(1) = iOneDIdx % m_iGridRawNum;
@@ -476,9 +480,15 @@ void TopologyMap::CircleNeighborhood(std::vector<MapIndex> & vNearbyGrids,
 	for (int i = 0; i != m_vSearchMask.size(); ++i) {
 
 		MapIndex oOneNearGridIdx;
-		//get nearby grid idx on x,y axis,respectively
+		//get nearby grid idx on x
 		oOneNearGridIdx.oTwoIndex(0) = oRobotIdx(0) + m_vSearchMask[i].oTwoIndex(0);
+		if (oOneNearGridIdx.oTwoIndex(0) < 0 || oOneNearGridIdx.oTwoIndex(0) >= m_oFeatureMap.getSize()(0))
+			break;//if the neighboring grid is outside of the map
+        //get nearby grid idx on y axis
 		oOneNearGridIdx.oTwoIndex(1) = oRobotIdx(1) + m_vSearchMask[i].oTwoIndex(1);
+		if (oOneNearGridIdx.oTwoIndex(1) < 0 || oOneNearGridIdx.oTwoIndex(1) >= m_oFeatureMap.getSize()(1))
+			break;//if the neighboring grid is outside of the map
+
 		oOneNearGridIdx.iOneIdx = TwotoOneDIdx(oOneNearGridIdx.oTwoIndex);
 		//compute the nearby grid
 		vNearbyGrids.push_back(oOneNearGridIdx);
@@ -591,8 +601,6 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 		////message from ROS type to PCL type
 		pcl::fromROSMsg(vGroundRosData, vOneGCloud);
 
-		grid_map::Matrix& gridMapData = m_oFeatureMap["elevation"];
-
 		//get right point clouds from LOAM output
 		for (int i = 0; i != vOneGCloud.size(); ++i) {
 			//sampling 2 time by given sampling value
@@ -607,7 +615,6 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 							//to center point cloud
 							m_vConfidenceMap[oAllTypeIdx.iOneIdx].oCenterPoint.z = vOneGCloud.points[i].z;
 							//to grid layer
-							gridMapData(oAllTypeIdx.oTwoIndex(0), oAllTypeIdx.oTwoIndex(1)) = vOneGCloud.points[i].z;
 
 							m_vConfidenceMap[oAllTypeIdx.iOneIdx].label = 2;
 						
@@ -617,8 +624,7 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 							//to center point cloud
 							m_vConfidenceMap[oAllTypeIdx.iOneIdx].oCenterPoint.z = fMeanZ;
 							//to grid layer
-							gridMapData(oAllTypeIdx.oTwoIndex(0), oAllTypeIdx.oTwoIndex(1)) = fMeanZ;
-
+							
 							if (m_vConfidenceMap[oAllTypeIdx.iOneIdx].label < 2)
 								m_vConfidenceMap[oAllTypeIdx.iOneIdx].label = 2;
 
@@ -810,7 +816,7 @@ void TopologyMap::ComputeTravelFeature(const pcl::PointXYZ & oRobotIdx) {
 	}
 
 	PublishPointCloud(vCloud);
-	//PublishGridMap();
+	PublishGridMap();
 
 }
 
@@ -832,16 +838,32 @@ Others: the HandlePointClouds is the kernel function
 *************************************************/
 
 void TopologyMap::PublishGridMap(){
-  // Publish as grid map.
 
-  ros::Time oNowTime = ros::Time::now();
-  m_oFeatureMap.setTimestamp(oNowTime.toNSec());
+    //push 
+	grid_map::Matrix& gridMapData = m_oFeatureMap["elevation"];
 
-  grid_map_msgs::GridMap oGridMapMessage;
+	//initial elevation map and center point clouds
+	for (int i = 0; i != m_oFeatureMap.getSize()(0); ++i) {//i
 
-  grid_map::GridMapRosConverter::toMessage(m_oFeatureMap, oGridMapMessage);
+		for (int j = 0; j != m_oFeatureMap.getSize()(1); ++j) {//j
 
-  m_oGridMapPublisher.publish(oGridMapMessage);
+			int iGridIdx = TwotoOneDIdx(i, j);
+
+			//center point
+			gridMapData(i, j) =  m_vConfidenceMap[iGridIdx].oCenterPoint.z ;
+			
+		}//end i
+
+	}//end j
+
+	ros::Time oNowTime = ros::Time::now();
+
+	m_oFeatureMap.setTimestamp(oNowTime.toNSec());
+
+	grid_map_msgs::GridMap oGridMapMessage;
+	grid_map::GridMapRosConverter::toMessage(m_oFeatureMap, oGridMapMessage);
+	// Publish as grid map.
+	m_oGridMapPublisher.publish(oGridMapMessage);
 
 }
 
