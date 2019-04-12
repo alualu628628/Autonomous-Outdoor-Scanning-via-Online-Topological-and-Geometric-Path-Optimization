@@ -22,8 +22,9 @@ Others: the HandlePointClouds is the kernel function
 *************************************************/
 TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     ros::NodeHandle & nodeHandle) :m_oFeatureMap(grid_map::GridMap({ "elevation" })),
-	                     m_vBoundCloud(new pcl::PointCloud<pcl::PointXYZ>),
-	                     m_vObstacleCloud(new pcl::PointCloud<pcl::PointXYZ>),
+                         m_oCnfdnSolver(12.0,4.2,5),
+	                     m_pBoundCloud(new pcl::PointCloud<pcl::PointXYZ>),
+	                     m_pObstacleCloud(new pcl::PointCloud<pcl::PointXYZ>),
 	                     m_iTrajFrameNum(0),
 	                     m_iGroundFrames(0),
 	                     m_iBoundFrames(0),
@@ -124,6 +125,7 @@ bool TopologyMap::ReadParameters(ros::NodeHandle & nodeHandle) {
 	//**map parameters**
 	//map neighboring region size
 	nodeHandle.param("robot_local_r", m_dRbtLocalRadius, 5.0);
+	m_oCnfdnSolver.SetSigmaValue(m_dRbtLocalRadius);
 
 	//map range/map size
 	nodeHandle.param("gridmap_maxrange", m_dMapMaxRange, 250.0);
@@ -176,8 +178,8 @@ void TopologyMap::InitializeGridMap(const float & fRobotX,
 	//z is initialized in ReadParameters()
 
 	//build the map
-	m_oFeatureMap.setGeometry(Length(2.0*m_dMapMaxRange, 2.0*m_dMapMaxRange),
-		m_dResolution, Position(fRobotX, fRobotY));
+	m_oFeatureMap.setGeometry(grid_map::Length(2.0*m_dMapMaxRange, 2.0*m_dMapMaxRange),
+		m_dResolution, grid_map::Position(fRobotX, fRobotY));
 
 	//dispaly
 	ROS_INFO("Initialized map with size %f x %f m (%i x %i cells).", m_oFeatureMap.getLength().x(),
@@ -193,8 +195,8 @@ void TopologyMap::InitializeGridMap(const float & fRobotX,
 	//m_oFeatureMap.add("confidence", Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
 
 	m_vConfidenceMap.clear();
-    Confidence oGridCnfd;
 
+    ConfidenceValue oGridCnfd;
 	for(int i = 0; i != m_oFeatureMap.getSize()(0)*m_oFeatureMap.getSize()(1); ++i)
 	    m_vConfidenceMap.push_back(oGridCnfd);
 
@@ -214,7 +216,8 @@ void TopologyMap::InitializeGridMap(const float & fRobotX,
 	m_vObstlPntMapIdx.resize(m_oFeatureMap.getSize()(0)*m_oFeatureMap.getSize()(1));
 
 	//get grid number in cols
-	m_iGridRawNum = m_oFeatureMap.getSize()(1);
+	ExtendedGM::iGridRawNum = m_oFeatureMap.getSize()(1);
+	ROS_INFO("Set grid raw number as [%d]", ExtendedGM::iGridRawNum);
 
 	//frame id
 	m_oFeatureMap.setFrameId(m_sMapFrameID);
@@ -227,10 +230,10 @@ void TopologyMap::InitializeGridMap(const float & fRobotX,
 			grid_map::Index oGridIdx;
 			oGridIdx(0) = i;
 			oGridIdx(1) = j;
-			int iGridIdx = TwotoOneDIdx(oGridIdx);
+			int iGridIdx = ExtendedGM::TwotoOneDIdx(oGridIdx);
 
 			//find the 1d and 2d index
-			Position oGridPos;
+			grid_map::Position oGridPos;
 			m_oFeatureMap.getPosition(oGridIdx, oGridPos);
 			//center point
 			m_vConfidenceMap[iGridIdx].oCenterPoint.x = oGridPos.x();
@@ -330,124 +333,6 @@ inline bool TopologyMap::CheckInSidePoint(const pcl::PointXYZ & oPoint) {
 
 }
 
-
-/*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
-Table Accessed: none
-Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
-Return: none
-Others: the HandlePointClouds is the kernel function
-*************************************************/
-
-int TopologyMap::PointoOneDIdx(pcl::PointXYZ & oPoint) {
-
-	grid_map::Position oPosition(oPoint.x, oPoint.y);
-
-	//get the 2d index of corresponding grid
-	grid_map::Index oIndex;
-	m_oFeatureMap.getIndex(oPosition, oIndex);
-
-	//get the 1d index of point
-	//function: ix * size(cols) + iy
-	return oIndex(0) * m_iGridRawNum + oIndex(1);
-
-}
-
-/*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
-Table Accessed: none
-Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
-Return: none
-Others: the HandlePointClouds is the kernel function
-*************************************************/
-
-inline MapIndex TopologyMap::PointoAllTypeIdx(pcl::PointXYZ & oPoint) {
-
-	MapIndex oAllTypeIdx;
-
-	grid_map::Position oPosition(oPoint.x, oPoint.y);
-
-	//get the 2d index of corresponding grid
-	m_oFeatureMap.getIndex(oPosition, oAllTypeIdx.oTwoIndex);
-
-	//get the 1d index of point
-	//function: ix * size(cols) + iy
-	oAllTypeIdx.iOneIdx = oAllTypeIdx.oTwoIndex(0) * m_iGridRawNum + oAllTypeIdx.oTwoIndex(1);
-
-	return oAllTypeIdx;
-
-}
-
-/*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
-Table Accessed: none
-Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
-Return: none
-Others: the HandlePointClouds is the kernel function
-*************************************************/
-
-inline int TopologyMap::TwotoOneDIdx(const grid_map::Index & oIndex) {
-
-	//get the 1d index of point
-	//function: ix * size(cols) + iy
-	return oIndex(0) * m_iGridRawNum + oIndex(1);
-
-}
-
-//reload TwotoOneDIdx function
-inline int TopologyMap::TwotoOneDIdx(const int & iIndexX, const int & iIndexY){
-    //function: ix * size(cols) + iy
-	return iIndexX * m_iGridRawNum + iIndexY;
-
-}
-/*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
-Table Accessed: none
-Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
-Return: none
-Others: the HandlePointClouds is the kernel function
-*************************************************/
-
-inline void TopologyMap::OneDtoTwoDIdx(grid_map::Index & oTwoDIdx,
-	const int & iOneDIdx) {
-
-	oTwoDIdx(1) = iOneDIdx % m_iGridRawNum;
-	oTwoDIdx(0) = (iOneDIdx - oTwoDIdx(1)) / m_iGridRawNum;
-
-}
-
 /*************************************************
 Function: TopologyMap
 Description: constrcution function for TopologyMap class
@@ -470,7 +355,7 @@ void TopologyMap::CircleNeighborhood(std::vector<MapIndex> & vNearbyGrids,
 	ROS_INFO("Running circle iterator demo.");
 	vNearbyGrids.clear();
 
-	Position oRobotPos(oRobotPoint.x, oRobotPoint.y);
+	grid_map::Position oRobotPos(oRobotPoint.x, oRobotPoint.y);
 	grid_map::Index oRobotIdx;
 	m_oFeatureMap.getIndex(oRobotPos, oRobotIdx);
 
@@ -489,7 +374,7 @@ void TopologyMap::CircleNeighborhood(std::vector<MapIndex> & vNearbyGrids,
 		if (oOneNearGridIdx.oTwoIndex(1) < 0 || oOneNearGridIdx.oTwoIndex(1) >= m_oFeatureMap.getSize()(1))
 			break;//if the neighboring grid is outside of the map
 
-		oOneNearGridIdx.iOneIdx = TwotoOneDIdx(oOneNearGridIdx.oTwoIndex);
+		oOneNearGridIdx.iOneIdx = ExtendedGM::TwotoOneDIdx(oOneNearGridIdx.oTwoIndex);
 		//compute the nearby grid
 		vNearbyGrids.push_back(oOneNearGridIdx);
 
@@ -497,7 +382,77 @@ void TopologyMap::CircleNeighborhood(std::vector<MapIndex> & vNearbyGrids,
 
 }
 
+/*************************************************
+Function: DevidePointClouds
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+privare nodem_dMapMaxRange
+flag of generating output file
+original frame value
+Output: none
+Return: none
+Others: the HandlePointClouds is the kernel function
+*************************************************/
 
+void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+                                  pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
+                                    pcl::PointCloud<pcl::PointXYZ> & vNearAllClouds,
+	                                         std::vector<int> & vNearGroundGridIdxs,
+                                          const std::vector<MapIndex> & vNearByIdxs){
+
+	//prepare and clear
+	vNearGrndClouds.clear();
+    vNearBndryClouds.clear();
+    vNearAllClouds.clear();
+	vNearGroundGridIdxs.clear();
+
+	pcl::PointCloud<pcl::PointXYZ> vNearObstClouds;//nearby obstacle point clouds
+
+	//to each nearby grids
+	for (int i = 0; i != vNearByIdxs.size(); ++i) {
+
+		int iNearGridId = vNearByIdxs[i].iOneIdx;
+		//assign to cooresponding point clouds based on its label
+        switch (m_vConfidenceMap[iNearGridId].label){
+
+        	case 1 : //the grid is a obstacle grid
+        	    for (int j = 0; j != m_vObstlPntMapIdx[iNearGridId].size(); ++j)
+        	    	vNearObstClouds.points.push_back(m_pObstacleCloud->points[m_vObstlPntMapIdx[iNearGridId][j]]);
+            break;
+
+            case 2 : //the grid is a ground grid
+                vNearGrndClouds.points.push_back(m_vConfidenceMap[iNearGridId].oCenterPoint);
+        	    vNearGroundGridIdxs.push_back(iNearGridId);
+            break;
+
+            case 3 : //the grid is a boundary grid
+                for (int j = 0; j != m_vBoundPntMapIdx[iNearGridId].size(); ++j)
+				    vNearBndryClouds.points.push_back(m_pBoundCloud->points[m_vBoundPntMapIdx[iNearGridId][j]]);
+            break;
+
+            default:
+            break;
+        }
+
+    }
+
+    //make a all label point clouds (for occlusion detection)
+    vNearAllClouds.reserve(vNearGrndClouds.size() + vNearBndryClouds.size() + vNearObstClouds.size());
+
+    for(int i = 0; i != vNearGrndClouds.size(); ++i)
+    	vNearAllClouds.push_back(vNearGrndClouds.points[i]);
+
+    for(int i = 0; i != vNearBndryClouds.size(); ++i)
+    	vNearAllClouds.push_back(vNearBndryClouds.points[i]);
+
+    for(int i = 0; i != vNearObstClouds.size(); ++i)
+    	vNearAllClouds.push_back(vNearObstClouds.points[i]);
+
+}
 
 //*********************************Initialization function*********************************
 
@@ -561,7 +516,7 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		//std::cout<<"debug 2"<<std::endl;
 
 		if (m_bGridMapReadyFlag)
-			ComputeTravelFeature(m_vOdomCloud.back());
+			ComputeConfidence(m_vOdomCloud.back());
 
 
 	}
@@ -608,7 +563,7 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 				//check the point
 				if (CheckInSidePoint(vOneGCloud.points[i])) {
 					//to point clouds
-					MapIndex oAllTypeIdx = PointoAllTypeIdx(vOneGCloud.points[i]);
+					MapIndex oAllTypeIdx = ExtendedGM::PointoAllTypeIdx(vOneGCloud.points[i],m_oFeatureMap);
 
 						// If no elevation has been set, use current elevation.
 						if (!m_vConfidenceMap[oAllTypeIdx.iOneIdx].label) {
@@ -668,8 +623,8 @@ void TopologyMap::HandleBoundClouds(const sensor_msgs::PointCloud2 & vBoundRosDa
 			if (!(i%m_iPCSmplNum)) {
 
 				if (CheckInSidePoint(vOneBCloud.points[i])) {
-					m_vBoundCloud->points.push_back(vOneBCloud.points[i]);
-					int iPointIdx = PointoOneDIdx(vOneBCloud.points[i]);
+					m_pBoundCloud->points.push_back(vOneBCloud.points[i]);
+					int iPointIdx = ExtendedGM::PointoOneDIdx(vOneBCloud.points[i],m_oFeatureMap);
 					//to point idx
 					m_vBoundPntMapIdx[iPointIdx].push_back(m_iBoundFrames);
 					//label grid
@@ -714,8 +669,8 @@ void TopologyMap::HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacl
 			if (!(i%m_iPCSmplNum)) {
 
 				if (CheckInSidePoint(vOneOCloud.points[i])) {
-					m_vObstacleCloud->points.push_back(vOneOCloud.points[i]);
-					int iPointIdx = PointoOneDIdx(vOneOCloud.points[i]);
+					m_pObstacleCloud->points.push_back(vOneOCloud.points[i]);
+					int iPointIdx = ExtendedGM::PointoOneDIdx(vOneOCloud.points[i],m_oFeatureMap);
 					//to point idx
 					m_vObstlPntMapIdx[iPointIdx].push_back(m_iObstacleFrames);
 					//label grid
@@ -801,21 +756,43 @@ Return: none
 Others: the HandlePointClouds is the kernel function
 *************************************************/
 
-void TopologyMap::ComputeTravelFeature(const pcl::PointXYZ & oRobotIdx) {
+void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oRobotPos) {
 	//m_oFeatureMap.at("elevation", *oIterator) = 2.0;
 
-	std::vector<MapIndex> vNearByIdx;
-	CircleNeighborhood(vNearByIdx, oRobotIdx);
-	pcl::PointCloud<pcl::PointXYZ> vCloud;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearGrndClouds(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearBndryClouds(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearAllClouds(new pcl::PointCloud<pcl::PointXYZ>);
+    std::vector<int> vNearGrndGrdIdxs;
 
-	for (int i = 0; i != vNearByIdx.size(); ++i) {
+    //find the neighboring point clouds
+    std::vector<MapIndex> vNearByIdxs;
+	CircleNeighborhood(vNearByIdxs, oRobotPos);
 
-		if(m_vConfidenceMap[vNearByIdx[i].iOneIdx].label == 2)
-			vCloud.push_back(m_vConfidenceMap[vNearByIdx[i].iOneIdx].oCenterPoint);
+    //extract point clouds with different labels, respectively
+    DevidePointClouds(*pNearGrndClouds,
+    	              *pNearBndryClouds,
+    	              *pNearAllClouds,
+	                  vNearGrndGrdIdxs,
+                      vNearByIdxs);
 
-	}
+    //compute distance term
+    m_oCnfdnSolver.DistanceTerm(m_vConfidenceMap,
+    	                               oRobotPos,
+                                vNearGrndGrdIdxs,
+	                            *pNearGrndClouds);
 
-	PublishPointCloud(vCloud);
+
+    //compute boundary term
+    m_oCnfdnSolver.BoundTerm(m_vConfidenceMap,
+                             vNearGrndGrdIdxs,
+	                         pNearGrndClouds,
+    	                     pNearBndryClouds);
+
+  
+    //publish result
+	PublishPointCloud(*pNearGrndClouds);//for test
+	//PublishPointCloud(*pNearBndryClouds);//for test
+	//PublishPointCloud(*pNearAllClouds);//for test
 	PublishGridMap();
 
 }
@@ -847,10 +824,10 @@ void TopologyMap::PublishGridMap(){
 
 		for (int j = 0; j != m_oFeatureMap.getSize()(1); ++j) {//j
 
-			int iGridIdx = TwotoOneDIdx(i, j);
+			int iGridIdx = ExtendedGM::TwotoOneDIdx(i, j);
 
 			//center point
-			gridMapData(i, j) =  m_vConfidenceMap[iGridIdx].oCenterPoint.z ;
+			gridMapData(i, j) = m_vConfidenceMap[iGridIdx].travelTerm;
 			
 		}//end i
 

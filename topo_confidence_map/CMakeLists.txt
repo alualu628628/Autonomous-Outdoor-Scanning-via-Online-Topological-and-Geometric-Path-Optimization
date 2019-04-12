@@ -24,12 +24,12 @@ find_package(catkin REQUIRED COMPONENTS
              grid_map_filters
              grid_map_loader
              grid_map_msgs
-             grid_map_octomap
+             #grid_map_octomap
              grid_map_rviz_plugin
              grid_map_visualization
              geometry_msgs
              sensor_msgs
-             octomap_msgs
+             #octomap_msgs
              filters
 )
 
@@ -48,22 +48,23 @@ if(${octomap_VERSION} VERSION_LESS 1.8) # ROS Indigo and Jade.
   include_directories(
     include
     ${catkin_INCLUDE_DIRS}
-    ${OCTOMAP_INCLUDE_DIR}
+    #${OCTOMAP_INCLUDE_DIR}
   )
 else() # ROS Kinetic and above.
   include_directories(
     include
     ${catkin_INCLUDE_DIRS}
-    ${OCTOMAP_INCLUDE_DIRS}
+    #${OCTOMAP_INCLUDE_DIRS}
   )
 endif()
 
+aux_source_directory(src DIR_SRCS)
 
 ###### build ########
-add_executable(topo_confidence_map
-  src/OctoGrid.cpp src/TopologyMap.cpp src/main.cpp)
+add_executable(topo_confidence_map ${DIR_SRCS})
 
 
+target_link_libraries(topo_confidence_map ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
-target_link_libraries(topo_confidence_map ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OCTOMAP_LIBRARIES})
+
 
