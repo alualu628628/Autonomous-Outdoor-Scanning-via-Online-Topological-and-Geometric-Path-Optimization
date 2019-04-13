@@ -566,12 +566,12 @@ void Confidence::DistanceTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 		int iNearGridId = vNearGroundIdxs[i];
 	
 		//non-empty ground grid
-		if (vConfidenceMap[iNearGridId].label == 2) {
+		//if (vConfidenceMap[iNearGridId].label == 2) {
 
 			//compute smooth distance using Gaussin Kernel based on the center point
 			//the empty grid has zero value in this term
 			float fGridTravelRes = GaussianKernel(oRobotPoint, 
-				                                  vGroundCloud[i], 
+				                                  vGroundCloud.points[i], 
 				                                  m_fSigma);
 
 			//**********Incremental item************
@@ -580,7 +580,7 @@ void Confidence::DistanceTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 		    	vConfidenceMap[iNearGridId].travelTerm = fGridTravelRes;
 
 
-		}//end if (vGridTravelPsIdx[vNearByIdxs[i]].size())
+		//}//end if 
 
 	}//end i
 	
@@ -612,6 +612,9 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	 //**compute the center offset part**
 	 //maybe there is not any boundary in an open area
 	if (pBoundCloud->points.size()) {
+
+		ROS_INFO("build kdtree");
+
 		pcl::KdTreeFLANN<pcl::PointXYZ> oBoundTree;
 		oBoundTree.setInputCloud(pBoundCloud);
 
@@ -629,7 +632,7 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 			if (fBoundvalue < 0)
 				fBoundvalue = 0.0;
 
-			if (vConfidenceMap[vNearGroundIdxs[i]].boundTerm < fBoundvalue)
+			if (vConfidenceMap[vNearGroundIdxs[i]].boundTerm > fBoundvalue)
 				vConfidenceMap[vNearGroundIdxs[i]].boundTerm = fBoundvalue;
 
 		}//end i 

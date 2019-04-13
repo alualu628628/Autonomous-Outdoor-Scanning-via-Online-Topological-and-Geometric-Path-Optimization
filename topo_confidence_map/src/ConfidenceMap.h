@@ -89,8 +89,8 @@ struct ConfidenceValue{
 	//constructor
 	ConfidenceValue() {
 
-		travelTerm = 1.0;//start with 1, which means no need to go there
-		boundTerm = 0.0;//start with 1, which means no need to go there
+		travelTerm = 0.0;//start with 1, which means no need to go there
+		boundTerm = 1.0;//start with 1, which means no need to go there
 		visiTerm = 0.0;
 		qualTerm = 0.0;
 		label = 0;//start with nothing

@@ -775,6 +775,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oRobotPos) {
 	                  vNearGrndGrdIdxs,
                       vNearByIdxs);
 
+
     //compute distance term
     m_oCnfdnSolver.DistanceTerm(m_vConfidenceMap,
     	                               oRobotPos,
@@ -787,12 +788,11 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oRobotPos) {
                              vNearGrndGrdIdxs,
 	                         pNearGrndClouds,
     	                     pNearBndryClouds);
-
   
     //publish result
-	PublishPointCloud(*pNearGrndClouds);//for test
+	//PublishPointCloud(*pNearGrndClouds);//for test
 	//PublishPointCloud(*pNearBndryClouds);//for test
-	//PublishPointCloud(*pNearAllClouds);//for test
+	PublishPointCloud(*pNearAllClouds);//for test
 	PublishGridMap();
 
 }
@@ -827,7 +827,7 @@ void TopologyMap::PublishGridMap(){
 			int iGridIdx = ExtendedGM::TwotoOneDIdx(i, j);
 
 			//center point
-			gridMapData(i, j) = m_vConfidenceMap[iGridIdx].travelTerm;
+			gridMapData(i, j) = m_vConfidenceMap[iGridIdx].boundTerm;
 			
 		}//end i
 
@@ -908,6 +908,8 @@ void TopologyMap::PublishPointCloud(pcl::PointCloud<pcl::PointXYZ> & vCloud){
 
 
 } /* namespace */
+
+
 
 
 
