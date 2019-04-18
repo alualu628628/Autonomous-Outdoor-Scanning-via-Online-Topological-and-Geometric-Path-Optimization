@@ -1,11 +1,10 @@
 #ifndef CONFIDENCEMAP_H 
 #define CONFIDENCEMAP_H 
+
+
 //#include "HausdorffMeasure.h"
-//flann based
 
-#include <pcl/kdtree/impl/kdtree_flann.hpp>
-//#include "GHPR.h"
-
+#include "GHPR.h"
 #include "ExtendedGridMap.h"
 
 #include <stdlib.h>
@@ -130,6 +129,7 @@ public:
 	//set visibility term related paramters
 	void SetVisParas(const float & f_fGHPRParam, const float & f_fVisTermThr);
 
+
 	//*******************Mathematical Formula Part********************
 	
 	inline float VectorInnerProduct(const pcl::PointXYZ & oAVec,
@@ -150,6 +150,10 @@ public:
 	inline float ComputeDensity(const PCLCloudXYZ & vCloud,
 								int iSampleTimes = 5,
 								bool bKDFlag = true);
+
+	//region grow to obtain travelable region (travelable region is the ground which can be touch from current location)
+	void RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
+	                    const std::vector<int> & vNewScannedGrids);
 
 
 	//the 2 norm of a vector
@@ -192,18 +196,13 @@ public:
 	                         const PCLCloudXYZPtr & pGroundCloud,
 	                          const PCLCloudXYZPtr & pBoundCloud);
 
-	//3. Compute the occlusion
-	/*//0412//void OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceVec,
-	                    const std::vector<int> & vNearByIdxs,
-		  const std::vector<pcl::PointXYZ> & vHistoryViewPoints,
-	                           const PCLCloudXYZ & vTravelCloud,
-	     const std::vector<std::vector<int>> & vGridTravelPsIdx,
-				             const PCLCloudXYZ & vAllBoundCloud,
-		  const std::vector<std::vector<int>> & vGridBoundPsIdx,
-	                         const PCLCloudXYZ & vObstacleCloud,
-	        const std::vector<std::vector<int>> & vGridObsPsIdx);
-	
 
+	//3. Compute the occlusion
+	void OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
+	                                  PCLCloudXYZPtr & pNearAllCloud,
+	                        const std::vector<int> & vNearGroundIdxs,
+	                            const pcl::PointXYZ & oPastViewPoint);
+	
 
 	//2. quality term of confidence map
 	//void QualityTermUsingDensity(std::vector<ConfidenceValue> & vConfidenceVec,
@@ -216,7 +215,7 @@ public:
 	//	              const std::vector<std::vector<int>> & vGridObsPsIdx);
 
 	//2. quality term of confidence map
-	void QualityTerm(std::vector<ConfidenceValue> & vConfidenceVec,
+	/*void QualityTerm(std::vector<ConfidenceValue> & vConfidenceVec,
 		                 const std::vector<int> & vNearByIdxs,
 		                      const PCLCloudXYZ & vAllBoundCloud,
 		   const std::vector<std::vector<int>> & vGridBoundPsIdx,

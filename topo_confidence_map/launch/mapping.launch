@@ -10,14 +10,18 @@
   <arg name="odomsamplingfreq" default="1.0" />
   <!--arg name="freshoctomapfreq" default="0.5" /-->
   <arg name="pointframesmpl" default="5" />
+  <arg name="pastinterval" default="5.0" />
+  <arg name="pastviewzoff" default="0.451"/> 
 
-  <arg name="robotlocalr" default="7.0"/>
   <arg name="mapmaxrange" default="25" />
   <arg name="mapminz" default="-3.0" />
   <arg name="mapmaxz" default="7.0" />
   <arg name="mapresolution" default="0.2" />
   <arg name="mapframeid" default="odom" />
-  
+  <arg name="robotlocalr" default="10.0"/>
+  <arg name="nodemini_rate" default="0.5" />
+
+
   <!-- Load the octomap -->
   <!--node pkg="octomap_server" type="octomap_server_node" name="octomap_server"-->
     <!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
@@ -45,22 +49,25 @@
      <param name="boundary_pc_topic" type="string" value="$(arg boundarypctpc)" />
      <param name="obstacle_pc_topic" type="string" value="$(arg obstaclepctpc)" />
 
-     <!--parameters of map-->
-     <param name="gridmap_maxrange" type="double" value="$(arg mapmaxrange)" />
-     <param name="gridmap_minz" type="double" value="$(arg mapminz)" />
-     <param name="gridmap_maxz" type="double" value="$(arg mapmaxz)" />
-     <param name="gridmap_resolution" type="double" value="$(arg mapresolution)" />
-
      <!--Sampling of odometry points -->
      <param name="odometry_rawfreq" type="double" value="$(arg odometryrawfreq)" />
      <param name="odomsampling_freq" type="double" value="$(arg odomsamplingfreq)" />
      <!--param name="freshoctomap_freq" type="double" value="$(arg freshoctomapfreq)" /-->
      <param name="pointframe_smplnum" type="int" value="$(arg pointframesmpl)" />
 
+     <param name="pastview_interval" type="double" value="$(arg pastinterval)" />
+     <param name="pastview_zoffset" type="double" value="$(arg pastviewzoff)" />
+
+     <!--parameters of map-->
+     <param name="gridmap_maxrange" type="double" value="$(arg mapmaxrange)" />
+     <param name="gridmap_minz" type="double" value="$(arg mapminz)" />
+     <param name="gridmap_maxz" type="double" value="$(arg mapmaxz)" />
+     <param name="gridmap_resolution" type="double" value="$(arg mapresolution)" />
+     <param name="gridmap_frameid" type="string" value="$(arg mapframeid)" />
+
      <!--the local neighboring radius of robot to compute local confidence map-->
      <param name="robot_local_r" type="double" value="$(arg robotlocalr)" />
-
-     <param name="gridmap_frameid" type="string" value="$(arg mapframeid)" />
+     <param name="nodegenerate_rate" type="double" value="$(arg nodemini_rate)" />
 
   </node>
 

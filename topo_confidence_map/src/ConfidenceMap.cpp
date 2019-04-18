@@ -277,6 +277,107 @@ inline float Confidence::ComputeDensity(const PCLCloudXYZ & vCloud,
 
 
 /*************************************************
+Function: RegionGrow
+Description: this function is to find the reachable grid based on current robot location
+Calls: none
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: vNewScannedGrids - the neighboring grid of the current robot location
+Output: the reachable label of grid map. The grid labelled as 1 is reachable grid 
+Return: none
+Others: point with label 2 is queried and changed one by one during implementing function
+        point with label 0 will becomes point with label 2 after implementing function, this is to prepare next computing
+*************************************************/
+void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
+	                            const std::vector<int> & vNewScannedGrids){
+
+    //status of grid in region grow
+	//-1 indicates it is an unknown grid
+	//0 indicates this grid is ground but not reachable now
+    //1 indicates this grid is a travelable region grid
+	//2 is the new scanned grids (input) without growing
+	//3 indicates the grid has been computed
+	//4 indicates this grid is a off groud grid (not reachable forever)
+	
+	for(int i = 0; i != vNewScannedGrids.size(); ++i){
+		//if it is unknown (never be computed before)
+		if(vConfidenceMap[vNewScannedGrids[i]].travelable == -1){
+			//if it is a ground grid
+			if(vConfidenceMap[vNewScannedGrids[i]].label == 2)
+		       vConfidenceMap[vNewScannedGrids[i]].travelable = 2;
+			else
+			   vConfidenceMap[vNewScannedGrids[i]].travelable = 4;//off-ground
+		}
+	}
+
+    //check each input grid
+	for(int i = 0; i != vNewScannedGrids.size(); ++i){
+
+		//current seed index
+	    int iCurIdx;
+		//inital flag as 3
+		int bTravelableFlag = 3;
+		
+		//seeds
+	    std::vector<int> vSeeds;  
+		std::vector<int> vSeedHistory;
+		//get one input grid as seed
+		vSeeds.push_back(vNewScannedGrids[i]);
+
+	    //if this one has not been grown
+		if(vConfidenceMap[vNewScannedGrids[i]].travelable == 2){
+            //growing
+	        while(!vSeeds.empty()){
+		         //choose a seed (last one)
+		         iCurIdx = *(vSeeds.end()-1);
+			
+		         //delete the last one
+		         vSeeds.pop_back();
+				 //if this seeds has been calculated
+				 if (vConfidenceMap[iCurIdx].travelable == 2) {
+					 //record the history of seeds
+					 vSeedHistory.push_back(iCurIdx);
+					 //label this seed as being processed
+					 vConfidenceMap[iCurIdx].travelable = 3;
+					 //find the nearboring grids
+					 //std::vector<int> vNearGridIdx = SearchGrids(iCurIdx, 0.5);
+					 std::vector<int> vNearGridIdx;/*0418*/
+					 //check neighboring grids
+					 for (int i = 0; i != vNearGridIdx.size(); ++i) {
+						 //if the near grid is new input
+						 if (vConfidenceMap[vNearGridIdx[i]].travelable == 2)
+							 vSeeds.push_back(vNearGridIdx[i]);
+
+						 //if the near grid is reachable so that the query ground grids must be also reachable
+						 if (vConfidenceMap[vNearGridIdx[i]].travelable == 1)
+							 bTravelableFlag = 2;
+					 }//end for int i = 0;i!=vNearGridIdx.size();++i
+				 }//end if vConfidenceMap[iCurIdx].travelable == 2
+		    }//end while
+
+		    //assignment
+			for(int i=0;i!=vSeedHistory.size();++i){
+			        vConfidenceMap[vSeedHistory[i]].travelable -= bTravelableFlag;
+			}
+
+	    }//end if vConfidenceMap[vNearGridIdx[i]].travelable == 2
+	
+	}//end for
+
+	//search the unreachable grid
+	//the reachable region is with respect to current query location
+	//because an unreachable grid may be reachable if the robot moves close
+	for (int i = 0; i != vNewScannedGrids.size(); ++i) {
+	    //prepare for further growing
+		if(vConfidenceMap[vNewScannedGrids[i]].travelable == 0)
+		   vConfidenceMap[vNewScannedGrids[i]].travelable = 2;
+	}
+
+}
+
+
+/*************************************************
 Function: Compute2Norm
 Description: compute the Euclidean distance between two points
 Calls: none
@@ -495,7 +596,7 @@ std::vector<int> Confidence::GetRandom(const PCLCloudXYZPtr & pAllTravelCloud,
 
 		int iRandomGrid = oMaper.AssignPointToMap(pAllTravelCloud->points[iRandomRes]);
 
-		if (oMaper.m_vReWardMap[iRandomGrid].iLabel == 2) {
+		if (oMaper.vConfidenceMap[iRandomGrid].label == 2) {
 			//exchange the last one of unselected value and current randon selected value
 			int iTempValue = vAllValueVec[iRandomRes];
 			vAllValueVec[iRandomRes] = vAllValueVec[iLastIdx - iCurSampNum];
@@ -613,8 +714,6 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	 //maybe there is not any boundary in an open area
 	if (pBoundCloud->points.size()) {
 
-		ROS_INFO("build kdtree");
-
 		pcl::KdTreeFLANN<pcl::PointXYZ> oBoundTree;
 		oBoundTree.setInputCloud(pBoundCloud);
 
@@ -640,6 +739,85 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	}
 
 }
+
+
+/*************************************************
+Function: OcclusionTerm
+Description: the function is to compute the distance feature to the confidence value
+Calls: ComputeCenter
+GaussianKernel
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: vConfidenceMap - the confidence map (grid map)
+oRobotPoint - the location of the robot
+vNearByIdxs - the neighboring grids based on the input robot location
+vTravelCloud - the travelable point clouds (the ground point clouds)
+vGridTravelPsIdx - the index of point within each grid to total travelable point clouds
+Output: the distance term value of each neighboring grid
+Return: a vector saves distance value of each neighboring grid
+Others: none
+*************************************************/
+void Confidence::OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
+	                                          PCLCloudXYZPtr & pNearAllCloud,
+	                                const std::vector<int> & vNearGroundIdxs,
+	                                    const pcl::PointXYZ & oPastViewPoint){ 
+
+	//check the point cloud size (down sampling if point clouds is too large)
+	unsigned int iNonGrndPSize = pNearAllCloud->points.size() - vNearGroundIdxs.size();
+	unsigned int iSmplThr = 500000;
+
+	int iSize = vNearGroundIdxs.size();
+
+	int iiSize = pNearAllCloud->points.size();
+
+    //if need sampling
+	if(iNonGrndPSize > iSmplThr){
+
+		pcl::PointCloud<pcl::PointXYZ> vSamplingClouds;
+		//retain ground points
+		for(int i = 0; i != vNearGroundIdxs.size(); ++i)
+			vSamplingClouds.push_back(pNearAllCloud->points[i]);
+
+		//down sampling
+		int iSmplNum = int(iNonGrndPSize / iSmplThr);
+
+		//only down sample the non-ground points 
+		for(int i = vNearGroundIdxs.size(); i != pNearAllCloud->points.size(); i = i + iSmplNum){
+			//sampling
+			vSamplingClouds.push_back(pNearAllCloud->points[i]);
+
+		}
+
+        pNearAllCloud->clear();
+
+		//restore the point clouds
+		for(int i = 0; i != vSamplingClouds.points.size(); ++i)
+			pNearAllCloud->points.push_back(vSamplingClouds.points[i]);//get back
+
+	}//end if iNonGrndPSize > iSmplThr
+   
+	//using the GHPR algorithm 
+	GHPR oGHPRer(4.2);
+
+	//**********Measurement item************
+	//compute the visibility based on the history of view points
+	std::vector<int> vVisableIdx = oGHPRer.ComputeVisibility(*pNearAllCloud, oPastViewPoint);
+	    
+	//**********Incremental item************
+	//fv(p) = fv(n)  
+	for (int i = 0; i != vVisableIdx.size(); ++i){
+		//if it is a ground point
+		if(vVisableIdx[i] < vNearGroundIdxs.size())
+			//get maximum value of occlusion term
+			vConfidenceMap[vNearGroundIdxs[vVisableIdx[i]]].visiTerm += 1.0;
+
+	}
+   
+
+}
+
+
 /*************************************************
 Function: QualityTermUsingDensity
 Description: the function is to compute the distance feature to the confidence value
@@ -731,8 +909,8 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 		int iOneGridIdx = vNearByIdxs[i];
 
 		//if this grid is a obstacle grid or boundary grid
-		if(vConfidenceMap[iOneGridIdx].iLabel == 1
-		   || vConfidenceMap[iOneGridIdx].iLabel == 3){
+		if(vConfidenceMap[iOneGridIdx].label == 1
+		   || vConfidenceMap[iOneGridIdx].label == 3){
 			
 			//record this grid idx
 			vMeasuredGridIdx.push_back(iOneGridIdx);
@@ -770,138 +948,7 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 
 }//0412*/
 
-/*************************************************
-Function: OcclusionTerm
-Description: the function is to compute the distance feature to the confidence value
-Calls: ComputeCenter
-GaussianKernel
-Called By: main function of project
-Table Accessed: none
-Table Updated: none
-Input: vConfidenceMap - the confidence map (grid map)
-oRobotPoint - the location of the robot
-vNearByIdxs - the neighboring grids based on the input robot location
-vTravelCloud - the travelable point clouds (the ground point clouds)
-vGridTravelPsIdx - the index of point within each grid to total travelable point clouds
-Output: the distance term value of each neighboring grid
-Return: a vector saves distance value of each neighboring grid
-Others: none
-*************************************************/
-/*void Confidence::OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
-	                            const std::vector<int> & vNearByIdxs,
-				  const std::vector<pcl::PointXYZ> & vHistoryViewPoints,
-	                                   const PCLCloudXYZ & vTravelCloud,
-	             const std::vector<std::vector<int>> & vGridTravelPsIdx,
-				                     const PCLCloudXYZ & vAllBoundCloud,
-				  const std::vector<std::vector<int>> & vGridBoundPsIdx,
-	                                 const PCLCloudXYZ & vObstacleCloud,
-	                const std::vector<std::vector<int>> & vGridObsPsIdx){
 
-
-	//point clouds to be seen
-	PCLCloudXYZPtr pOccCloud(new PCLCloudXYZ);
-	//point index to the travel grid
-	std::vector<int> vTravelPointBelongIdx;
-
-	//save the point that is in a reachable grid to compute a confidence map
-	for (int i = 0; i != vNearByIdxs.size(); ++i) {
-
-		int iOneGridIdx = vNearByIdxs[i];
-		//if it is a ground grid
-		if (vConfidenceMap[iOneGridIdx].iLabel == 2) {
-
-			//record the ground point only
-			for (int j = 0; j != vGridTravelPsIdx[iOneGridIdx].size(); ++j) {
-				pOccCloud->points.push_back(vTravelCloud.points[vGridTravelPsIdx[iOneGridIdx][j]]);
-				vTravelPointBelongIdx.push_back(i);
-			}//end for j
-
-		}//end if vConfidenceMap[vNearByIdxs[i]].iLabel == 2
-
-	}//end for i
-
-	//save the point that is in an unreachable grid
-	for (int i = 0; i != vNearByIdxs.size(); ++i) {
-
-		int iOneGridIdx = vNearByIdxs[i];
-
-		if (vConfidenceMap[iOneGridIdx].iLabel != 2) {
-			//record the ground point
-			for (int j = 0; j != vGridTravelPsIdx[iOneGridIdx].size(); ++j)
-				pOccCloud->points.push_back(vTravelCloud.points[vGridTravelPsIdx[iOneGridIdx][j]]);
-
-			//record the boundary point
-			for (int j = 0; j != vGridBoundPsIdx[iOneGridIdx].size(); ++j) 
-				pOccCloud->points.push_back(vAllBoundCloud.points[vGridBoundPsIdx[iOneGridIdx][j]]);
-
-			//record the obstacle point
-			for (int j = 0; j != vGridObsPsIdx[iOneGridIdx].size(); ++j)
-				pOccCloud->points.push_back(vObstacleCloud.points[vGridObsPsIdx[iOneGridIdx][j]]);
-
-		}//end if vConfidenceMap[vNearByIdxs[i]].iLabel != 2
-
-	}//end for i
-
-
-	//std::vector<int> vVisableIdx = ComputeVisibility(*pOccCloud, oRobotPoint);
-	GHPR oGHPRer(m_fGHPRParam);
-
-	for (int i = 0; i != vHistoryViewPoints.size(); ++i) {
-	
-		//**********Measurement item************
-		//intermediate variables
-		std::vector<bool> vNearGridOccValue(vNearByIdxs.size(), false);///<distance weight part 
-
-	    //compute the visibility based on the history of view points
-		std::vector<int> vVisableIdx = oGHPRer.ComputeVisibility(*pOccCloud, vHistoryViewPoints[i]);
-	
-		//std::stringstream teststream;
-		//teststream << RECORDNUM <<"_"<<i<< "Res.txt";
-		//std::cout << teststream.str() <<" point size:  " << pOccCloud->points.size() << std::endl;
-		//std::string testfilename;
-		//teststream >> testfilename;
-		//std::ofstream oCloudOutFile;
-		//oCloudOutFile.open(testfilename.c_str(), std::ios::out | std::ios::app);
-		//std::vector<int> vRes(pOccCloud->points.size(),0);
-		//for (int i = 0; i != vVisableIdx.size(); ++i)
-		//	vRes[vVisableIdx[i]] = 1;
-
-		//for (int i=0;i!= pOccCloud->points.size();++i){
-		////record the data in txt file for test
-		//oCloudOutFile << pOccCloud->points[i].x << " "
-		//	          << pOccCloud->points[i].y << " "
-		//	          << pOccCloud->points[i].z << " "
-		//	          << vRes[i] << " "
-		//	          << std::endl;
-		//}
-		//oCloudOutFile << vHistoryViewPoints[i].x << " "
-		//	<< vHistoryViewPoints[i].y << " "
-		//	<< vHistoryViewPoints[i].z << " "
-		//	<< 2 << " "
-		//	<< std::endl;
-
-		//visibility result assignment 
-		for (int j = 0; j != vVisableIdx.size(); ++j){
-		
-		    //if it is in a travelable region 
-			if (vVisableIdx[j] < vTravelPointBelongIdx.size()) {
-				vNearGridOccValue[vTravelPointBelongIdx[vVisableIdx[j]]] = true;
-			}
-		
-		}
-	
-	    //**********Incremental item************
-	    //fv(p) = fv(n)  
-	    for (int i = 0; i != vNearByIdxs.size(); ++i){
-		     //get maximum value of distance term
-			 if(vNearGridOccValue[i])
-			    vConfidenceMap[vNearByIdxs[i]].visibility += 1.0;
-
-	    }
-
-	}//end for (int i = 0; i != vHistoryViewPoints.size(); ++i) 
-
-}//0412*/
 
 /*************************************************
 Function: BoundaryTerm
@@ -983,7 +1030,7 @@ Others: none
 //	int iUnkownCount = 0;
 //
 //	//if it is a ground region
-//	if (vConfidenceMap[iQueryGrid].iLabel == 2) {
+//	if (vConfidenceMap[iQueryGrid].label == 2) {
 //
 //		for (int k = 0; k != vNearByIdxs.size(); ++k) {
 //			//count its neighboring unknown grids

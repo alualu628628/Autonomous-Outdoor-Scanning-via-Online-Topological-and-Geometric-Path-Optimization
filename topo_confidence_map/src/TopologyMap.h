@@ -40,20 +40,17 @@ class TopologyMap{
   virtual ~TopologyMap();
 
   //Reads and verifies the ROS parameters.
-  bool ReadParameters(ros::NodeHandle & nodeHandle);
+  bool ReadTopicParams(ros::NodeHandle & nodeHandle);
 
   //Initialize a fixed Grid Map
-  void InitializeGridMap(const float & fRobotX, const float & fRobotY);
+  void InitializeGridMap(const pcl::PointXYZ & oRobotPos);
 
-  //generate local neighboring index (generate a mask)
-  void GenerateCircleMask();
+  //down sample the point clouds with grid idx
+  void SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud,
+                           std::vector<std::vector<int> > & vPointMapIdx,
+                           int iSmplNum = 3);
   //*************Traversing / retrieving function*************
-  //check inside points
-  inline bool CheckInSidePoint(const pcl::PointXYZ & oPoint);
 
-  //search neighboring grids within a circle region
-  void CircleNeighborhood(std::vector<MapIndex> & vNearbyGrids,
-                          const pcl::PointXYZ & oRobotPoint);
 
   //extract the point clouds from the given neighboring grids
   void DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
@@ -61,6 +58,12 @@ class TopologyMap{
                           pcl::PointCloud<pcl::PointXYZ> & vNearAllClouds,
                                    std::vector<int> & vNearGroundGridIdxs,
                                 const std::vector<MapIndex> & vNearByIdxs);
+
+  void DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+                        pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
+                                   std::vector<int> & vNearGroundGridIdxs,
+                                const std::vector<MapIndex> & vNearByIdxs);
+
 
   //*************handler function*************
   //handle the trajectory information
@@ -80,7 +83,10 @@ class TopologyMap{
   //void UpdatingOctomapNodes();
 
   //*************Feature calculation function (Subject function)*************
-  void ComputeConfidence(const pcl::PointXYZ & oRobotPos);
+  void ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
+                         const pcl::PointXYZ & oPastRobotPos);
+
+  void ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos);
   
   //*************Output function*************
   //publish grid map
@@ -109,11 +115,6 @@ class TopologyMap{
   std::string m_sBoundTopic; //the topic name of targeted odometry (robot trajectory)
 
   std::string m_sObstacleTopic; //the topic name of targeted odometry (robot trajectory)
-		
-  //input service:
-  //std::string m_oOctomapServiceTopic;//the name of source octomap service
-  //m_oOctoMapClient<->oOctomapServerVec<->m_oOctomapServiceTopic
-  //ros::ServiceClient m_oOctoMapClient;//Octomap service client
 
   //**output topics related**
 
@@ -128,8 +129,10 @@ class TopologyMap{
   double m_dOdomRawHz;//the raw frequency of odometry topic (50hz, or 10hz in normal)
   
   double m_dSamplingHz;//the raw frequency of odometry topic (50hz, or 10hz in normal)
-  
-  //double m_dOctomapFreshHz;//the frenquecy of updating otcomap (and also publish ConfidenceValue at the same time)
+
+  double m_dPastViewIntvl;//the past view interval (second)
+
+  float m_fViewZOffset;//z offset of odom to lidar sensor
   
   //sampling number
 
@@ -139,14 +142,18 @@ class TopologyMap{
   
   //int m_iMapFreshNum; //received octomap updated time interval is equal to int(m_dOdomRawHz / m_dOctomapFreshHz);
 
+  int m_iComputedFrame;
+
+  int m_iIntervalNum; //the past view interval number for occlusion calculation
+
   //the frame count of trajectory point
-  int m_iTrajFrameNum;
+  unsigned int m_iTrajFrameNum;
 
-  int m_iGroundFrames;
+  unsigned int m_iGroundFrames;
 
-  int m_iBoundFrames;
+  unsigned int m_iBoundFrames;
 
-  int m_iObstacleFrames;
+  unsigned int m_iObstacleFrames;
 
   //**point cloud related**
   //the positions of robot
@@ -155,33 +162,12 @@ class TopologyMap{
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_pBoundCloud;//boundary point clouds
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_pObstacleCloud;//obstacle point clouds
 
-  //record the octree node point clouds (it can be seems as the down sampling of scanning point clouds)
-  //pcl::PointCloud<pcl::PointXYZ> m_vNodeCloud;
-
-  //point index in gridmap
-  //grid cell x<grid cell y < node point id in vNodeCloud>>
-  //std::vector<std::vector<std::vector<int> > > m_vMapPointIndex;//record the point index in grid map cells
-
   //std::vector<std::vector<int> > m_vGroundPntMapIdx;//ground point index in grid map
   std::vector<std::vector<int> > m_vBoundPntMapIdx;//boundary point index in grid map
   std::vector<std::vector<int> > m_vObstlPntMapIdx;//obstacle point index in grid map
 
-  //**Grid map data**
-  
-  double m_dRbtLocalRadius;//construted maximum range of map 
-  //note that the map size is fixed, thus it must be initialied large enough to pick the scene 
-  double m_dMapMaxRange;///<it indicates the half length of bounding box (map)
-
-  std::string m_sMapFrameID;//grid map ID
- 
-  grid_map::Position3 m_oMinCorner; //Bounding box minimum corner of map.
-
-  grid_map::Position3 m_oMaxCorner; //Bounding box maximum corner of map.
-
-  double m_dResolution; //resolution of map pixels/cells 
-
   //the map - main body 
-  grid_map::GridMap m_oFeatureMap;//grid map
+  ExtendedGM m_oGMer;
 
   Confidence m_oCnfdnSolver;//confidence object
 
@@ -189,9 +175,6 @@ class TopologyMap{
 
   //the grid map initialization flag indicates whether the map has been simply established
   bool m_bGridMapReadyFlag;
-
-  //main body of data
-  std::vector<MapIndex> m_vSearchMask;
   
 };
 
