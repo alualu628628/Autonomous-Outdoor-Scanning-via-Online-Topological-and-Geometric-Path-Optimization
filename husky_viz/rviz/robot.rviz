@@ -12,9 +12,6 @@ Panels:
         - /Navigation1/Exploration1
         - /mesh1
         - /Odometry1
-        - /OccupancyMap1
-        - /OccupancyGrid1
-        - /MarkerArray1
         - /GridMap1
       Splitter Ratio: 0.494924
     Tree Height: 621
@@ -232,8 +229,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 0.0401946
-            Min Value: -0.183184
+            Max Value: 1.41175
+            Min Value: -0.18616
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -254,7 +251,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.01
           Style: Points
-          Topic: /ground_points
+          Topic: /topology_map/test_clouds
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -393,49 +390,22 @@ Visualization Manager:
     - Angle Tolerance: 0.1
       Class: rviz/Odometry
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Keep: 100
       Length: 1
       Name: Odometry
       Position Tolerance: 0.1
       Topic: /odometry/filtered
-      Value: true
-    - Alpha: 0.7
-      Class: octomap_rviz_plugin/OccupancyMap
-      Color Scheme: map
-      Draw Behind: false
-      Enabled: true
-      Max. Octree Depth: 16
-      Name: OccupancyMap
-      Octomap Binary Topic: /octomap_binary
-      Unreliable: false
-      Value: true
-    - Class: octomap_rviz_plugin/OccupancyGrid
-      Enabled: false
-      Max. Octree Depth: 16
-      Name: OccupancyGrid
-      Octomap Topic: /octomap_full
-      Queue Size: 5
-      Value: false
-      Voxel Coloring: Z-Axis
-      Voxel Rendering: Occupied Voxels
-    - Class: rviz/MarkerArray
-      Enabled: false
-      Marker Topic: /occupied_cells_vis_array
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
       Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Class: grid_map_rviz_plugin/GridMap
       Color: 200; 200; 200
       Color Layer: elevation
-      Color Transformer: GridMapLayer
+      Color Transformer: IntensityLayer
       Enabled: true
       Height Layer: elevation
-      Height Transformer: GridMapLayer
+      Height Transformer: Flat
       History Length: 1
       Invert Rainbow: false
       Max Color: 255; 255; 255
@@ -471,22 +441,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 23.9965
+      Distance: 29.7969
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.60779
-        Y: -2.10489
-        Z: -1.9961
+        X: 1.39428
+        Y: -2.5451
+        Z: 0.0546804
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.3898
+      Pitch: 1.0398
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.96723
+      Yaw: 2.89222
     Saved: ~
 Window Geometry:
   Displays:
@@ -504,5 +474,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1600
-  X: 174
-  Y: 321
+  X: 212
+  Y: 362

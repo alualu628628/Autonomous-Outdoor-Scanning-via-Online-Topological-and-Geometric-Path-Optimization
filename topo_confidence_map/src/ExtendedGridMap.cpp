@@ -340,8 +340,6 @@ void ExtendedGM::CircleNeighborhood(std::vector<MapIndex> & vNearbyGrids,
 	grid_map::Index oQueryIdx;
 	oFeatureMap.getIndex(oQueryPos, oQueryIdx);
 
-	pcl::PointCloud<pcl::PointXYZ> vCloud;
-
 	//seach in given neighboring grids
 	for (int i = 0; i != vSearchMask.size(); ++i) {
 
@@ -362,6 +360,41 @@ void ExtendedGM::CircleNeighborhood(std::vector<MapIndex> & vNearbyGrids,
 	}
 
 }
+//reload 
+void ExtendedGM::CircleNeighborhood(std::vector<int> & vNearbyGrids,
+	                          const grid_map::GridMap & oFeatureMap,
+	                      const std::vector<MapIndex> & vSearchMask,
+	                                      const int & iQueryGridIdx) {
+						                           
+		                                       
+    //clear output
+	vNearbyGrids.clear();
+
+    //get the two dimension index
+	grid_map::Index oQueryIdx;
+	OneDtoTwoDIdx(oQueryIdx,iQueryGridIdx);
+
+	//seach in given neighboring grids
+	for (int i = 0; i != vSearchMask.size(); ++i) {
+
+		MapIndex oOneNearGridIdx;
+		//get nearby grid idx on x
+		oOneNearGridIdx.oTwoIndex(0) = oQueryIdx(0) + vSearchMask[i].oTwoIndex(0);
+		if (oOneNearGridIdx.oTwoIndex(0) < 0 || oOneNearGridIdx.oTwoIndex(0) >= oFeatureMap.getSize()(0))
+			break;//if the neighboring grid is outside of the map
+        //get nearby grid idx on y axis
+		oOneNearGridIdx.oTwoIndex(1) = oQueryIdx(1) + vSearchMask[i].oTwoIndex(1);
+		if (oOneNearGridIdx.oTwoIndex(1) < 0 || oOneNearGridIdx.oTwoIndex(1) >= oFeatureMap.getSize()(1))
+			break;//if the neighboring grid is outside of the map
+
+		int iOneNearIdx = TwotoOneDIdx(oOneNearGridIdx.oTwoIndex);
+		//compute the nearby grid
+		vNearbyGrids.push_back(iOneNearIdx);
+
+	}
+
+}
+
 
 
 

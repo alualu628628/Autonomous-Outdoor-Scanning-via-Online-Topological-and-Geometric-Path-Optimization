@@ -233,8 +233,6 @@ void GHPR::FindVisibleIndices(std::vector<int> & vVisibleIndices,
 		//if the query point is not the viewpoint
 		if (vNearestIdx[0] != iViewPointIdx)
 			vVisibleIndices.push_back(vNearestIdx[0]);
-		else
-			std::cout << "got it," << " it is " << vNearestIdx[0] << std::endl;
 
 	}//end for i != pHullCloud->points.size()
 

@@ -151,11 +151,6 @@ public:
 								int iSampleTimes = 5,
 								bool bKDFlag = true);
 
-	//region grow to obtain travelable region (travelable region is the ground which can be touch from current location)
-	void RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
-	                    const std::vector<int> & vNewScannedGrids);
-
-
 	//the 2 norm of a vector
 	inline float Compute2Norm(const pcl::PointXYZ & oQueryPo,
 		                     const pcl::PointXYZ & oTargerPo);
@@ -232,6 +227,12 @@ public:
 	//6. Compute the total coffidence value
 	void ComputeTotalCoffidence(std::vector<ConfidenceValue> & vConfidenceMap, 
 	                                                   const int & iQueryIdx);
+
+
+	//region grow to obtain travelable region (travelable region is the ground which can be touch from current location)
+	void RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
+	                    const std::vector<int> & vNewScannedGrids,
+							    const ExtendedGM & oExtendGridMap);
 
 	//normalization of features
 	static void Normalization(std::vector<float> & vFeatures);
