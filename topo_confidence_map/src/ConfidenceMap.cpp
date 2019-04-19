@@ -615,8 +615,9 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	if (pBoundCloud->points.size()) {
 
         //define a threshold indicating where is dangerous for robot to close  
-		float fNoTouchThr = (m_fSigma - 0.5) / m_fSigma;
+		//float fNoTouchThr = (m_fSigma - 0.5) / m_fSigma;
 
+        //set a kdtree for boundary point clouds
 		pcl::KdTreeFLANN<pcl::PointXYZ> oBoundTree;
 		oBoundTree.setInputCloud(pBoundCloud);
 
@@ -638,8 +639,8 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 				vConfidenceMap[vNearGroundIdxs[i]].boundTerm = fBoundvalue;
 
             //also affect the travelable when the robot is too close to wall
-			if (vConfidenceMap[vNearGroundIdxs[i]].boundTerm > fNoTouchThr)
-                vConfidenceMap[vNearGroundIdxs[i]].travelable = 4;
+			//if (vConfidenceMap[vNearGroundIdxs[i]].boundTerm > fNoTouchThr)
+            //    vConfidenceMap[vNearGroundIdxs[i]].travelable = 4;
 
 		}//end i 
 
@@ -1029,6 +1030,7 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 		}
 	}
 
+    
 	//record computed grid (record which grid has been computed with a status value)
 	std::vector<int> vComputedGridIdx;
 
@@ -1037,8 +1039,8 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 
 		//current seed index
 	    int iCurIdx;
-		//inital flag as 3
-		int bTravelableFlag = 3;
+		//inital result as a non-touchable grid
+		int iGrowRes = 0;
 		
 		//seeds
 	    std::vector<int> vSeeds;  
@@ -1076,18 +1078,17 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 					if (vConfidenceMap[vNearGridIdx[i]].travelable == 2)
 						vSeeds.push_back(vNearGridIdx[i]);
 
-					//if the near grid is reachable so that the query ground grids must be also reachable
+					//the near grid is reachable thereby the query ground grids must be reachable too
 					if (vConfidenceMap[vNearGridIdx[i]].travelable == 1)
-						bTravelableFlag = 2;
+						iGrowRes = 1;
 				}//end for int i = 0;i!=vNearGridIdx.size();++i
 				 
 		    }//end while
 
 		    //assignment as a touchable grid or ioslated grids
-			for(int i = 0; i != vSeedHistory.size(); ++i){
-			        vConfidenceMap[vSeedHistory[i]].travelable -= bTravelableFlag;
-			}
-
+			for(int i = 0; i != vSeedHistory.size(); ++i)
+			    vConfidenceMap[vSeedHistory[i]].travelable = iGrowRes;
+			
 	    }//end if vConfidenceMap[vNearGridIdx[i]].travelable == 2
 	
 	}//end for
@@ -1097,9 +1098,10 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 	//because an unreachable grid may be reachable if the robot moves close
 	for (int i = 0; i != vComputedGridIdx.size(); ++i) {
 	    //prepare for further growing
-		if(vConfidenceMap[vComputedGridIdx[i]].travelable == 0)
+		if(!vConfidenceMap[vComputedGridIdx[i]].travelable)
 		   vConfidenceMap[vComputedGridIdx[i]].travelable = 2;
 	}
+	
 
 }
 

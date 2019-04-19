@@ -180,9 +180,14 @@ bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
 
 	//generate region grow neighborhood mask
 	//eight unicom
+	double dRegionGrowR;
+	nodeHandle.param("regiongrow_r", dRegionGrowR, 0.5);
 	m_oGMer.m_vGrowSearchMask.clear();
-	m_oGMer.m_vGrowSearchMask = m_oGMer.GenerateCircleMask(0.5);
+	m_oGMer.m_vGrowSearchMask = m_oGMer.GenerateCircleMask(dRegionGrowR);
 
+	m_oGMer.m_vBoundDefendMask.clear();
+    m_oGMer.m_vBoundDefendMask = m_oGMer.GenerateCircleMask(1.0*dRegionGrowR);
+    
 	return true;
 
 }
@@ -245,7 +250,7 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
 
     //get the neighborhood of original coordiante value and initial a rough travelable region
 	std::vector<MapIndex> vOriginalNearIdx;
-	std::vector<MapIndex> vOriginalMask = m_oGMer.GenerateCircleMask(6.0); 
+	std::vector<MapIndex> vOriginalMask = m_oGMer.GenerateCircleMask(5.0); 
 	ExtendedGM::CircleNeighborhood(vOriginalNearIdx,
 	                               m_oGMer.m_oFeatureMap,
 	                               vOriginalMask,
@@ -582,6 +587,7 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 		if(vNewScanGridIdxs.size())
 			m_oCnfdnSolver.RegionGrow(m_vConfidenceMap,vNewScanGridIdxs,m_oGMer);
 
+
 	}//end if m_bGridMapReadyFlag
 
 }
@@ -619,9 +625,22 @@ void TopologyMap::HandleBoundClouds(const sensor_msgs::PointCloud2 & vBoundRosDa
 					int iPointIdx = ExtendedGM::PointoOneDIdx(vOneBCloud.points[i],m_oGMer.m_oFeatureMap);
 					//to point idx
 					m_vBoundPntMapIdx[iPointIdx].push_back(m_iBoundFrames);
-					//label grid
-					m_vConfidenceMap[iPointIdx].label = 3;
-					m_vConfidenceMap[iPointIdx].travelable = 4;
+					//if this grid has not been found as a boundary region
+					if (m_vConfidenceMap[iPointIdx].label != 3) {
+						//label as boundary grid
+					    m_vConfidenceMap[iPointIdx].label = 3;
+					    //search its neighboring region (region grow scale)
+					    std::vector<int> vNearGridIdx;
+				        ExtendedGM::CircleNeighborhood(vNearGridIdx,
+						                               m_oGMer.m_oFeatureMap, 
+											           m_oGMer.m_vBoundDefendMask,
+		                                               iPointIdx);
+
+				        //label as non-travelable region since it is dangerous for robot to close to obstacle in a distance
+                        for(int i = 0; i != vNearGridIdx.size(); ++i)
+                        	m_vConfidenceMap[vNearGridIdx[i]].travelable = 4;
+
+				    }//end if
 
 					m_iBoundFrames++;
 				}

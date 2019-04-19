@@ -93,6 +93,8 @@ public:
 
 	//a neighboorhood search mask of region operation 
 	std::vector<MapIndex> m_vGrowSearchMask;
+	//a expand operation scale of boundary grid
+	std::vector<MapIndex> m_vBoundDefendMask;
 
 	//a mask region that generates a node 
 	std::vector<MapIndex> m_vNodeMadeMask;
