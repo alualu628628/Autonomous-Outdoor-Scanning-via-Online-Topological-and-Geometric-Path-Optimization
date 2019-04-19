@@ -181,15 +181,7 @@ bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
 	//generate region grow neighborhood mask
 	//eight unicom
 	m_oGMer.m_vGrowSearchMask.clear();
-	for(int i = -1; i != 2; ++i ){
-
-		for(int j = -1 ; j != 2 ; ++j){
-			MapIndex oMaskMemberIdx;
-			oMaskMemberIdx.oTwoIndex(0) = i;
-			oMaskMemberIdx.oTwoIndex(1) = j;
-			m_oGMer.m_vGrowSearchMask.push_back(oMaskMemberIdx); 
-		}//end j
-	}//end i
+	m_oGMer.m_vGrowSearchMask = m_oGMer.GenerateCircleMask(0.5);
 
 	return true;
 
@@ -250,6 +242,18 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
 		}//end i
 
 	}//end j
+
+    //get the neighborhood of original coordiante value and initial a rough travelable region
+	std::vector<MapIndex> vOriginalNearIdx;
+	std::vector<MapIndex> vOriginalMask = m_oGMer.GenerateCircleMask(6.0); 
+	ExtendedGM::CircleNeighborhood(vOriginalNearIdx,
+	                               m_oGMer.m_oFeatureMap,
+	                               vOriginalMask,
+	                               oRobotPos);
+
+    //only assign the travelable value,which means the node will be created only on the grid that has the actual data  
+    for(int i = 0; i != vOriginalNearIdx.size(); ++i)
+    	m_vConfidenceMap[vOriginalNearIdx[i].iOneIdx].travelable = 1;
 
 
 	m_bGridMapReadyFlag = true;
@@ -538,6 +542,7 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 		////message from ROS type to PCL type
 		pcl::fromROSMsg(vGroundRosData, vOneGCloud);
 
+        std::vector<int> vNewScanGridIdxs;
 		//get right point clouds from LOAM output
 		for (int i = 0; i != vOneGCloud.size(); ++i) {
 			//sampling 2 time by given sampling value
@@ -554,14 +559,15 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 							//to grid layer
 
 							m_vConfidenceMap[oAllTypeIdx.iOneIdx].label = 2;
+							vNewScanGridIdxs.push_back(oAllTypeIdx.iOneIdx);
 						
 						}else{
 							//moving average
 							float fMeanZ = (m_vConfidenceMap[oAllTypeIdx.iOneIdx].oCenterPoint.z + vOneGCloud.points[i].z) / 2.0f;
 							//to center point cloud
 							m_vConfidenceMap[oAllTypeIdx.iOneIdx].oCenterPoint.z = fMeanZ;
-							//to grid layer
 							
+							//cover obstacle grid
 							if (m_vConfidenceMap[oAllTypeIdx.iOneIdx].label < 2)
 								m_vConfidenceMap[oAllTypeIdx.iOneIdx].label = 2;
 
@@ -571,6 +577,10 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 				}//end if (CheckInSidePoint(vOneGCloud.points[i]))
 			}//end if (!(i%m_iPCSmplNum))
 		}//end for (int i = 0; i != vOneGCloud.size();
+	
+	    //grow the travelable region
+		if(vNewScanGridIdxs.size())
+			m_oCnfdnSolver.RegionGrow(m_vConfidenceMap,vNewScanGridIdxs,m_oGMer);
 
 	}//end if m_bGridMapReadyFlag
 
@@ -611,6 +621,7 @@ void TopologyMap::HandleBoundClouds(const sensor_msgs::PointCloud2 & vBoundRosDa
 					m_vBoundPntMapIdx[iPointIdx].push_back(m_iBoundFrames);
 					//label grid
 					m_vConfidenceMap[iPointIdx].label = 3;
+					m_vConfidenceMap[iPointIdx].travelable = 4;
 
 					m_iBoundFrames++;
 				}
@@ -656,17 +667,25 @@ void TopologyMap::HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacl
 			if (!(i%m_iPCSmplNum)) {
 
 				if (m_oGMer.CheckInSidePoint(vOneOCloud.points[i])) {
+
 					m_pObstacleCloud->points.push_back(vOneOCloud.points[i]);
 					int iPointIdx = ExtendedGM::PointoOneDIdx(vOneOCloud.points[i],m_oGMer.m_oFeatureMap);
 					//to point idx
 					m_vObstlPntMapIdx[iPointIdx].push_back(m_iObstacleFrames);
-					//label grid
-					if(!m_vConfidenceMap[iPointIdx].label)
+
+					//the obstacle grid can cover unknown, ground, obstacle grids in simulation
+					if(!m_vConfidenceMap[iPointIdx].label) {
+						//label grid as obstacle grid
 						m_vConfidenceMap[iPointIdx].label = 1;
+						//
+						m_vConfidenceMap[iPointIdx].travelable = 4;
+						
+					}
+					/*add some conditions here if ground points has some noise (to cover ground grid)*/
 
 					m_iObstacleFrames++;
-				}
-			}//end i%m_iPCSmplNum
+				}//end if m_oGMer.CheckInSidePoint(vOneOCloud.points[i])
+			}//end if i%m_iPCSmplNum
 		}//end for i
 
 
@@ -742,10 +761,11 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
     oPastView.z = oPastRobotPos.z + m_fViewZOffset;
 
     //compute visibiity
-    m_oCnfdnSolver.OcclusionTerm(m_vConfidenceMap,
-	                             pNearAllClouds,
-	                             vNearGrndGrdIdxs,
-	                             oPastView);
+    if(vNearGrndGrdIdxs.size() >= 3)
+    	m_oCnfdnSolver.OcclusionTerm(m_vConfidenceMap,
+	                                   pNearAllClouds,
+	                                 vNearGrndGrdIdxs,
+	                                        oPastView);
 
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
@@ -783,11 +803,10 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 
 
     //compute boundary term
-    if(vNearGrndGrdIdxs.size() >= 3)
-    	m_oCnfdnSolver.BoundTerm(m_vConfidenceMap,
-                                 vNearGrndGrdIdxs,
-	                              pNearGrndClouds,
-    	                         pNearBndryClouds);
+    m_oCnfdnSolver.BoundTerm(m_vConfidenceMap,
+                             vNearGrndGrdIdxs,
+	                          pNearGrndClouds,
+    	                     pNearBndryClouds);
 
 
     //publish result
@@ -826,9 +845,16 @@ void TopologyMap::PublishGridMap(){
 
 			int iGridIdx = ExtendedGM::TwotoOneDIdx(i, j);
 
-		//.travelTerm   //.boundTerm    //.visiTerm    //.qualTerm      //.totalValue
-			gridMapData(i, j) = m_vConfidenceMap[iGridIdx].visiTerm;
-			
+		//.travelTerm   //.boundTerm    //.visiTerm    //.qualTerm      //.totalValue //.travelable
+			//if(m_vConfidenceMap[iGridIdx].travelable == 2){
+			//   gridMapData(i, j) = 2;
+		   //}else if(m_vConfidenceMap[iGridIdx].travelable == 1){
+            //   gridMapData(i, j) = 1;
+		    //}else{
+            //   gridMapData(i, j) = 0;
+		    //}
+		    gridMapData(i, j) = m_vConfidenceMap[iGridIdx].travelable;
+	
 		}//end i
 
 	}//end j

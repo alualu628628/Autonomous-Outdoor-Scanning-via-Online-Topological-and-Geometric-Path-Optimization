@@ -69,6 +69,10 @@ public:
 	                               const grid_map::GridMap & oFeatureMap,
 	                           const std::vector<MapIndex> & vSearchMask,
 	                                   const pcl::PointXYZ & oQueryPoint);
+	static void CircleNeighborhood(std::vector<int> & vNearbyGrids,
+	                         const grid_map::GridMap & oFeatureMap,
+	                     const std::vector<MapIndex> & vSearchMask,
+	                                     const int & iQueryGridIdx);
 
 	//check inside points
 	bool CheckInSidePoint(const pcl::PointXYZ & oPoint);

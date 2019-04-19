@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+  <world name="terrain_world">
+
+    <include>
+      <pose> 10 0 0 0.785 0 0</pose>
+      <uri>model://sun</uri>
+
+    </include>
+
+    <!--<include>
+      <uri>model://ground_plane</uri>
+    </include>-->
+
+
+    <model name="terrain_mesh">
+      <!--position the mesh where you want it to be-->
+
+      <pose>0 0 0 1.57 0 0 </pose> <!-- rotate Pi/2 about x axis-->
+      <!--<pose>0 0 0 0 0 0 </pose>-->
+      <static>true </static>
+
+      <link name="terrain">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://mesh/terrain.dae</uri>
+              <scale>10 10 10</scale> <!--make it larger -->
+            </mesh>
+          </geometry>
+        </visual>
+
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://mesh/terrain.dae</uri>
+              <scale>10 10 10</scale> <!--make it larger -->
+            </mesh>
+          </geometry>
+        </collision>
+
+      </link>
+
+    </model>
+  </world>
+</sdf>

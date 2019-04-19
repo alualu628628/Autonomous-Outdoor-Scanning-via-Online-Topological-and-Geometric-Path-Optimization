@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+
+<launch>
+  <remap from="/husky_velocity_controller/odom" to="/encoder_odom" />
+
+  <arg name="world_name" value="playpen.world"/>
+
+  <arg name="laser_enabled" default="true"/>
+  <arg name="kinect_enabled" default="false"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find husky_custom_gazebo)/worlds/(arg world_name)"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="false"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <include file="$(find husky_gazebo)/launch/spawn_husky.launch">
+    <arg name="laser_enabled" value="$(arg laser_enabled)"/>
+    <arg name="kinect_enabled" value="$(arg kinect_enabled)"/>
+  </include>
+
+</launch>
