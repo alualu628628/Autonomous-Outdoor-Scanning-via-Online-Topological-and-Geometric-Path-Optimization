@@ -155,6 +155,8 @@ class TopologyMap{
 
   unsigned int m_iObstacleFrames;
 
+  unsigned int m_iNodeTimes;//the times of node to be visited
+
   //**point cloud related**
   //the positions of robot
   std::queue<pcl::PointXYZ> m_vOdomCloud;//I dont think it is necessary to use a circle vector

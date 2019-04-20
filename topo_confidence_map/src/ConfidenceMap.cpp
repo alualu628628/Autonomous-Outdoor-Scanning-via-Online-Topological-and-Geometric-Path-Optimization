@@ -1,4 +1,4 @@
-#include "ConfidenceMap.h"
+ #include "ConfidenceMap.h"
 
 namespace topology_map {
 
@@ -16,16 +16,23 @@ Others: none
 *************************************************/
 Confidence::Confidence(float f_fSigma,
 	                   float f_fGHPRParam,
-	                  float f_fVisTermThr):
+	                  float f_fVisTermThr,
+	                  float f_fMinNodeThr):
 	                     m_fWeightDis(0.7),
                          m_fWeightVis(0.3),
 	                      m_fDensityR(0.3),
                          m_fLenWeight(0.6),
                        m_fBoundWeight(0.4){
 
+    //set sigma value
 	SetSigmaValue(f_fSigma);
 
-	SetVisParas(f_fGHPRParam, f_fVisTermThr);
+    //set visibility parameters
+	SetVisParas(f_fGHPRParam, 
+		        f_fVisTermThr);
+
+    //set node generation parameter
+	SetNodeGenParas(f_fMinNodeThr);
 
 	//srand((unsigned)time(NULL));
 
@@ -90,6 +97,25 @@ void Confidence::SetVisParas(const float & f_fGHPRParam,
 
 }
 
+/*************************************************
+Function: SetVisParas
+Description: set value to the parameters related to visibility term
+Calls: none
+Called By: Confidence
+Table Accessed: none
+Table Updated: none
+Input: f_fGHPRParam - a parameter of GHPR algorithm
+      f_fVisTermThr - a threshold of visibility value
+Output: m_fGHPRParam
+        m_fVisTermThr
+Return: none
+Others: none
+*************************************************/
+void Confidence::SetNodeGenParas(const float & f_fMinNodeThr){
+
+	m_fMinNodeThr = f_fMinNodeThr;
+
+}
 
 /*************************************************
 Function: VectorInnerProduct
@@ -642,9 +668,13 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 			//if (vConfidenceMap[vNearGroundIdxs[i]].boundTerm > fNoTouchThr)
             //    vConfidenceMap[vNearGroundIdxs[i]].travelable = 4;
 
+            //update the total value
+            //thereby the boundterm will be calculated at the end of the other two terms 
+            ComputeTotalCoffidence(vConfidenceMap,vNearGroundIdxs[i]);
+
 		}//end i 
 
-	}
+	}//end if
 
 }
 
@@ -1105,6 +1135,96 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 
 }
 
+
+
+/*************************************************
+Function: RegionGrow
+Description: this function is to find the reachable grid based on current robot location
+Calls: none
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: vNewScannedGrids - the neighboring grid of the current robot location
+Output: the reachable label of grid map. The grid labelled as 1 is reachable grid 
+Return: none
+Others: point with label 2 is queried and changed one by one during implementing function
+        point with label 0 will becomes point with label 2 after implementing function, this is to prepare next computing
+*************************************************/
+std::vector<int> Confidence::NonMinimumSuppression(const std::vector<ConfidenceValue> & vConfidenceMap,
+								                                     const ExtendedGM & oExtendGridMap,
+	                                                                         const int & iCurrNodeTime){
+
+	//define candidate variables
+	std::vector<int> vMinCandidates;
+	std::vector<bool> vMinCandidStatus(vConfidenceMap.size(),true);
+
+	//search each grid to construct a candidate node extraction region
+	for (int i = 0; i != vConfidenceMap.size(); ++i) {
+			//if it is a reachable ground grid (some initial reachable grids are not the ground grids)
+			if(vConfidenceMap[i].travelable == 1 && vConfidenceMap[i].label == 2){
+				//if it has not been computed (this grid is new in current trip)
+			    if (vConfidenceMap[i].nodeCount == iCurrNodeTime) {
+				    //if it is small
+				    if (vConfidenceMap[i].totalValue < m_fMinNodeThr){
+		                //get this grid into candidate vector
+				        vMinCandidates.push_back(i);
+			        }//end if vConfidenceMap[i].totalValue < m_fMinThreshold
+			    }//end if !vConfidenceMap[i].nodeCount
+		    }//end if vConfidenceMap[i].travelable = 1
+
+	}//end for i
+	
+std::cout<<" vMinCandidates.size(): "<< vMinCandidates.size()<<std::endl;
+
+	//Traversal each candidate grid
+	for (int i = 0; i != vMinCandidates.size(); ++i) {
+		
+		int iCurIdx = vMinCandidates[i];
+		//if the candidate grid has not been removed
+		if (vMinCandidStatus[iCurIdx]) {
+			//find neighboring grid
+			std::vector<int> vNeighborGrids;
+			ExtendedGM::CircleNeighborhood(vNeighborGrids,
+						                   oExtendGridMap.m_oFeatureMap, 
+										   oExtendGridMap.m_vNodeMadeMask,
+		                                   iCurIdx);
+			
+			//search each neighboring grid
+			for (int j = 0; j != vNeighborGrids.size(); ++j) {
+				//the contrastive grids must be synchronous
+				if(vConfidenceMap[vNeighborGrids[j]].nodeCount == iCurrNodeTime){
+					
+				   //do not compare with itself(query grid)
+				   if (iCurIdx != vNeighborGrids[j]) {
+					   //compare the total value
+					   if (vConfidenceMap[iCurIdx].totalValue <= vConfidenceMap[vNeighborGrids[j]].totalValue)
+					       vMinCandidStatus[vNeighborGrids[j]] = false;
+				       else 
+					       vMinCandidStatus[iCurIdx] = false;
+			       }//if != vNeighborGrids[j]
+
+				}//end if(vConfidenceMap[iCurIdx].travelable == 1)
+
+			}//end for j
+
+		}//end if (vMinCandidates[vMinCandidates[i]])
+
+	}//end i != vConfidenceMap.size()
+	
+	//define output
+	std::vector<int> vNodeIdx;
+    //assignment
+	for (int i = 0; i != vMinCandidates.size(); ++i){
+		if (vMinCandidStatus[vMinCandidates[i]])
+			vNodeIdx.push_back(vMinCandidates[i]);
+	}
+
+
+    std::cout<<" vNodeIdx.size(): "<< vNodeIdx.size()<<std::endl;
+
+	return vNodeIdx;
+
+}
 
 /*************************************************
 Function: Normalization

@@ -229,8 +229,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.41175
-            Min Value: -0.18616
+            Max Value: 1.40722
+            Min Value: -0.138757
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -401,7 +401,7 @@ Visualization Manager:
       Autocompute Intensity Bounds: true
       Class: grid_map_rviz_plugin/GridMap
       Color: 200; 200; 200
-      Color Layer: elevation
+      Color Layer: confidence
       Color Transformer: IntensityLayer
       Enabled: true
       Height Layer: elevation
@@ -441,16 +441,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 29.7969
+      Distance: 26.7714
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.39428
-        Y: -2.5451
-        Z: 0.0546804
+        X: 0.532266
+        Y: -1.6061
+        Z: -0.571975
       Name: Current View
       Near Clip Distance: 0.01
       Pitch: 1.0398
@@ -474,5 +474,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1600
-  X: 212
-  Y: 362
+  X: 398
+  Y: 421

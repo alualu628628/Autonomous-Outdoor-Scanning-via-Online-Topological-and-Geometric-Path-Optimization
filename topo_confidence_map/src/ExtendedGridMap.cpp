@@ -129,13 +129,15 @@ void ExtendedGM::GenerateMap(const pcl::PointXYZ & oRobotPos){
 	
 
 	//set feature layer
-	//m_oFeatureMap.setBasicLayers({"elevation"});
+	m_oFeatureMap.setBasicLayers({"elevation"});
 
 	//add other map layer
-	//m_oFeatureMap.add("traversability", Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
-	//m_oFeatureMap.add("boundary", Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
-	//m_oFeatureMap.add("observability", Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
-	//m_oFeatureMap.add("confidence", Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
+	m_oFeatureMap.add("traversability", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
+	m_oFeatureMap.add("boundary", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
+	m_oFeatureMap.add("observability", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
+	m_oFeatureMap.add("confidence", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
+	m_oFeatureMap.add("travelable", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
+	m_oFeatureMap.add("label", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
 
 }
 
