@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(simple_navigation_goals)
+project(husky_navigation_goals)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -10,6 +10,7 @@ project(simple_navigation_goals)
 find_package(catkin REQUIRED COMPONENTS
   actionlib
   move_base_msgs
+  nav_msgs
   roscpp
 )
 
@@ -197,5 +198,5 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-add_executable(simple_navigation_goals src/simple_navigation_goals.cpp)
-target_link_libraries(simple_navigation_goals ${catkin_LIBRARIES})
+add_executable(husky_navigation_goals src/husky_navigation_goals.cpp src/SendHuskyGoal.cpp)
+target_link_libraries(husky_navigation_goals ${catkin_LIBRARIES})

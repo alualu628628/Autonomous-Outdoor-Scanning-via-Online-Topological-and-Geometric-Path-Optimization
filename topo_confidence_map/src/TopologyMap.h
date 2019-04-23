@@ -99,6 +99,8 @@ class TopologyMap{
   //publish point clouds
   void PublishPointCloud(pcl::PointCloud<pcl::PointXYZ> & vCloud);
 
+  void PublishGoalOdom(pcl::PointXYZ & oGoalPoint);
+
  private:
 
   //**input topic related**
@@ -124,6 +126,8 @@ class TopologyMap{
   //ros::Publisher m_oOctomapPublisher; //! Octomap publisher.
   //publishing point cloud is only for test
   ros::Publisher m_oCloudPublisher;// point cloud publisher for test
+
+  ros::Publisher m_oGoalPublisher;// goal odometry information publisher
 
   //**frenquency related**
   

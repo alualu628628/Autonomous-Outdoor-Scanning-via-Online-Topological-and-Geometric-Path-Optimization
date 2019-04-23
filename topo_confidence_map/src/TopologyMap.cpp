@@ -53,6 +53,8 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 
 	m_oCloudPublisher = nodeHandle.advertise<sensor_msgs::PointCloud2>("test_clouds", 1, true);
 
+	m_oGoalPublisher = nodeHandle.advertise<nav_msgs::Odometry>("goal_odom", 1, true);
+
 }
 
 /*************************************************
@@ -529,15 +531,28 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 
 		    m_oOPSolver.GTR(oOdomPoint,m_vConfidenceMap);
 
-		    pcl::PointXYZ oTargetPoint;
-		    m_oOPSolver.OutputGoalPos(oTargetPoint);
+		    
 		    std::vector<pcl::PointXYZ> vUnvisitedNodes;
 		    m_oOPSolver.OutputUnvisitedNodes(vUnvisitedNodes);
+
+		   
 		    
-		    std::cout<<"The next best view is: "<< oTargetPoint.x << ", " << oTargetPoint.y 
-		    << ". remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
+		    std::cout<< "remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
+            
+            //begin the next trip
+		    m_iNodeTimes++;
 		    
 		}//end if m_oOPSolver.NearGoal
+
+        //send generated goal
+		if(m_iNodeTimes > 0){
+            
+			pcl::PointXYZ oTargetPoint;
+			//get goal
+		    m_oOPSolver.OutputGoalPos(oTargetPoint);
+		    //publish goal
+            PublishGoalOdom(oTargetPoint);
+        }
 
     }//end if (!(m_iTrajFrameNum % m_iOdomSampingNum))
 
@@ -970,7 +985,36 @@ void TopologyMap::PublishPointCloud(pcl::PointCloud<pcl::PointXYZ> & vCloud){
 }
 
 
+/*************************************************
+Function: TopologyMap
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+       privare node
+       flag of generating output file
+       original frame value
+Output: none
+Return: none
+Others: the HandlePointClouds is the kernel function
+*************************************************/
 
+void TopologyMap::PublishGoalOdom(pcl::PointXYZ & oGoalPoint){
+
+        nav_msgs::Odometry oCurrGoalOdom;
+        oCurrGoalOdom.header.stamp = ros::Time::now();
+        oCurrGoalOdom.header.frame_id = "odom";
+
+        //set the position
+        oCurrGoalOdom.pose.pose.position.x = oGoalPoint.x;
+        oCurrGoalOdom.pose.pose.position.y = oGoalPoint.y;
+        oCurrGoalOdom.pose.pose.position.z = oGoalPoint.z;
+
+        m_oGoalPublisher.publish(oCurrGoalOdom);
+
+}
 
 } /* namespace */
 
