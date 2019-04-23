@@ -263,6 +263,9 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
     	m_vConfidenceMap[vOriginalNearIdx[i].iOneIdx].nodeCount = m_iNodeTimes;
     }
 
+    //initial op solver
+    m_oOPSolver.Initial(oRobotPos, m_oGMer.m_oFeatureMap);
+
 	m_bGridMapReadyFlag = true;
 
 }
@@ -512,18 +515,29 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 
 		
 		oOdomPoint.z = 0.0;
-		//float fRemainDis = Confidence::ComputeEuclideanDis(oOdomPoint, oCurrTargetNode);
-        float fHistoryDis = Confidence::ComputeEuclideanDis(m_vOdomCloud.back(), m_vOdomCloud.front());
-        std::cout<<"distance is "<<fHistoryDis<<std::endl;
+        
         //if the robot is close to the target or the robot is standing in place in a long time
 		//if(fRemainDis < 0.5 || fHistoryDis < 0.005){
-        if(fHistoryDis < 0.005){
-			//get the new node
-			std::vector<int> vTestIdx = m_oCnfdnSolver.NonMinimumSuppression(m_vConfidenceMap, m_oGMer, m_iNodeTimes);
-			for(int i = 0; i != vTestIdx.size(); ++i)
-				std::cout << "new node is " << vTestIdx[i] << std::endl;
+        if(m_oOPSolver.NearGoal(oOdomPoint, m_iComputedFrame,0.5,10)){
+			//get the new nodes
+			std::vector<int> vNewNodeIdx;
+			std::vector<pcl::PointXYZ> vNodeClouds;
+			m_oCnfdnSolver.FindLocalMinimum(vNewNodeIdx, vNodeClouds,
+	                                        m_vConfidenceMap, m_oGMer, m_iNodeTimes);
+			//get new nodes
+			m_oOPSolver.GetNewNodeSuppression(vNewNodeIdx, vNodeClouds, 3.0);
 
-		}//end if fRemainDis < 0.5 || fHistoryDis < 0.005
+		    m_oOPSolver.GTR(oOdomPoint,m_vConfidenceMap);
+
+		    pcl::PointXYZ oTargetPoint;
+		    m_oOPSolver.OutputGoalPos(oTargetPoint);
+		    std::vector<pcl::PointXYZ> vUnvisitedNodes;
+		    m_oOPSolver.OutputUnvisitedNodes(vUnvisitedNodes);
+		    
+		    std::cout<<"The next best view is: "<< oTargetPoint.x << ", " << oTargetPoint.y 
+		    << ". remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
+		    
+		}//end if m_oOPSolver.NearGoal
 
     }//end if (!(m_iTrajFrameNum % m_iOdomSampingNum))
 
@@ -768,19 +782,19 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
 		                           m_oGMer.m_vRobotSearchMask,
 		                           oCurrRobotPos);
 
+    //label the node count of computed ground grids 
+    //it means the grids is in which time of node
+    for(int i = 0; i !=vNearByIdxs.size(); ++i){
+    	if(m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount < 0)
+           m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount = m_iNodeTimes;
+    }
+
     //extract point clouds with different labels, respectively
     DevidePointClouds(*pNearGrndClouds,
     	              *pNearBndryClouds,
     	              *pNearAllClouds,
 	                  vNearGrndGrdIdxs,
                       vNearByIdxs);
-
-    //label the node count of computed ground grids 
-    //it means the grids is in which time of node
-    for(int i = 0; i != vNearGrndGrdIdxs.size(); ++i){
-    	if(m_vConfidenceMap[vNearGrndGrdIdxs[i]].nodeCount < 0)
-           m_vConfidenceMap[vNearGrndGrdIdxs[i]].nodeCount = m_iNodeTimes;
-    }
 
 
     //compute distance term
@@ -830,20 +844,19 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 	                               m_oGMer.m_oFeatureMap,
 	                               m_oGMer.m_vRobotSearchMask,
 	                               oCurrRobotPos);
+	
+    //label the node count of computed ground grids 
+    //it means the grids is in which time of node
+    for(int i = 0; i !=vNearByIdxs.size(); ++i){
+    	if(m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount < 0)
+           m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount = m_iNodeTimes;
+    }
 
     //extract point clouds with different labels, respectively
     DevidePointClouds(*pNearGrndClouds,
     	              *pNearBndryClouds,
 	                  vNearGrndGrdIdxs,
                       vNearByIdxs);
-
-    //label the node count of computed ground grids 
-    //it means the grids is in which time of node
-    for(int i = 0; i != vNearGrndGrdIdxs.size(); ++i){
-    	if(m_vConfidenceMap[vNearGrndGrdIdxs[i]].nodeCount < 0)
-           m_vConfidenceMap[vNearGrndGrdIdxs[i]].nodeCount = m_iNodeTimes;
-    }
-
 
     //compute distance term
     m_oCnfdnSolver.DistanceTerm(m_vConfidenceMap,

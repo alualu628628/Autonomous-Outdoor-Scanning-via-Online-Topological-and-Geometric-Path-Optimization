@@ -18,7 +18,7 @@
   <arg name="mapmaxz" default="7.0" />
   <arg name="mapresolution" default="0.2" />
   <arg name="mapframeid" default="odom" />
-  <arg name="robotlocalr" default="10.0"/>
+  <arg name="robotlocalr" default="8.0"/>
   <arg name="nodemini_rate" default="0.5" />
 
 

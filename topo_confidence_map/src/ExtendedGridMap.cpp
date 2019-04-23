@@ -208,6 +208,90 @@ MapIndex ExtendedGM::PointoAllTypeIdx(const pcl::PointXYZ & oPoint,
 
 }
 
+
+/*************************************************
+Function: OneDIdxtoPoint
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+privare node
+flag of generating output file
+original frame value
+Output: none
+Return: none
+Others: the HandlePointClouds is the kernel function
+*************************************************/
+void  ExtendedGM::OneDIdxtoPoint(pcl::PointXYZ & oPoint,
+    	                          const int & iQueryIdx,
+    	          const grid_map::GridMap & oFeatureMap){
+
+	grid_map::Index oGridIdx;
+	ExtendedGM::OneDtoTwoDIdx(oGridIdx, iQueryIdx);
+
+	//find the 1d and 2d index
+	grid_map::Position oGridPos;
+	oFeatureMap.getPosition(oGridIdx, oGridPos);
+
+	oPoint.x = oGridPos(0);
+	oPoint.y = oGridPos(1);
+
+}
+//reload a grid_map::Position type point output
+void  ExtendedGM::OneDIdxtoPoint(grid_map::Position & oPointPos,
+    	                                  const int & iQueryIdx,
+    	                  const grid_map::GridMap & oFeatureMap){
+
+	grid_map::Index oGridIdx;
+	ExtendedGM::OneDtoTwoDIdx(oGridIdx, iQueryIdx);
+
+	//find the 1d and 2d index
+	oFeatureMap.getPosition(oGridIdx, oPointPos);
+
+}
+
+
+/*************************************************
+Function: TwoDIdxtoPoint
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+privare node
+flag of generating output file
+original frame value
+Output: none
+Return: none
+Others: the HandlePointClouds is the kernel function
+*************************************************/
+
+void ExtendedGM::TwoDIdxtoPoint(pcl::PointXYZ & oPoint,
+    	                       const grid_map::Index & oGridIdx,
+		                       const grid_map::GridMap & oFeatureMap){
+
+	//find the 1d and 2d index
+	grid_map::Position oGridPos;
+	oFeatureMap.getPosition(oGridIdx, oGridPos);
+
+	//get position in pcl type
+	oPoint.x = oGridIdx(0);
+	oPoint.y = oGridIdx(1);
+
+}
+//reload a grid_map::Position type output
+void ExtendedGM::TwoDIdxtoPoint(grid_map::Position & oPointPos,
+    	                       const grid_map::Index & oGridIdx,
+		                       const grid_map::GridMap & oFeatureMap){
+
+	//get the position from map
+	oFeatureMap.getPosition(oGridIdx, oPointPos);
+
+}
+
 /*************************************************
 Function: TopologyMap
 Description: constrcution function for TopologyMap class

@@ -52,6 +52,22 @@ public:
 	static MapIndex PointoAllTypeIdx(const pcl::PointXYZ & oPoint,
 		                             const grid_map::GridMap & oFeatureMap);
 
+    //transform 1D grid index to point position
+    static void OneDIdxtoPoint(pcl::PointXYZ & oPoint,
+    	                       const int & iQueryIdx,
+		                       const grid_map::GridMap & oFeatureMap);
+    static void OneDIdxtoPoint(grid_map::Position & oPointPos,
+    	                       const int & iQueryIdx,
+		                       const grid_map::GridMap & oFeatureMap);
+
+    //transform 2D grid index to point position
+    static void TwoDIdxtoPoint(pcl::PointXYZ & oPoint,
+    	                       const grid_map::Index & oGridIdx,
+		                       const grid_map::GridMap & oFeatureMap);
+    static void TwoDIdxtoPoint(grid_map::Position & oPointPos,
+    	                       const grid_map::Index & oGridIdx,
+		                       const grid_map::GridMap & oFeatureMap);
+
 	//transform 2D index to 1D index
 	static int TwotoOneDIdx(const grid_map::Index & oIndex);
 	static int TwotoOneDIdx(const int & iIndexX, 

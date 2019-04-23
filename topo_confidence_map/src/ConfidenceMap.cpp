@@ -1150,9 +1150,44 @@ Return: none
 Others: point with label 2 is queried and changed one by one during implementing function
         point with label 0 will becomes point with label 2 after implementing function, this is to prepare next computing
 *************************************************/
-std::vector<int> Confidence::NonMinimumSuppression(const std::vector<ConfidenceValue> & vConfidenceMap,
-								                                     const ExtendedGM & oExtendGridMap,
-	                                                                         const int & iCurrNodeTime){
+inline bool Confidence::CheckIsNewScannedGrid(const int & iCurrNodeTime, 
+	                                          const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                          const int & iQueryIdx){
+    
+    //it should be a ground grid at first
+	if(vConfidenceMap[iQueryIdx].label != 2)
+		return false;
+
+    //it then should be a reachable groud grid
+	if(vConfidenceMap[iQueryIdx].travelable != 1)
+		return false;
+
+	//it also should be a new scanned grid (in new scaning trip)
+	if(vConfidenceMap[iQueryIdx].nodeCount != iCurrNodeTime)
+		return false;
+
+    return true;
+
+}
+
+/*************************************************
+Function: RegionGrow
+Description: this function is to find the reachable grid based on current robot location
+Calls: none
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: vNewScannedGrids - the neighboring grid of the current robot location
+Output: the reachable label of grid map. The grid labelled as 1 is reachable grid 
+Return: none
+Others: point with label 2 is queried and changed one by one during implementing function
+        point with label 0 will becomes point with label 2 after implementing function, this is to prepare next computing
+*************************************************/
+void Confidence::FindLocalMinimum(std::vector<int> & vNodeIdxs,
+	                              std::vector<pcl::PointXYZ> & vNodeClouds,
+	                              const std::vector<ConfidenceValue> & vConfidenceMap,
+								  const ExtendedGM & oExtendGridMap,
+	                              const int & iCurrNodeTime){
 
 	//define candidate variables
 	std::vector<int> vMinCandidates;
@@ -1161,20 +1196,18 @@ std::vector<int> Confidence::NonMinimumSuppression(const std::vector<ConfidenceV
 	//search each grid to construct a candidate node extraction region
 	for (int i = 0; i != vConfidenceMap.size(); ++i) {
 			//if it is a reachable ground grid (some initial reachable grids are not the ground grids)
-			if(vConfidenceMap[i].travelable == 1 && vConfidenceMap[i].label == 2){
-				//if it has not been computed (this grid is new in current trip)
-			    if (vConfidenceMap[i].nodeCount == iCurrNodeTime) {
-				    //if it is small
-				    if (vConfidenceMap[i].totalValue < m_fMinNodeThr){
-		                //get this grid into candidate vector
-				        vMinCandidates.push_back(i);
-			        }//end if vConfidenceMap[i].totalValue < m_fMinThreshold
-			    }//end if !vConfidenceMap[i].nodeCount
-		    }//end if vConfidenceMap[i].travelable = 1
+
+		if(CheckIsNewScannedGrid(iCurrNodeTime, vConfidenceMap, i)){
+
+            //if it is small
+			if (vConfidenceMap[i].totalValue < m_fMinNodeThr){
+		        //get this grid into candidate vector
+				vMinCandidates.push_back(i);
+			}//end if vConfidenceMap[i].totalValue < m_fMinThreshold
+
+		}//end CheckIsNewScannedGrid(iCurrNodeTime, vConfidenceMap, i)
 
 	}//end for i
-	
-std::cout<<" vMinCandidates.size(): "<< vMinCandidates.size()<<std::endl;
 
 	//Traversal each candidate grid
 	for (int i = 0; i != vMinCandidates.size(); ++i) {
@@ -1192,7 +1225,7 @@ std::cout<<" vMinCandidates.size(): "<< vMinCandidates.size()<<std::endl;
 			//search each neighboring grid
 			for (int j = 0; j != vNeighborGrids.size(); ++j) {
 				//the contrastive grids must be synchronous
-				if(vConfidenceMap[vNeighborGrids[j]].nodeCount == iCurrNodeTime){
+				if(CheckIsNewScannedGrid(iCurrNodeTime, vConfidenceMap, vNeighborGrids[j])){
 					
 				   //do not compare with itself(query grid)
 				   if (iCurIdx != vNeighborGrids[j]) {
@@ -1203,7 +1236,7 @@ std::cout<<" vMinCandidates.size(): "<< vMinCandidates.size()<<std::endl;
 					       vMinCandidStatus[iCurIdx] = false;
 			       }//if != vNeighborGrids[j]
 
-				}//end if(vConfidenceMap[iCurIdx].travelable == 1)
+				}//end CheckIsNewScannedGrid(iCurrNodeTime, vConfidenceMap, vNeighborGrids[j])
 
 			}//end for j
 
@@ -1212,17 +1245,23 @@ std::cout<<" vMinCandidates.size(): "<< vMinCandidates.size()<<std::endl;
 	}//end i != vConfidenceMap.size()
 	
 	//define output
-	std::vector<int> vNodeIdx;
-    //assignment
+	vNodeIdxs.clear();
+    vNodeClouds.clear();
+
+    //assign to each candidate grid
 	for (int i = 0; i != vMinCandidates.size(); ++i){
-		if (vMinCandidStatus[vMinCandidates[i]])
-			vNodeIdx.push_back(vMinCandidates[i]);
-	}
+        //it is the local minimum value
+		if (vMinCandidStatus[vMinCandidates[i]]){
+            //get grid index
+			vNodeIdxs.push_back(vMinCandidates[i]);
+		    //get corresponding ground point
+			pcl::PointXYZ oGridPoint;
+			ExtendedGM::OneDIdxtoPoint(oGridPoint, vMinCandidates[i], oExtendGridMap.m_oFeatureMap);
 
-
-    std::cout<<" vNodeIdx.size(): "<< vNodeIdx.size()<<std::endl;
-
-	return vNodeIdx;
+            vNodeClouds.push_back(oGridPoint);
+		
+        }//end if
+	}//end for
 
 }
 

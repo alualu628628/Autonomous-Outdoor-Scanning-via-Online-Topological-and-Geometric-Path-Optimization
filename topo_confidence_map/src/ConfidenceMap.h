@@ -239,10 +239,17 @@ public:
 	                    const std::vector<int> & vNewScannedGrids,
 							    const ExtendedGM & oExtendGridMap);
 
+    //check whether the grid is a newest scanned travelable ground grid
+	bool CheckIsNewScannedGrid(const int & iCurrNodeTime, 
+	                           const std::vector<ConfidenceValue> & vConfidenceMap,
+	                           const int & iQueryIdx);
+
 	//non-minimum suppression
-	std::vector<int> NonMinimumSuppression(const std::vector<ConfidenceValue> & vConfidenceMap,
-								                             const ExtendedGM & oExtendGridMap,
-	                                                                 const int & iCurrNodeTime);
+    void FindLocalMinimum(std::vector<int> & vNodeIdxs,
+	                      std::vector<pcl::PointXYZ> & vNodeClouds,
+	                      const std::vector<ConfidenceValue> & vConfidenceMap,
+						  const ExtendedGM & oExtendGridMap,
+	                      const int & iCurrNodeTime);
 
 	//normalization of features
 	static void Normalization(std::vector<float> & vFeatures);

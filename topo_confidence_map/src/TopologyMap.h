@@ -14,7 +14,8 @@
 #include "pcl_ros/transforms.h"  
 #include <pcl_conversions/pcl_conversions.h>
 
-#include "ConfidenceMap.h"
+//#include "ConfidenceMap.h"
+#include "OP.h"
 
 //octomap related
 //#include <octomap/octomap.h>
@@ -177,6 +178,9 @@ class TopologyMap{
 
   //the grid map initialization flag indicates whether the map has been simply established
   bool m_bGridMapReadyFlag;
+
+  //a node object
+  OP m_oOPSolver;
   
 };
 
