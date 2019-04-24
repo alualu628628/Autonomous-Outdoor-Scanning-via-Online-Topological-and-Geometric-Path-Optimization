@@ -16,7 +16,7 @@ SendHuskyGoal::SendHuskyGoal(ros::NodeHandle & node,
                              ros::NodeHandle & nodeHandle):m_oAC("move_base", true){
 
     //parameters
-	nodeHandle.param("robotodom_topic", m_sTrajTopic, std::string("/odometry/filtered"));
+	//nodeHandle.param("robotodom_topic", m_sTrajTopic, std::string("/odometry/filtered"));
 
 	nodeHandle.param("goalodom_topic", m_sGoalTopic, std::string("/goal_odom"));
 
@@ -32,7 +32,7 @@ SendHuskyGoal::SendHuskyGoal(ros::NodeHandle & node,
     oGoal.target_pose.header.frame_id = "odom";
 
     //subscribe trajectory topic
-    m_oTrajSuber = nodeHandle.subscribe(m_sTrajTopic, 1, &SendHuskyGoal::HandleTrajectory, this);
+    //m_oTrajSuber = nodeHandle.subscribe(m_sTrajTopic, 1, &SendHuskyGoal::HandleTrajectory, this);
     //subscribe action goal topic
     m_oGoalSuber = nodeHandle.subscribe(m_sGoalTopic, 1, &SendHuskyGoal::HandleGoalOdom, this);
 
@@ -116,12 +116,12 @@ void SendHuskyGoal::HandleGoalOdom(const nav_msgs::Odometry & oInputGoalOdom){
 
         m_oAC.sendGoal(oGoal);
 
-        m_oAC.waitForResult();
+        //m_oAC.waitForResult();
    
-        if(m_oAC.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-            ROS_INFO("Hooray, the base moved 1 meter forward");
-        else
-            ROS_INFO("The base failed to move forward 1 meter for some reason");
+        //if(m_oAC.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+        //    ROS_INFO("Hooray, the base moved 1 meter forward");
+        //else
+        //    ROS_INFO("The base failed to move forward 1 meter for some reason");
 
     }//end if
 

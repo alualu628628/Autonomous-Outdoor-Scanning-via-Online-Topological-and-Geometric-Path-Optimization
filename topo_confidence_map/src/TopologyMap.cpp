@@ -119,11 +119,17 @@ bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
 
 	//m_iMapFreshNum = int(m_dOdomRawHz / m_dOctomapFreshHz); 
 	//ROS_INFO("Set updating octomap times as [%d]",m_iMapFreshNum);
+    double dPastViewDuration;
+	nodeHandle.param("pastview_duration", dPastViewDuration, 5.0);
+	m_iPastOdomNum = int(dPastViewDuration * m_dSamplingHz);
+	if(m_iPastOdomNum <= 0)
+	   m_iPastOdomNum = 1;//at least one point (in this case, this point will be front and back point of quene)
 
-	nodeHandle.param("pastview_interval", m_dPastViewIntvl, 5.0);
-	m_iIntervalNum = int(m_dPastViewIntvl * m_dSamplingHz);
-	if(m_iIntervalNum <= 0)
-	   m_iIntervalNum = 1;//at least one point (in this case, this point will be front and back point of quene)
+	double dShockDuration;
+	nodeHandle.param("shock_duration", dShockDuration, 8.0);
+	m_iShockNum = int(dShockDuration * m_dSamplingHz);
+	if(m_iShockNum <= 0)
+	   m_iShockNum = 100;//at least one point (in this case, this point will be front and back point of quene)
 
 
     double dViewZOffset;
@@ -189,7 +195,7 @@ bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
 	m_oGMer.m_vGrowSearchMask = m_oGMer.GenerateCircleMask(dRegionGrowR);
 
 	m_oGMer.m_vBoundDefendMask.clear();
-    m_oGMer.m_vBoundDefendMask = m_oGMer.GenerateCircleMask(1.0*dRegionGrowR);
+    m_oGMer.m_vBoundDefendMask = m_oGMer.GenerateCircleMask(1.5*dRegionGrowR);
     
 	return true;
 
@@ -493,34 +499,38 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		oOdomPoint.x = oTrajectory.pose.pose.position.x;//z in loam is x
 		oOdomPoint.y = oTrajectory.pose.pose.position.y;//x in loam is y
 		oOdomPoint.z = oTrajectory.pose.pose.position.z;//y in loam is z
-		m_vOdomCloud.push(oOdomPoint);
+		m_vOdomViews.push(oOdomPoint);
+		oOdomPoint.z = 0.0;
+		m_vOdomShocks.push(oOdomPoint);
 
 		//make the sequence size smaller than a value
-		//m_vOdomCloud in fact is a history odometry within a given interval
+		//m_vOdomViews in fact is a history odometry within a given interval
 		//it only report the current robot position (back) and past (given time before) position (front) 
-		if (m_vOdomCloud.size() > m_iIntervalNum)
-			m_vOdomCloud.pop();
+		if (m_vOdomViews.size() > m_iPastOdomNum)
+			m_vOdomViews.pop();
+		if (m_vOdomShocks.size() > m_iShockNum)
+			m_vOdomShocks.pop();
 
 		//compute the confidence map on the constructed map with surronding point clouds
 		if (m_bGridMapReadyFlag){
 			//frequency of visibility calculation should be low
-			if(m_iComputedFrame%3){
+			if(m_iComputedFrame % 3){
 
 				//compute the distance and boundary feature
-				ComputeConfidence(m_vOdomCloud.back());
+				ComputeConfidence(m_vOdomViews.back());
 		    }else{
 
 		    	//compute all features
-		    	ComputeConfidence(m_vOdomCloud.back(), m_vOdomCloud.front());
+		    	ComputeConfidence(m_vOdomViews.back(), m_vOdomViews.front());
 			}//end else
 		}//end if m_bGridMapReadyFlag
-
-		
-		oOdomPoint.z = 0.0;
         
         //if the robot is close to the target or the robot is standing in place in a long time
 		//if(fRemainDis < 0.5 || fHistoryDis < 0.005){
-        if(m_oOPSolver.NearGoal(oOdomPoint, m_iComputedFrame,0.5,10)){
+        if(m_oOPSolver.NearGoal(m_vOdomShocks, 
+        	                    m_iShockNum,
+        	                    m_iComputedFrame, 2.0, 10)){
+
 			//get the new nodes
 			std::vector<int> vNewNodeIdx;
 			std::vector<pcl::PointXYZ> vNodeClouds;
@@ -528,15 +538,16 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 	                                        m_vConfidenceMap, m_oGMer, m_iNodeTimes);
 			//get new nodes
 			m_oOPSolver.GetNewNodeSuppression(vNewNodeIdx, vNodeClouds, 3.0);
-
-		    m_oOPSolver.GTR(oOdomPoint,m_vConfidenceMap);
+            
+		    m_oOPSolver.GTR(m_vOdomViews.back(),m_vConfidenceMap);
 
 		    
 		    std::vector<pcl::PointXYZ> vUnvisitedNodes;
 		    m_oOPSolver.OutputUnvisitedNodes(vUnvisitedNodes);
 
-		   
-		    
+            //clear old data of last trip
+		    m_vOdomShocks = std::queue<pcl::PointXYZ>();
+
 		    std::cout<< "remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
             
             //begin the next trip
