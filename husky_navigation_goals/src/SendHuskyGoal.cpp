@@ -29,7 +29,7 @@ SendHuskyGoal::SendHuskyGoal(ros::NodeHandle & node,
 	oGoal.target_pose.pose.position.x = 0.0;
     oGoal.target_pose.pose.position.y = 0.0;
     oGoal.target_pose.pose.position.z = 0.0;
-    oGoal.target_pose.header.frame_id = "base_link";
+    oGoal.target_pose.header.frame_id = "odom";
 
     //subscribe trajectory topic
     m_oTrajSuber = nodeHandle.subscribe(m_sTrajTopic, 1, &SendHuskyGoal::HandleTrajectory, this);
