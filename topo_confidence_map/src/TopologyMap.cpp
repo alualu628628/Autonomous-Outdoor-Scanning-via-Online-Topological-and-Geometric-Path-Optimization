@@ -22,7 +22,7 @@ Others: the HandlePointClouds is the kernel function
 *************************************************/
 TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     ros::NodeHandle & nodeHandle):
-                         m_oCnfdnSolver(12.0,4.2,5),
+                         m_oCnfdnSolver(12.0,4.2,5,0.6),
 	                     m_pBoundCloud(new pcl::PointCloud<pcl::PointXYZ>),
 	                     m_pObstacleCloud(new pcl::PointCloud<pcl::PointXYZ>),
 	                     m_iTrajFrameNum(0),
@@ -30,6 +30,7 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_iBoundFrames(0),
 	                     m_iObstacleFrames(0),
 	                     m_iComputedFrame(0),
+	                     m_iNodeTimes(0),
 	                     m_iOdomSampingNum(25),
 	                     m_bGridMapReadyFlag(false) {
 
@@ -51,6 +52,8 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	m_oGridMapPublisher = nodeHandle.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
 
 	m_oCloudPublisher = nodeHandle.advertise<sensor_msgs::PointCloud2>("test_clouds", 1, true);
+
+	m_oGoalPublisher = nodeHandle.advertise<nav_msgs::Odometry>("goal_odom", 1, true);
 
 }
 
@@ -180,9 +183,14 @@ bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
 
 	//generate region grow neighborhood mask
 	//eight unicom
+	double dRegionGrowR;
+	nodeHandle.param("regiongrow_r", dRegionGrowR, 0.5);
 	m_oGMer.m_vGrowSearchMask.clear();
-	m_oGMer.m_vGrowSearchMask = m_oGMer.GenerateCircleMask(0.5);
+	m_oGMer.m_vGrowSearchMask = m_oGMer.GenerateCircleMask(dRegionGrowR);
 
+	m_oGMer.m_vBoundDefendMask.clear();
+    m_oGMer.m_vBoundDefendMask = m_oGMer.GenerateCircleMask(1.0*dRegionGrowR);
+    
 	return true;
 
 }
@@ -245,16 +253,20 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
 
     //get the neighborhood of original coordiante value and initial a rough travelable region
 	std::vector<MapIndex> vOriginalNearIdx;
-	std::vector<MapIndex> vOriginalMask = m_oGMer.GenerateCircleMask(6.0); 
+	std::vector<MapIndex> vOriginalMask = m_oGMer.GenerateCircleMask(5.0); 
 	ExtendedGM::CircleNeighborhood(vOriginalNearIdx,
 	                               m_oGMer.m_oFeatureMap,
 	                               vOriginalMask,
 	                               oRobotPos);
 
     //only assign the travelable value,which means the node will be created only on the grid that has the actual data  
-    for(int i = 0; i != vOriginalNearIdx.size(); ++i)
+    for(int i = 0; i != vOriginalNearIdx.size(); ++i){
     	m_vConfidenceMap[vOriginalNearIdx[i].iOneIdx].travelable = 1;
+    	m_vConfidenceMap[vOriginalNearIdx[i].iOneIdx].nodeCount = m_iNodeTimes;
+    }
 
+    //initial op solver
+    m_oOPSolver.Initial(oRobotPos, m_oGMer.m_oFeatureMap);
 
 	m_bGridMapReadyFlag = true;
 
@@ -503,8 +515,46 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 			}//end else
 		}//end if m_bGridMapReadyFlag
 
+		
+		oOdomPoint.z = 0.0;
+        
+        //if the robot is close to the target or the robot is standing in place in a long time
+		//if(fRemainDis < 0.5 || fHistoryDis < 0.005){
+        if(m_oOPSolver.NearGoal(oOdomPoint, m_iComputedFrame,0.5,10)){
+			//get the new nodes
+			std::vector<int> vNewNodeIdx;
+			std::vector<pcl::PointXYZ> vNodeClouds;
+			m_oCnfdnSolver.FindLocalMinimum(vNewNodeIdx, vNodeClouds,
+	                                        m_vConfidenceMap, m_oGMer, m_iNodeTimes);
+			//get new nodes
+			m_oOPSolver.GetNewNodeSuppression(vNewNodeIdx, vNodeClouds, 3.0);
 
-	}
+		    m_oOPSolver.GTR(oOdomPoint,m_vConfidenceMap);
+
+		    
+		    std::vector<pcl::PointXYZ> vUnvisitedNodes;
+		    m_oOPSolver.OutputUnvisitedNodes(vUnvisitedNodes);
+
+		   
+		    
+		    std::cout<< "remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
+            
+            //begin the next trip
+		    m_iNodeTimes++;
+		    
+		}//end if m_oOPSolver.NearGoal
+
+        //send generated goal
+		if(m_iNodeTimes > 0){
+            
+			pcl::PointXYZ oTargetPoint;
+			//get goal
+		    m_oOPSolver.OutputGoalPos(oTargetPoint);
+		    //publish goal
+            PublishGoalOdom(oTargetPoint);
+        }
+
+    }//end if (!(m_iTrajFrameNum % m_iOdomSampingNum))
 
 	//if the frame count touches the least common multiple of m_iOdomSampingNum and 
 	//if( bMapUpdateFlag && bSamplingFlag ){
@@ -619,9 +669,22 @@ void TopologyMap::HandleBoundClouds(const sensor_msgs::PointCloud2 & vBoundRosDa
 					int iPointIdx = ExtendedGM::PointoOneDIdx(vOneBCloud.points[i],m_oGMer.m_oFeatureMap);
 					//to point idx
 					m_vBoundPntMapIdx[iPointIdx].push_back(m_iBoundFrames);
-					//label grid
-					m_vConfidenceMap[iPointIdx].label = 3;
-					m_vConfidenceMap[iPointIdx].travelable = 4;
+					//if this grid has not been found as a boundary region
+					if (m_vConfidenceMap[iPointIdx].label != 3) {
+						//label as boundary grid
+					    m_vConfidenceMap[iPointIdx].label = 3;
+					    //search its neighboring region (region grow scale)
+					    std::vector<int> vNearGridIdx;
+				        ExtendedGM::CircleNeighborhood(vNearGridIdx,
+						                               m_oGMer.m_oFeatureMap, 
+											           m_oGMer.m_vBoundDefendMask,
+		                                               iPointIdx);
+
+				        //label as non-travelable region since it is dangerous for robot to close to obstacle in a distance
+                        for(int i = 0; i != vNearGridIdx.size(); ++i)
+                        	m_vConfidenceMap[vNearGridIdx[i]].travelable = 4;
+
+				    }//end if
 
 					m_iBoundFrames++;
 				}
@@ -733,6 +796,13 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
 		                           m_oGMer.m_vRobotSearchMask,
 		                           oCurrRobotPos);
 
+    //label the node count of computed ground grids 
+    //it means the grids is in which time of node
+    for(int i = 0; i !=vNearByIdxs.size(); ++i){
+    	if(m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount < 0)
+           m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount = m_iNodeTimes;
+    }
+
     //extract point clouds with different labels, respectively
     DevidePointClouds(*pNearGrndClouds,
     	              *pNearBndryClouds,
@@ -748,12 +818,6 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
 	                            *pNearGrndClouds);
 
 
-    //compute boundary term
-    m_oCnfdnSolver.BoundTerm(m_vConfidenceMap,
-                             vNearGrndGrdIdxs,
-	                         pNearGrndClouds,
-    	                     pNearBndryClouds);
-
     //in this case, robot position is based on odom frame, it need to be transfored to lidar sensor frame 
     pcl::PointXYZ oPastView;
     oPastView.x = oPastRobotPos.x;
@@ -766,6 +830,13 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
 	                                   pNearAllClouds,
 	                                 vNearGrndGrdIdxs,
 	                                        oPastView);
+
+
+    //compute boundary term
+    m_oCnfdnSolver.BoundTerm(m_vConfidenceMap,
+                             vNearGrndGrdIdxs,
+	                         pNearGrndClouds,
+    	                     pNearBndryClouds);
 
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
@@ -787,13 +858,19 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 	                               m_oGMer.m_oFeatureMap,
 	                               m_oGMer.m_vRobotSearchMask,
 	                               oCurrRobotPos);
+	
+    //label the node count of computed ground grids 
+    //it means the grids is in which time of node
+    for(int i = 0; i !=vNearByIdxs.size(); ++i){
+    	if(m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount < 0)
+           m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount = m_iNodeTimes;
+    }
 
     //extract point clouds with different labels, respectively
     DevidePointClouds(*pNearGrndClouds,
     	              *pNearBndryClouds,
 	                  vNearGrndGrdIdxs,
                       vNearByIdxs);
-
 
     //compute distance term
     m_oCnfdnSolver.DistanceTerm(m_vConfidenceMap,
@@ -836,7 +913,13 @@ Others: the HandlePointClouds is the kernel function
 void TopologyMap::PublishGridMap(){
 
     //push 
-	grid_map::Matrix& gridMapData = m_oGMer.m_oFeatureMap["elevation"];
+	grid_map::Matrix& gridMapData1 = m_oGMer.m_oFeatureMap["elevation"];
+	grid_map::Matrix& gridMapData2 = m_oGMer.m_oFeatureMap["traversability"];
+	grid_map::Matrix& gridMapData3 = m_oGMer.m_oFeatureMap["boundary"];
+	grid_map::Matrix& gridMapData4 = m_oGMer.m_oFeatureMap["observability"];
+	grid_map::Matrix& gridMapData5 = m_oGMer.m_oFeatureMap["confidence"];
+	grid_map::Matrix& gridMapData6 = m_oGMer.m_oFeatureMap["travelable"];
+	grid_map::Matrix& gridMapData7 = m_oGMer.m_oFeatureMap["label"];
 
 	//initial elevation map and center point clouds
 	for (int i = 0; i != m_oGMer.m_oFeatureMap.getSize()(0); ++i) {//i
@@ -846,18 +929,18 @@ void TopologyMap::PublishGridMap(){
 			int iGridIdx = ExtendedGM::TwotoOneDIdx(i, j);
 
 		//.travelTerm   //.boundTerm    //.visiTerm    //.qualTerm      //.totalValue //.travelable
-			//if(m_vConfidenceMap[iGridIdx].travelable == 2){
-			//   gridMapData(i, j) = 2;
-		   //}else if(m_vConfidenceMap[iGridIdx].travelable == 1){
-            //   gridMapData(i, j) = 1;
-		    //}else{
-            //   gridMapData(i, j) = 0;
-		    //}
-		    gridMapData(i, j) = m_vConfidenceMap[iGridIdx].travelable;
+		    gridMapData1(i, j) = m_vConfidenceMap[iGridIdx].nodeCount;
+		    gridMapData2(i, j) = m_vConfidenceMap[iGridIdx].travelTerm;
+		    gridMapData3(i, j) = m_vConfidenceMap[iGridIdx].boundTerm;
+		    gridMapData4(i, j) = m_vConfidenceMap[iGridIdx].visiTerm ;
+		    gridMapData5(i, j) = m_vConfidenceMap[iGridIdx].totalValue;
+		    gridMapData6(i, j) = m_vConfidenceMap[iGridIdx].travelable;
+		    gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].label;
 	
 		}//end i
 
 	}//end j
+
 
 	ros::Time oNowTime = ros::Time::now();
 
@@ -901,7 +984,36 @@ void TopologyMap::PublishPointCloud(pcl::PointCloud<pcl::PointXYZ> & vCloud){
 }
 
 
+/*************************************************
+Function: TopologyMap
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+       privare node
+       flag of generating output file
+       original frame value
+Output: none
+Return: none
+Others: the HandlePointClouds is the kernel function
+*************************************************/
 
+void TopologyMap::PublishGoalOdom(pcl::PointXYZ & oGoalPoint){
+
+        nav_msgs::Odometry oCurrGoalOdom;
+        oCurrGoalOdom.header.stamp = ros::Time::now();
+        oCurrGoalOdom.header.frame_id = "odom";
+
+        //set the position
+        oCurrGoalOdom.pose.pose.position.x = oGoalPoint.x;
+        oCurrGoalOdom.pose.pose.position.y = oGoalPoint.y;
+        oCurrGoalOdom.pose.pose.position.z = oGoalPoint.z;
+
+        m_oGoalPublisher.publish(oCurrGoalOdom);
+
+}
 
 } /* namespace */
 

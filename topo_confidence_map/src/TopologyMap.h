@@ -14,7 +14,8 @@
 #include "pcl_ros/transforms.h"  
 #include <pcl_conversions/pcl_conversions.h>
 
-#include "ConfidenceMap.h"
+//#include "ConfidenceMap.h"
+#include "OP.h"
 
 //octomap related
 //#include <octomap/octomap.h>
@@ -98,6 +99,8 @@ class TopologyMap{
   //publish point clouds
   void PublishPointCloud(pcl::PointCloud<pcl::PointXYZ> & vCloud);
 
+  void PublishGoalOdom(pcl::PointXYZ & oGoalPoint);
+
  private:
 
   //**input topic related**
@@ -123,6 +126,8 @@ class TopologyMap{
   //ros::Publisher m_oOctomapPublisher; //! Octomap publisher.
   //publishing point cloud is only for test
   ros::Publisher m_oCloudPublisher;// point cloud publisher for test
+
+  ros::Publisher m_oGoalPublisher;// goal odometry information publisher
 
   //**frenquency related**
   
@@ -155,6 +160,8 @@ class TopologyMap{
 
   unsigned int m_iObstacleFrames;
 
+  unsigned int m_iNodeTimes;//the times of node to be visited
+
   //**point cloud related**
   //the positions of robot
   std::queue<pcl::PointXYZ> m_vOdomCloud;//I dont think it is necessary to use a circle vector
@@ -175,6 +182,9 @@ class TopologyMap{
 
   //the grid map initialization flag indicates whether the map has been simply established
   bool m_bGridMapReadyFlag;
+
+  //a node object
+  OP m_oOPSolver;
   
 };
 

@@ -1,4 +1,4 @@
-#include "ConfidenceMap.h"
+ #include "ConfidenceMap.h"
 
 namespace topology_map {
 
@@ -16,16 +16,23 @@ Others: none
 *************************************************/
 Confidence::Confidence(float f_fSigma,
 	                   float f_fGHPRParam,
-	                  float f_fVisTermThr):
+	                  float f_fVisTermThr,
+	                  float f_fMinNodeThr):
 	                     m_fWeightDis(0.7),
                          m_fWeightVis(0.3),
 	                      m_fDensityR(0.3),
                          m_fLenWeight(0.6),
                        m_fBoundWeight(0.4){
 
+    //set sigma value
 	SetSigmaValue(f_fSigma);
 
-	SetVisParas(f_fGHPRParam, f_fVisTermThr);
+    //set visibility parameters
+	SetVisParas(f_fGHPRParam, 
+		        f_fVisTermThr);
+
+    //set node generation parameter
+	SetNodeGenParas(f_fMinNodeThr);
 
 	//srand((unsigned)time(NULL));
 
@@ -90,6 +97,25 @@ void Confidence::SetVisParas(const float & f_fGHPRParam,
 
 }
 
+/*************************************************
+Function: SetVisParas
+Description: set value to the parameters related to visibility term
+Calls: none
+Called By: Confidence
+Table Accessed: none
+Table Updated: none
+Input: f_fGHPRParam - a parameter of GHPR algorithm
+      f_fVisTermThr - a threshold of visibility value
+Output: m_fGHPRParam
+        m_fVisTermThr
+Return: none
+Others: none
+*************************************************/
+void Confidence::SetNodeGenParas(const float & f_fMinNodeThr){
+
+	m_fMinNodeThr = f_fMinNodeThr;
+
+}
 
 /*************************************************
 Function: VectorInnerProduct
@@ -615,8 +641,9 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	if (pBoundCloud->points.size()) {
 
         //define a threshold indicating where is dangerous for robot to close  
-		float fNoTouchThr = (m_fSigma - 0.5) / m_fSigma;
+		//float fNoTouchThr = (m_fSigma - 0.5) / m_fSigma;
 
+        //set a kdtree for boundary point clouds
 		pcl::KdTreeFLANN<pcl::PointXYZ> oBoundTree;
 		oBoundTree.setInputCloud(pBoundCloud);
 
@@ -638,12 +665,16 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 				vConfidenceMap[vNearGroundIdxs[i]].boundTerm = fBoundvalue;
 
             //also affect the travelable when the robot is too close to wall
-			if (vConfidenceMap[vNearGroundIdxs[i]].boundTerm > fNoTouchThr)
-                vConfidenceMap[vNearGroundIdxs[i]].travelable = 4;
+			//if (vConfidenceMap[vNearGroundIdxs[i]].boundTerm > fNoTouchThr)
+            //    vConfidenceMap[vNearGroundIdxs[i]].travelable = 4;
+
+            //update the total value
+            //thereby the boundterm will be calculated at the end of the other two terms 
+            ComputeTotalCoffidence(vConfidenceMap,vNearGroundIdxs[i]);
 
 		}//end i 
 
-	}
+	}//end if
 
 }
 
@@ -1029,6 +1060,7 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 		}
 	}
 
+    
 	//record computed grid (record which grid has been computed with a status value)
 	std::vector<int> vComputedGridIdx;
 
@@ -1037,8 +1069,8 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 
 		//current seed index
 	    int iCurIdx;
-		//inital flag as 3
-		int bTravelableFlag = 3;
+		//inital result as a non-touchable grid
+		int iGrowRes = 0;
 		
 		//seeds
 	    std::vector<int> vSeeds;  
@@ -1076,18 +1108,17 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 					if (vConfidenceMap[vNearGridIdx[i]].travelable == 2)
 						vSeeds.push_back(vNearGridIdx[i]);
 
-					//if the near grid is reachable so that the query ground grids must be also reachable
+					//the near grid is reachable thereby the query ground grids must be reachable too
 					if (vConfidenceMap[vNearGridIdx[i]].travelable == 1)
-						bTravelableFlag = 2;
+						iGrowRes = 1;
 				}//end for int i = 0;i!=vNearGridIdx.size();++i
 				 
 		    }//end while
 
 		    //assignment as a touchable grid or ioslated grids
-			for(int i = 0; i != vSeedHistory.size(); ++i){
-			        vConfidenceMap[vSeedHistory[i]].travelable -= bTravelableFlag;
-			}
-
+			for(int i = 0; i != vSeedHistory.size(); ++i)
+			    vConfidenceMap[vSeedHistory[i]].travelable = iGrowRes;
+			
 	    }//end if vConfidenceMap[vNearGridIdx[i]].travelable == 2
 	
 	}//end for
@@ -1097,12 +1128,142 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 	//because an unreachable grid may be reachable if the robot moves close
 	for (int i = 0; i != vComputedGridIdx.size(); ++i) {
 	    //prepare for further growing
-		if(vConfidenceMap[vComputedGridIdx[i]].travelable == 0)
+		if(!vConfidenceMap[vComputedGridIdx[i]].travelable)
 		   vConfidenceMap[vComputedGridIdx[i]].travelable = 2;
 	}
+	
 
 }
 
+
+
+/*************************************************
+Function: RegionGrow
+Description: this function is to find the reachable grid based on current robot location
+Calls: none
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: vNewScannedGrids - the neighboring grid of the current robot location
+Output: the reachable label of grid map. The grid labelled as 1 is reachable grid 
+Return: none
+Others: point with label 2 is queried and changed one by one during implementing function
+        point with label 0 will becomes point with label 2 after implementing function, this is to prepare next computing
+*************************************************/
+inline bool Confidence::CheckIsNewScannedGrid(const int & iCurrNodeTime, 
+	                                          const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                          const int & iQueryIdx){
+    
+    //it should be a ground grid at first
+	if(vConfidenceMap[iQueryIdx].label != 2)
+		return false;
+
+    //it then should be a reachable groud grid
+	if(vConfidenceMap[iQueryIdx].travelable != 1)
+		return false;
+
+	//it also should be a new scanned grid (in new scaning trip)
+	if(vConfidenceMap[iQueryIdx].nodeCount != iCurrNodeTime)
+		return false;
+
+    return true;
+
+}
+
+/*************************************************
+Function: RegionGrow
+Description: this function is to find the reachable grid based on current robot location
+Calls: none
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: vNewScannedGrids - the neighboring grid of the current robot location
+Output: the reachable label of grid map. The grid labelled as 1 is reachable grid 
+Return: none
+Others: point with label 2 is queried and changed one by one during implementing function
+        point with label 0 will becomes point with label 2 after implementing function, this is to prepare next computing
+*************************************************/
+void Confidence::FindLocalMinimum(std::vector<int> & vNodeIdxs,
+	                              std::vector<pcl::PointXYZ> & vNodeClouds,
+	                              const std::vector<ConfidenceValue> & vConfidenceMap,
+								  const ExtendedGM & oExtendGridMap,
+	                              const int & iCurrNodeTime){
+
+	//define candidate variables
+	std::vector<int> vMinCandidates;
+	std::vector<bool> vMinCandidStatus(vConfidenceMap.size(),true);
+
+	//search each grid to construct a candidate node extraction region
+	for (int i = 0; i != vConfidenceMap.size(); ++i) {
+			//if it is a reachable ground grid (some initial reachable grids are not the ground grids)
+
+		if(CheckIsNewScannedGrid(iCurrNodeTime, vConfidenceMap, i)){
+
+            //if it is small
+			if (vConfidenceMap[i].totalValue < m_fMinNodeThr){
+		        //get this grid into candidate vector
+				vMinCandidates.push_back(i);
+			}//end if vConfidenceMap[i].totalValue < m_fMinThreshold
+
+		}//end CheckIsNewScannedGrid(iCurrNodeTime, vConfidenceMap, i)
+
+	}//end for i
+
+	//Traversal each candidate grid
+	for (int i = 0; i != vMinCandidates.size(); ++i) {
+		
+		int iCurIdx = vMinCandidates[i];
+		//if the candidate grid has not been removed
+		if (vMinCandidStatus[iCurIdx]) {
+			//find neighboring grid
+			std::vector<int> vNeighborGrids;
+			ExtendedGM::CircleNeighborhood(vNeighborGrids,
+						                   oExtendGridMap.m_oFeatureMap, 
+										   oExtendGridMap.m_vNodeMadeMask,
+		                                   iCurIdx);
+			
+			//search each neighboring grid
+			for (int j = 0; j != vNeighborGrids.size(); ++j) {
+				//the contrastive grids must be synchronous
+				if(CheckIsNewScannedGrid(iCurrNodeTime, vConfidenceMap, vNeighborGrids[j])){
+					
+				   //do not compare with itself(query grid)
+				   if (iCurIdx != vNeighborGrids[j]) {
+					   //compare the total value
+					   if (vConfidenceMap[iCurIdx].totalValue <= vConfidenceMap[vNeighborGrids[j]].totalValue)
+					       vMinCandidStatus[vNeighborGrids[j]] = false;
+				       else 
+					       vMinCandidStatus[iCurIdx] = false;
+			       }//if != vNeighborGrids[j]
+
+				}//end CheckIsNewScannedGrid(iCurrNodeTime, vConfidenceMap, vNeighborGrids[j])
+
+			}//end for j
+
+		}//end if (vMinCandidates[vMinCandidates[i]])
+
+	}//end i != vConfidenceMap.size()
+	
+	//define output
+	vNodeIdxs.clear();
+    vNodeClouds.clear();
+
+    //assign to each candidate grid
+	for (int i = 0; i != vMinCandidates.size(); ++i){
+        //it is the local minimum value
+		if (vMinCandidStatus[vMinCandidates[i]]){
+            //get grid index
+			vNodeIdxs.push_back(vMinCandidates[i]);
+		    //get corresponding ground point
+			pcl::PointXYZ oGridPoint;
+			ExtendedGM::OneDIdxtoPoint(oGridPoint, vMinCandidates[i], oExtendGridMap.m_oFeatureMap);
+
+            vNodeClouds.push_back(oGridPoint);
+		
+        }//end if
+	}//end for
+
+}
 
 /*************************************************
 Function: Normalization

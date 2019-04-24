@@ -81,7 +81,7 @@ struct ConfidenceValue{
 	//quality computed flag
 	bool qualFlag;
 	//minimum computed flag
-	bool nodeGenFlag;
+	short nodeCount;
 	//center point of a map grid 
 	pcl::PointXYZ oCenterPoint;
 
@@ -92,9 +92,10 @@ struct ConfidenceValue{
 		boundTerm = 1.0;//start with 1, which means no need to go there
 		visiTerm = 0.0;
 		qualTerm = 0.0;
+		totalValue = 0.0;//initial each grid as not need to move there
 		label = 0;//start with nothing
 		travelable = -1;//start with unknown
-		nodeGenFlag = false;	//start with undone	
+		nodeCount = -1;	//start with undone	
 		qualFlag = true;//start with undone
 		oCenterPoint.x = 0.0;//start from 0, which will be re-define in InitializeGridMap
 		oCenterPoint.y = 0.0;//start from 0
@@ -118,7 +119,8 @@ public:
 	//constructor
 	Confidence(float f_fSigma,
 		       float f_fGHPRParam = 4.2,
-		       float f_fVisTermThr = 5);
+		       float f_fVisTermThr = 5,
+		       float f_fMinNodeThr = 0.2);
 	
 	//destructor
 	~Confidence();
@@ -128,6 +130,9 @@ public:
 
 	//set visibility term related paramters
 	void SetVisParas(const float & f_fGHPRParam, const float & f_fVisTermThr);
+
+
+	void SetNodeGenParas(const float & f_fMinNodeThr);
 
 
 	//*******************Mathematical Formula Part********************
@@ -234,6 +239,18 @@ public:
 	                    const std::vector<int> & vNewScannedGrids,
 							    const ExtendedGM & oExtendGridMap);
 
+    //check whether the grid is a newest scanned travelable ground grid
+	bool CheckIsNewScannedGrid(const int & iCurrNodeTime, 
+	                           const std::vector<ConfidenceValue> & vConfidenceMap,
+	                           const int & iQueryIdx);
+
+	//non-minimum suppression
+    void FindLocalMinimum(std::vector<int> & vNodeIdxs,
+	                      std::vector<pcl::PointXYZ> & vNodeClouds,
+	                      const std::vector<ConfidenceValue> & vConfidenceMap,
+						  const ExtendedGM & oExtendGridMap,
+	                      const int & iCurrNodeTime);
+
 	//normalization of features
 	static void Normalization(std::vector<float> & vFeatures);
 
@@ -260,6 +277,9 @@ private:
 
 	//the searched radius of a query point in density estimation
 	const float m_fDensityR;
+
+    //node generation
+	float m_fMinNodeThr;
 
 };
 
