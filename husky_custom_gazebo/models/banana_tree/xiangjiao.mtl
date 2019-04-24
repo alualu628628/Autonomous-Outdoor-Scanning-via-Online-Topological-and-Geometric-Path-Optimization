@@ -1,0 +1,114 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# 创建的文件:24.04.2019 13:47:40
+
+newmtl ai_FrondStemSG
+	Ns 30.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0824 0.5020 0.0000
+	Kd 0.0824 0.5020 0.0000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka maps\FrondStem.jpg
+	map_Kd maps\FrondStem.jpg
+
+newmtl ai_BananaStalkSG
+	Ns 30.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.1725 0.4941 0.0000
+	Kd 0.1725 0.4941 0.0000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka maps\BananaStalk.jpg
+	map_Kd maps\BananaStalk.jpg
+
+newmtl ai_StemCapSG
+	Ns 30.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.4902 0.7176 0.3804
+	Kd 0.4902 0.7176 0.3804
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka maps\StemCap_01.jpg
+	map_Kd maps\StemCap_01.jpg
+
+newmtl ai_BananaFlowerSG
+	Ns 30.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.9020 0.6784 0.0000
+	Kd 0.9020 0.6784 0.0000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka maps\BananaFlower.jpg
+	map_Kd maps\BananaFlower.jpg
+
+newmtl ai_ClippedFrond_03SG
+	Ns 30.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.0000 0.0000 0.0000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka maps\ClippedFrond_03.jpg
+	map_Kd maps\ClippedFrond_03.jpg
+
+newmtl ai_BananaFrond_DeadSG
+	Ns 30.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.6196 0.4471 0.2627
+	Kd 0.6196 0.4471 0.2627
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka maps\BananaFrond_Dead.jpg
+	map_Kd maps\BananaFrond_Dead.jpg
+
+newmtl aiStandard2SG
+	Ns 30.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.2471 0.6784 0.1451
+	Kd 0.2471 0.6784 0.1451
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka maps\BananaFrond_TwoSided3.jpg
+	map_Kd maps\BananaFrond_TwoSided3.jpg
+
+newmtl aiStandard2SGdgd
+	Ns 30.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.2471 0.6784 0.1451
+	Kd 0.2471 0.6784 0.1451
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka maps\BananaFrond_TwoSided4.jpg
+	map_Kd maps\BananaFrond_TwoSided4.jpg
