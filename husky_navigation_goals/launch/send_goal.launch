@@ -7,7 +7,7 @@
   <!-- Launch the husky goal package -->
   <node pkg="husky_navigation_goals" type="husky_navigation_goals" name="husky_navigation_goals" output="screen" >
 
-     <param name="robotodom_topic" type="string" value="$(arg robotodomtopic)" />
+     <!--param name="robotodom_topic" type="string" value="$(arg robotodomtopic)" /-->
 
      <param name="goalodom_topic" type="string" value="$(arg goalodomtopic)" />
 

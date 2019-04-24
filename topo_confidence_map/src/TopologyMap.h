@@ -1,8 +1,6 @@
 
 #ifndef TOPOLOGYMAP_H
 #define TOPOLOGYMAP_H
-
-#include <queue>
 #include <string>
 
 //ros related
@@ -135,8 +133,6 @@ class TopologyMap{
   
   double m_dSamplingHz;//the raw frequency of odometry topic (50hz, or 10hz in normal)
 
-  double m_dPastViewIntvl;//the past view interval (second)
-
   float m_fViewZOffset;//z offset of odom to lidar sensor
   
   //sampling number
@@ -149,7 +145,9 @@ class TopologyMap{
 
   int m_iComputedFrame;
 
-  int m_iIntervalNum; //the past view interval number for occlusion calculation
+  int m_iPastOdomNum; //the past view interval number for occlusion calculation
+
+  int m_iShockNum;//the shock duration that robot can tolerate 
 
   //the frame count of trajectory point
   unsigned int m_iTrajFrameNum;
@@ -164,8 +162,9 @@ class TopologyMap{
 
   //**point cloud related**
   //the positions of robot
-  std::queue<pcl::PointXYZ> m_vOdomCloud;//I dont think it is necessary to use a circle vector
-
+  std::queue<pcl::PointXYZ> m_vOdomViews;//I dont think it is necessary to use a circle vector
+  std::queue<pcl::PointXYZ> m_vOdomShocks;
+  
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_pBoundCloud;//boundary point clouds
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_pObstacleCloud;//obstacle point clouds
 

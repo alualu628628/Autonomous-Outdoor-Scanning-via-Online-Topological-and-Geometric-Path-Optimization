@@ -37,7 +37,7 @@ public:
 
 private:
 
-	ros::Subscriber m_oTrajSuber;//suber
+	//ros::Subscriber m_oTrajSuber;//suber
 	std::string m_sTrajTopic;//topic name
 
 	ros::Subscriber m_oGoalSuber;//suber

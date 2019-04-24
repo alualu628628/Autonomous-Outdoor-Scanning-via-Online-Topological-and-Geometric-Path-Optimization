@@ -1,5 +1,6 @@
 #ifndef OP_H
 #define OP_H
+#include <queue>
 #include "ConfidenceMap.h"
 
 
@@ -36,10 +37,11 @@ public:
 
 	//judge whether the robot is close/near the goal node (movement target)
 	//choose the next best view as soon as the robot is inside the target region  
-	bool NearGoal(const pcl::PointXYZ & oOdomPoint,
-                             const int & iProcessFrame,
-	                           float fDisDiffThr = 0.5,
-	                            int iFirstTripThr = 10);
+	bool NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
+	                              const int & iShockNumThr,
+                                 const int & iProcessFrame,
+	                               float fDisDiffThr = 0.5,
+	                                int iFirstTripThr = 10);
 
 	//get the current node index
 	void GetNewNode(const int & iNewNodeIdx,
