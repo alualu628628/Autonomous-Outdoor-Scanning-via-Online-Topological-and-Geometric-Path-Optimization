@@ -7,11 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /Sensing1
-        - /Sensing1/PointCloud21
         - /Navigation1/Exploration1
-        - /mesh1
-        - /Odometry1
-        - /GridMap1
       Splitter Ratio: 0.494924009
     Tree Height: 795
   - Class: rviz/Selection
@@ -70,6 +66,16 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        base_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_laser_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         base_link:
           Alpha: 1
           Show Axes: false
@@ -252,8 +258,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.49017155
-            Min Value: -0.424996853
+            Max Value: 1.36652493
+            Min Value: -0.199211717
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -414,40 +420,6 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-    - Angle Tolerance: 0.100000001
-      Class: rviz/Odometry
-      Covariance:
-        Orientation:
-          Alpha: 0.5
-          Color: 255; 255; 127
-          Color Style: Unique
-          Frame: Local
-          Offset: 1
-          Scale: 1
-          Value: true
-        Position:
-          Alpha: 0.300000012
-          Color: 204; 51; 204
-          Scale: 1
-          Value: true
-        Value: true
-      Enabled: false
-      Keep: 100
-      Name: Odometry
-      Position Tolerance: 0.100000001
-      Shape:
-        Alpha: 1
-        Axes Length: 1
-        Axes Radius: 0.100000001
-        Color: 255; 25; 0
-        Head Length: 0.300000012
-        Head Radius: 0.100000001
-        Shaft Length: 1
-        Shaft Radius: 0.0500000007
-        Value: Arrow
-      Topic: /odometry/filtered
-      Unreliable: false
-      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Class: grid_map_rviz_plugin/GridMap
@@ -493,7 +465,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 35.3957901
+      Distance: 21.2266922
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -508,10 +480,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.4197998
+      Pitch: 1.25480008
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.19721866
+      Yaw: 3.24221921
     Saved: ~
 Window Geometry:
   Displays:
