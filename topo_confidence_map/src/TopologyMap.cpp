@@ -638,11 +638,6 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 				}//end if (CheckInSidePoint(vOneGCloud.points[i]))
 			}//end if (!(i%m_iPCSmplNum))
 		}//end for (int i = 0; i != vOneGCloud.size();
-	
-	    //grow the travelable region
-		if(vNewScanGridIdxs.size())
-			m_oCnfdnSolver.RegionGrow(m_vConfidenceMap,vNewScanGridIdxs,m_oGMer);
-
 
 	}//end if m_bGridMapReadyFlag
 
@@ -809,11 +804,11 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
 		                           oCurrRobotPos);
 
     //label the node count of computed ground grids 
-    //it means the grids is in which time of node
-    for(int i = 0; i !=vNearByIdxs.size(); ++i){
-    	if(m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount < 0)
-           m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount = m_iNodeTimes;
-    }
+	//grow the travelable region
+	m_oCnfdnSolver.RegionGrow(m_vConfidenceMap,
+			                  vNearByIdxs,
+			                  m_oGMer,
+			                  m_iNodeTimes);
 
     //extract point clouds with different labels, respectively
     DevidePointClouds(*pNearGrndClouds,
@@ -872,11 +867,11 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 	                               oCurrRobotPos);
 	
     //label the node count of computed ground grids 
-    //it means the grids is in which time of node
-    for(int i = 0; i !=vNearByIdxs.size(); ++i){
-    	if(m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount < 0)
-           m_vConfidenceMap[vNearByIdxs[i].iOneIdx].nodeCount = m_iNodeTimes;
-    }
+	//grow the travelable region
+	m_oCnfdnSolver.RegionGrow(m_vConfidenceMap,
+			                  vNearByIdxs,
+			                  m_oGMer,
+			                  m_iNodeTimes);
 
     //extract point clouds with different labels, respectively
     DevidePointClouds(*pNearGrndClouds,

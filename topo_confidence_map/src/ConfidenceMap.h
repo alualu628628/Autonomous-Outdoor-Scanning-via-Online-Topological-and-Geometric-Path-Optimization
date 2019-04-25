@@ -236,8 +236,9 @@ public:
 
 	//region grow to obtain travelable region (travelable region is the ground which can be touch from current location)
 	void RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
-	                    const std::vector<int> & vNewScannedGrids,
-							    const ExtendedGM & oExtendGridMap);
+	                const std::vector<MapIndex> & vNearbyGridIdxs,
+								const ExtendedGM & oExtendGridMap,
+								           const int & iNodeTimes);
 
     //check whether the grid is a newest scanned travelable ground grid
 	bool CheckIsNewScannedGrid(const int & iCurrNodeTime, 

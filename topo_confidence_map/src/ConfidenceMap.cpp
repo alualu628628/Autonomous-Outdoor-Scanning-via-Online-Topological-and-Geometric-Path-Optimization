@@ -575,7 +575,7 @@ Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
 	   oRobotPoint - the location of the robot  
-	   vNearByIdxs - the neighboring grids based on the input robot location
+	   vNearbyGridIdxs - the neighboring grids based on the input robot location
 	   vTravelCloud - the travelable point clouds (the ground point clouds)
 	   vGridTravelPsIdx - the index of point within each grid to total travelable point clouds  
 Output: the distance term value of each neighboring grid
@@ -624,7 +624,7 @@ Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
 	   oRobotPoint - the location of the robot  
-	   vNearByIdxs - the neighboring grids based on the input robot location
+	   vNearbyGridIdxs - the neighboring grids based on the input robot location
 	   vTravelCloud - the travelable point clouds (the ground point clouds)
 	   vGridTravelPsIdx - the index of point within each grid to total travelable point clouds  
 Output: the distance term value of each neighboring grid
@@ -689,7 +689,7 @@ Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
 oRobotPoint - the location of the robot
-vNearByIdxs - the neighboring grids based on the input robot location
+vNearbyGridIdxs - the neighboring grids based on the input robot location
 vTravelCloud - the travelable point clouds (the ground point clouds)
 vGridTravelPsIdx - the index of point within each grid to total travelable point clouds
 Output: the distance term value of each neighboring grid
@@ -766,7 +766,7 @@ Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
 oRobotPoint - the location of the robot
-vNearByIdxs - the neighboring grids based on the input robot location
+vNearbyGridIdxs - the neighboring grids based on the input robot location
 vTravelCloud - the travelable point clouds (the ground point clouds)
 vGridTravelPsIdx - the index of point within each grid to total travelable point clouds
 Output: the distance term value of each neighboring grid
@@ -774,7 +774,7 @@ Return: a vector saves distance value of each neighboring grid
 Others: none
 *************************************************/
 //void Confidence::QualityTermUsingDensity(std::vector<ConfidenceValue> & vConfidenceMap,
-//                               const std::vector<int> & vNearByIdxs,
+//                               const std::vector<int> & vNearbyGridIdxs,
 //	                                  const PCLCloudXYZ & vTravelCloud,
 //	            const std::vector<std::vector<int>> & vGridTravelPsIdx,
 //	                                const PCLCloudXYZ & vAllBoundCloud,
@@ -783,12 +783,12 @@ Others: none
 //	               const std::vector<std::vector<int>> & vGridObsPsIdx) {
 //
 //	//save the point that is in an unreachable grid
-//	for (int i = 0; i != vNearByIdxs.size(); ++i) {
+//	for (int i = 0; i != vNearbyGridIdxs.size(); ++i) {
 //
 //		//point clouds to be seen
 //		PCLCloudXYZPtr pNearCloud(new PCLCloudXYZ);
 //
-//		int iOneGridIdx = vNearByIdxs[i];
+//		int iOneGridIdx = vNearbyGridIdxs[i];
 //
 //		//record the ground point
 //		for (int j = 0; j != vGridTravelPsIdx[iOneGridIdx].size(); ++j)
@@ -822,7 +822,7 @@ Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
 oRobotPoint - the location of the robot
-vNearByIdxs - the neighboring grids based on the input robot location
+vNearbyGridIdxs - the neighboring grids based on the input robot location
 vTravelCloud - the travelable point clouds (the ground point clouds)
 vGridTravelPsIdx - the index of point within each grid to total travelable point clouds
 Output: the distance term value of each neighboring grid
@@ -831,7 +831,7 @@ Others: none
 *************************************************/
 /*
 void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
-	                          const std::vector<int> & vNearByIdxs,
+	                          const std::vector<int> & vNearbyGridIdxs,
 	                               const PCLCloudXYZ & vAllBoundCloud,
 	            const std::vector<std::vector<int>> & vGridBoundPsIdx,
 	                               const PCLCloudXYZ & vObstacleCloud,
@@ -842,9 +842,9 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	std::vector<int> vMeasuredGridIdx;
 
 	//save the point that is in an unreachable grid
-	for (int i = 0; i != vNearByIdxs.size(); ++i) {
+	for (int i = 0; i != vNearbyGridIdxs.size(); ++i) {
 
-		int iOneGridIdx = vNearByIdxs[i];
+		int iOneGridIdx = vNearbyGridIdxs[i];
 
 		//if this grid is a obstacle grid or boundary grid
 		if(vConfidenceMap[iOneGridIdx].label == 1
@@ -898,7 +898,7 @@ Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
 	   oRobotPoint - the location of the robot  
-	   vNearByIdxs - the neighboring grids based on the input robot location
+	   vNearbyGridIdxs - the neighboring grids based on the input robot location
 	   vTravelCloud - the travelable point clouds (the ground point clouds)
 	   vGridTravelPsIdx - the index of point within each grid to total travelable point clouds  
 Output: the distance term value of each neighboring grid
@@ -954,14 +954,14 @@ Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
 	   iQueryGrid - the grid at which the robot right now is
-	   vNearByIdxs - the neighboring grids index based on the robot grid
+	   vNearbyGridIdxs - the neighboring grids index based on the robot grid
 Output: change the confidence value about frontier part
 Return: none
 Others: none
 *************************************************/
 //void Confidence::FrontierTerm(std::vector<ConfidenceValue> & vConfidenceMap, 
 //	                                            const int & iQueryGrid,
-//	                           const std::vector<int> & vNearByIdxs){
+//	                           const std::vector<int> & vNearbyGridIdxs){
 //
 //	//variables
 //	float fBoundaryRes = 0.0;
@@ -970,9 +970,9 @@ Others: none
 //	//if it is a ground region
 //	if (vConfidenceMap[iQueryGrid].label == 2) {
 //
-//		for (int k = 0; k != vNearByIdxs.size(); ++k) {
+//		for (int k = 0; k != vNearbyGridIdxs.size(); ++k) {
 //			//count its neighboring unknown grids
-//			if (!vConfidenceMap[vNearByIdxs[k]].bKnownFlag) {
+//			if (!vConfidenceMap[vNearbyGridIdxs[k]].bKnownFlag) {
 //				iUnkownCount++;
 //			}
 //
@@ -1000,7 +1000,7 @@ Table Accessed: none
 Table Updated: none
 Input: vConfidenceMap - the confidence map (grid map)
 	   oRobotPoint - the location of the robot  
-	   vNearByIdxs - the neighboring grids based on the input robot location
+	   vNearbyGridIdxs - the neighboring grids based on the input robot location
 	   vTravelCloud - the travelable point clouds (the ground point clouds)
 	   vGridTravelPsIdx - the index of point within each grid to total travelable point clouds  
 Output: the distance term value of each neighboring grid
@@ -1031,41 +1031,57 @@ Calls: none
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
-Input: vNewScannedGrids - the neighboring grid of the current robot location
+Input: vNearbyGridIdxs - the neighboring grid of the current robot location
 Output: the reachable label of grid map. The grid labelled as 1 is reachable grid 
 Return: none
 Others: point with label 2 is queried and changed one by one during implementing function
         point with label 0 will becomes point with label 2 after implementing function, this is to prepare next computing
 *************************************************/
 void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
-	                            const std::vector<int> & vNewScannedGrids,
-								        const ExtendedGM & oExtendGridMap){
+	                        const std::vector<MapIndex> & vNearbyGridIdxs,
+								        const ExtendedGM & oExtendGridMap,
+								                   const int & iNodeTimes){
 
     //status of grid in region grow
 	//-1 indicates it is an unknown grid
 	//0 indicates this grid is ground but not reachable now
     //1 indicates this grid is a travelable region grid
-	//2 is the new scanned grids (input) without growing calculation (in this time)
+	//2 is the new scanned ground grids (input) without growing calculation (in this time)
 	//3 indicates the grid has been computed
 	//4 indicates this grid is a off groud grid (not reachable forever)
+
+
+    //the grid need grow in MAP index (No neighboorhood local index)
+	std::vector<int> vNeedGrowGridIdx;
 	
-	for(int i = 0; i != vNewScannedGrids.size(); ++i){
-		//if it is unknown (never be computed before)
-		if(vConfidenceMap[vNewScannedGrids[i]].travelable == -1){
-			//if it is a ground grid
-			if(vConfidenceMap[vNewScannedGrids[i]].label == 2)
-		       vConfidenceMap[vNewScannedGrids[i]].travelable = 2;
-			else
-			   vConfidenceMap[vNewScannedGrids[i]].travelable = 4;//off-ground
+	for(int i = 0; i != vNearbyGridIdxs.size(); ++i){
+        //the current grid index
+		int iCurGridIdx = vNearbyGridIdxs[i].iOneIdx;
+
+        //in fact the node count is nothing to do with region grow
+        //it is here so computing can have one less cycle
+		if(vConfidenceMap[iCurGridIdx].nodeCount < 0)
+           vConfidenceMap[iCurGridIdx].nodeCount = iNodeTimes;
+
+        //find region grow candidates
+		//if it is a ground grid
+		if(vConfidenceMap[iCurGridIdx].label == 2){
+			//if this grid has not been covered by boundary
+			if(vConfidenceMap[iCurGridIdx].travelable < 1){
+		       vConfidenceMap[iCurGridIdx].travelable = 2;
+               vNeedGrowGridIdx.push_back(iCurGridIdx);
+		    }//end if
+			//else
+			//   vConfidenceMap[vNearbyGridIdxs[i]].travelable = 4;//off-ground
 		}
 	}
 
-    
-	//record computed grid (record which grid has been computed with a status value)
-	std::vector<int> vComputedGridIdx;
+    //if nothing to grow
+	if(!vNeedGrowGridIdx.size())
+		return;
 
     //check each input grid
-	for(int i = 0; i != vNewScannedGrids.size(); ++i){
+	for(int i = 0; i != vNeedGrowGridIdx.size(); ++i){
 
 		//current seed index
 	    int iCurIdx;
@@ -1076,10 +1092,10 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 	    std::vector<int> vSeeds;  
 		std::vector<int> vSeedHistory;
 		//get one input grid as seed
-		vSeeds.push_back(vNewScannedGrids[i]);
-
-	    //if this one has not been grown
-		if(vConfidenceMap[vNewScannedGrids[i]].travelable == 2){
+		vSeeds.push_back(vNeedGrowGridIdx[i]);
+        
+        //if this one still has not been grown after calculation of other grids
+		if(vConfidenceMap[vNeedGrowGridIdx[i]].travelable == 2){
             //growing
 	        while(!vSeeds.empty()){
 
@@ -1090,28 +1106,28 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 
 			    //record the history of seeds
 			    vSeedHistory.push_back(iCurIdx);
-			    vComputedGridIdx.push_back(iCurIdx);
+
 			    //label this seed as it has being considered
 				vConfidenceMap[iCurIdx].travelable = 3;
 
 				//find the nearboring grids
-				//std::vector<int> vNearGridIdx = SearchGrids(iCurIdx, 0.5);
-				std::vector<int> vNearGridIdx;
-				ExtendedGM::CircleNeighborhood(vNearGridIdx,
+				//std::vector<int> vGrowNearGridIdx = SearchGrids(iCurIdx, 0.5);
+				std::vector<int> vGrowNearGridIdx;
+				ExtendedGM::CircleNeighborhood(vGrowNearGridIdx,
 						                       oExtendGridMap.m_oFeatureMap, 
 											   oExtendGridMap.m_vGrowSearchMask,
 		                                       iCurIdx);
 
 				//check neighboring grids
-				for (int i = 0; i != vNearGridIdx.size(); ++i) {
+				for (int i = 0; i != vGrowNearGridIdx.size(); ++i) {
 					//if the near grid is new input
-					if (vConfidenceMap[vNearGridIdx[i]].travelable == 2)
-						vSeeds.push_back(vNearGridIdx[i]);
+					if (vConfidenceMap[vGrowNearGridIdx[i]].travelable == 2)
+						vSeeds.push_back(vGrowNearGridIdx[i]);
 
 					//the near grid is reachable thereby the query ground grids must be reachable too
-					if (vConfidenceMap[vNearGridIdx[i]].travelable == 1)
+					if (vConfidenceMap[vGrowNearGridIdx[i]].travelable == 1)
 						iGrowRes = 1;
-				}//end for int i = 0;i!=vNearGridIdx.size();++i
+				}//end for int i = 0;i!=vGrowNearGridIdx.size();++i
 				 
 		    }//end while
 
@@ -1119,19 +1135,10 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 			for(int i = 0; i != vSeedHistory.size(); ++i)
 			    vConfidenceMap[vSeedHistory[i]].travelable = iGrowRes;
 			
-	    }//end if vConfidenceMap[vNearGridIdx[i]].travelable == 2
-	
+        }//end if vConfidenceMap[vGrowNearGridIdx[i]].travelable == 2
+			
 	}//end for
 
-	//search the unreachable grid
-	//the reachable region is with respect to current query location
-	//because an unreachable grid may be reachable if the robot moves close
-	for (int i = 0; i != vComputedGridIdx.size(); ++i) {
-	    //prepare for further growing
-		if(!vConfidenceMap[vComputedGridIdx[i]].travelable)
-		   vConfidenceMap[vComputedGridIdx[i]].travelable = 2;
-	}
-	
 
 }
 
@@ -1144,7 +1151,7 @@ Calls: none
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
-Input: vNewScannedGrids - the neighboring grid of the current robot location
+Input: vNearbyGridIdxs - the neighboring grid of the current robot location
 Output: the reachable label of grid map. The grid labelled as 1 is reachable grid 
 Return: none
 Others: point with label 2 is queried and changed one by one during implementing function
@@ -1177,7 +1184,7 @@ Calls: none
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
-Input: vNewScannedGrids - the neighboring grid of the current robot location
+Input: vNearbyGridIdxs - the neighboring grid of the current robot location
 Output: the reachable label of grid map. The grid labelled as 1 is reachable grid 
 Return: none
 Others: point with label 2 is queried and changed one by one during implementing function
