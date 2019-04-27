@@ -259,7 +259,7 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
 
     //get the neighborhood of original coordiante value and initial a rough travelable region
 	std::vector<MapIndex> vOriginalNearIdx;
-	std::vector<MapIndex> vOriginalMask = m_oGMer.GenerateCircleMask(5.0); 
+	std::vector<MapIndex> vOriginalMask = m_oGMer.GenerateCircleMask(4.5); 
 	ExtendedGM::CircleNeighborhood(vOriginalNearIdx,
 	                               m_oGMer.m_oFeatureMap,
 	                               vOriginalMask,

@@ -1121,11 +1121,13 @@ void Confidence::RegionGrow(std::vector<ConfidenceValue> & vConfidenceMap,
 				//check neighboring grids
 				for (int i = 0; i != vGrowNearGridIdx.size(); ++i) {
 					//if the near grid is new input
-					if (vConfidenceMap[vGrowNearGridIdx[i]].travelable == 2)
+					if (vConfidenceMap[vGrowNearGridIdx[i]].travelable == 2 &&
+						vConfidenceMap[vGrowNearGridIdx[i]].label == 2)
 						vSeeds.push_back(vGrowNearGridIdx[i]);
 
 					//the near grid is reachable thereby the query ground grids must be reachable too
-					if (vConfidenceMap[vGrowNearGridIdx[i]].travelable == 1)
+					if (vConfidenceMap[vGrowNearGridIdx[i]].travelable == 1 &&
+						vConfidenceMap[vGrowNearGridIdx[i]].label == 2)
 						iGrowRes = 1;
 				}//end for int i = 0;i!=vGrowNearGridIdx.size();++i
 				 
