@@ -32,7 +32,9 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_iComputedFrame(0),
 	                     m_iNodeTimes(0),
 	                     m_iOdomSampingNum(25),
-	                     m_bGridMapReadyFlag(false) {
+	                     m_bGridMapReadyFlag(false),
+	                     m_bCoverFileFlag(false),
+	                     m_bOutTrajFileFlag(false){
 
 	//read parameters
 	ReadTopicParams(nodeHandle);
@@ -94,6 +96,10 @@ TopologyMap::~TopologyMap() {
 	*************************************************/
 
 bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
+
+	//output file name
+	nodeHandle.param("file_outputpath", m_sFileHead, std::string("./"));
+
 	//input topic
 	nodeHandle.param("odom_in_topic", m_sOdomTopic, std::string("/odometry/filtered"));
 
@@ -196,6 +202,11 @@ bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
 
 	m_oGMer.m_vBoundDefendMask.clear();
     m_oGMer.m_vBoundDefendMask = m_oGMer.GenerateCircleMask(1.5*dRegionGrowR);
+
+	double dInitialR;
+	nodeHandle.param("initial_r", dInitialR, 4.5);
+    m_oGMer.m_vInitialMask.clear();
+	m_oGMer.m_vInitialMask = m_oGMer.GenerateCircleMask(dInitialR);
     
 	return true;
 
@@ -259,10 +270,9 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
 
     //get the neighborhood of original coordiante value and initial a rough travelable region
 	std::vector<MapIndex> vOriginalNearIdx;
-	std::vector<MapIndex> vOriginalMask = m_oGMer.GenerateCircleMask(4.5); 
 	ExtendedGM::CircleNeighborhood(vOriginalNearIdx,
 	                               m_oGMer.m_oFeatureMap,
-	                               vOriginalMask,
+	                               m_oGMer.m_vInitialMask,
 	                               oRobotPos);
 
     //only assign the travelable value,which means the node will be created only on the grid that has the actual data  
@@ -502,6 +512,7 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		m_vOdomViews.push(oOdomPoint);
 		oOdomPoint.z = 0.0;
 		m_vOdomShocks.push(oOdomPoint);
+		OutputTrajectoryFile(oTrajectory);
 
 		//make the sequence size smaller than a value
 		//m_vOdomViews in fact is a history odometry within a given interval
@@ -919,6 +930,8 @@ Others: the HandlePointClouds is the kernel function
 
 void TopologyMap::PublishGridMap(){
 
+	int iTravelableNum = 0;
+
     //push 
 	grid_map::Matrix& gridMapData1 = m_oGMer.m_oFeatureMap["elevation"];
 	grid_map::Matrix& gridMapData2 = m_oGMer.m_oFeatureMap["traversability"];
@@ -943,11 +956,17 @@ void TopologyMap::PublishGridMap(){
 		    gridMapData5(i, j) = m_vConfidenceMap[iGridIdx].totalValue;
 		    gridMapData6(i, j) = m_vConfidenceMap[iGridIdx].travelable;
 		    gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].label;
+            //record the region that has been explored
+		    if(m_vConfidenceMap[iGridIdx].travelable == 1 &&
+		       m_vConfidenceMap[iGridIdx].label == 2)
+		    	iTravelableNum++;
 	
 		}//end i
 
 	}//end j
 
+    //output cover rate file
+	OutputCoverRateFile(iTravelableNum);
 
 	ros::Time oNowTime = ros::Time::now();
 
@@ -1021,6 +1040,94 @@ void TopologyMap::PublishGoalOdom(pcl::PointXYZ & oGoalPoint){
         m_oGoalPublisher.publish(oCurrGoalOdom);
 
 }
+
+
+/*************************************************
+Function: TopologyMap
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+       privare node
+       flag of generating output file
+       original frame value
+Output: none
+Return: none
+Others: the HandlePointClouds is the kernel function
+*************************************************/
+
+void TopologyMap::OutputCoverRateFile(const int & iTravelableNum){
+
+
+	if(!m_bCoverFileFlag){
+
+	    //set the current time stamp as a file name
+        //full name 
+		m_sCoverFileName << m_sFileHead << "CoverRes_" << ros::Time::now() << ".txt"; 
+
+		m_bCoverFileFlag = true;
+	}
+
+	//output
+	m_oCoverFile.open(m_sCoverFileName.str(), std::ios::out | std::ios::app);
+
+	//output in a txt file
+    //the storage type of output file is x y z time frames right/left_sensor
+    m_oCoverFile << iTravelableNum << " "
+                 << ros::Time::now() << " "
+                 << std::endl;
+
+    m_oCoverFile.close();
+
+}
+
+/*************************************************
+Function: TopologyMap
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+       privare node
+       flag of generating output file
+       original frame value
+Output: none
+Return: none
+Others: the HandlePointClouds is the kernel function
+*************************************************/
+
+void TopologyMap::OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory){
+
+
+	if(!m_bOutTrajFileFlag){
+
+	//set the current time stamp as a file name
+    //full name 
+		m_sOutTrajFileName << m_sFileHead << "Traj_" << oTrajectory.header.stamp << ".txt"; 
+
+		m_bOutTrajFileFlag = true;
+	}
+
+	//output
+	m_oTrajFile.open(m_sOutTrajFileName.str(), std::ios::out | std::ios::app);
+
+	//output in a txt file
+	//the storage type of output file is x y z time frames 
+    m_oTrajFile << oTrajectory.pose.pose.position.x << " "
+                << oTrajectory.pose.pose.position.y << " "
+                << oTrajectory.pose.pose.position.z << " " 
+                << oTrajectory.header.stamp << " "
+                << std::endl;
+
+    m_oTrajFile.close();
+
+}
+
+
+
 
 } /* namespace */
 

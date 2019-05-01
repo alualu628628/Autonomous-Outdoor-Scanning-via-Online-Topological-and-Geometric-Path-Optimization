@@ -115,6 +115,9 @@ public:
 	//a mask region that generates a node 
 	std::vector<MapIndex> m_vNodeMadeMask;
 
+    //a mask intialing the origianl travelable region
+	std::vector<MapIndex> m_vInitialMask;
+
 private:
 
 	//note that the map size is fixed, thus it must be initialied large enough to pick the scene 

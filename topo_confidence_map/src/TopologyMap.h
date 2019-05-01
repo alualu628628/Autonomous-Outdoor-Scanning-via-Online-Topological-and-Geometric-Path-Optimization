@@ -99,9 +99,24 @@ class TopologyMap{
 
   void PublishGoalOdom(pcl::PointXYZ & oGoalPoint);
 
+  //output data in file
+  void OutputCoverRateFile(const int & iTravelableNum);
+  void OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory);
+
  private:
 
   //**input topic related**
+  //output file name
+  std::string m_sFileHead;
+
+  std::stringstream m_sCoverFileName; ///<full name of output txt that records the point clouds//defind it in the function
+  bool m_bCoverFileFlag; //whether the outfile got a full name or not 
+  std::ofstream m_oCoverFile;
+
+  std::stringstream m_sOutTrajFileName;///<full name of output txt that records the trajectory point 
+  bool m_bOutTrajFileFlag;//whether the outfile got a full name or not 
+  std::ofstream m_oTrajFile;
+
   //input topics:
   ros::Subscriber m_oOdomSuber;//the subscirber is to hear (record) odometry from gazebo
 
@@ -184,6 +199,10 @@ class TopologyMap{
 
   //a node object
   OP m_oOPSolver;
+
+  //some paramters which is no more important
+  //the radius which initial the travelable region around robot at original location
+  float m_fInitialR;
   
 };
 

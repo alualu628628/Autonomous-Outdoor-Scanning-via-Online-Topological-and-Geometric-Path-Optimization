@@ -65,20 +65,29 @@ launches customized husky visualization (`rviz`).
 roslaunch husky_viz view_robot.launch
 ```
 
-LOAM can be used to SLAM (mapping and location robot) as follows (gp-insac algorithm is launched parallelly, which is to devide ground, obstacle and boundary points):
+LOAM can be used to SLAM (mapping and location robot) as follow(gp-insac algorithm is launched parallelly, which is to devide ground, obstacle and boundary points):
 ```
 roslaunch loam_velodyne loam_velodyne.launch
 ```
 
-For mapping `Octomap` or to just visualize the pointcloud from Husky, run in a different terminal  
+For mapping with topological and geometrical information 
 ```
-roslaunch octomap_server octomap_mapping.launch
+roslaunch topo_confidence_map mapping.launch
 ```
 
+To automatically send the goal of mapping results to husky moving action 
+```
+roslaunch husky_navigation_goals send_goal.launch 
+```
 
 Other launch files can be used for different other outdoor environments e.g., `husky_wild.launch`, `husky_terrain.launch`.
 
 
+## Parameters
+output the result in your own path, please modify below codes in '/simulation_ws/src/topo_confidence_map/launch/mapping.launch'
+```
+<arg name="fileoutputpath" default="/home/yourname/"/>
+```
 
 
 
