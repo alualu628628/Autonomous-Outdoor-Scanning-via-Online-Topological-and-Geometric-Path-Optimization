@@ -1096,7 +1096,7 @@ Input: global node,
        original frame value
 Output: none
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: the HandFindLocalMinimumlePointClouds is the kernel function
 *************************************************/
 
 void TopologyMap::OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory){
