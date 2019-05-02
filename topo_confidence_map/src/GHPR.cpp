@@ -97,14 +97,17 @@ Output: none
 Return: none
 Others: none
 *************************************************/
-std::vector<int> GHPR::ComputeVisibility(const pcl::PointCloud<pcl::PointXYZ> & vCloud,
+std::vector<bool> GHPR::ComputeVisibility(const pcl::PointCloud<pcl::PointXYZ> & vCloud,
                                                       const pcl::PointXYZ & oViewPoint){
 
     //define output
-	std::vector<int> vVisiableIdx;
+	std::vector<bool> vVisiableRes;
     //check there  is enough input
-	if(vCloud.points.size() < 3)
-		return vVisiableIdx;
+	if(vCloud.points.size() < 3){
+		//all points visible if less points 
+		vVisiableRes.resize(vCloud.size(),true);
+		return vVisiableRes;
+	}
 
 	//F(p,C) = C + (p - C) * f(||p - C||)/||p - C||
 	//a kernel function input, which must be larger that the maximum distance from the viewpoint to poins set
@@ -182,10 +185,10 @@ std::vector<int> GHPR::ComputeVisibility(const pcl::PointCloud<pcl::PointXYZ> & 
 
 	//In terms of this situation, we use the kdtree (also O(nlogn)) to find the index
 
-	FindVisibleIndices(vVisiableIdx,pConvexCloud,pChullResCloud);
+	FindVisibleIndices(vVisiableRes,pConvexCloud,pChullResCloud);
 
 	//return the reslut
-	return vVisiableIdx;
+	return vVisiableRes;
 
 }
 
@@ -198,21 +201,25 @@ Calls: none
 Called By: ComputeVisibility
 Table Accessed: none
 Table Updated: none
-Input: vVisibleIndices - the visible point 
+Input: vVisibleRes - the visible point 
        pTransforCloud - a geometrical transfor point clouds 
        pHullCloud - a point clouds at the convex hull
 Output: none
 Return: none
 Others: none
 *************************************************/
-void GHPR::FindVisibleIndices(std::vector<int> & vVisibleIndices,
+void GHPR::FindVisibleIndices(std::vector<bool> & vVisibleRes,
 	                          const pcl::PointCloud<pcl::PointXYZ>::Ptr & pTransforCloud,
 	                          const pcl::PointCloud<pcl::PointXYZ>::Ptr & pHullCloud) {
 
+	std::cout<<"pTransforCloud->points.size(): "<<pTransforCloud->points.size()<<std::endl;
+	std::cout<<"pHullCloud->points.size(): "<<pHullCloud->points.size()<<std::endl;
+
 	//define output
 	//remove the viewpoint from ouput list
-	vVisibleIndices.clear();
-	vVisibleIndices.reserve(pHullCloud->points.size() - 1);
+	vVisibleRes.clear();
+	vVisibleRes.resize(pTransforCloud->points.size() - 1,false);
+
 	int iViewPointIdx = pTransforCloud->points.size() - 1;
 
 	//construct a kdtree
@@ -232,7 +239,7 @@ void GHPR::FindVisibleIndices(std::vector<int> & vVisibleIndices,
 
 		//if the query point is not the viewpoint
 		if (vNearestIdx[0] != iViewPointIdx)
-			vVisibleIndices.push_back(vNearestIdx[0]);
+			vVisibleRes[vNearestIdx[0]] = true;
 
 	}//end for i != pHullCloud->points.size()
 

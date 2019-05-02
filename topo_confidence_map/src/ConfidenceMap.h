@@ -255,6 +255,11 @@ public:
 	//normalization of features
 	static void Normalization(std::vector<float> & vFeatures);
 
+    //output occlusion point clouds for test
+	void OutputOcclusionClouds(const pcl::PointCloud<pcl::PointXYZ> & vCloud,
+	                                   const std::vector<bool> & vVisableRes,
+	                                         const pcl::PointXYZ & viewpoint);
+
 	//*******************Public Data Part********************
 	pcl::PointXYZ oShowCenter;
 	pcl::PointXYZ oShowRobot;

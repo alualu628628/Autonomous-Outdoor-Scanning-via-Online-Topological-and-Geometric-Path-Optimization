@@ -1129,6 +1129,7 @@ void TopologyMap::OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory){
 
 
 
+
 } /* namespace */
 
 
