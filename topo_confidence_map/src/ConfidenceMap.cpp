@@ -18,8 +18,8 @@ Confidence::Confidence(float f_fSigma,
 	                   float f_fGHPRParam,
 	                  float f_fVisTermThr,
 	                  float f_fMinNodeThr):
-	                     m_fWeightDis(0.7),
-                         m_fWeightVis(0.3),
+	                     m_fWeightDis(0.9),
+                         m_fWeightVis(0.1),
 	                      m_fDensityR(0.3),
                          m_fLenWeight(0.1),
                        m_fBoundWeight(0.9){
@@ -660,8 +660,8 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 			float fBoundvalue = (m_fSigma - vSearchDis[0]) / m_fSigma;
 			if (fBoundvalue < 0)
 				fBoundvalue = 0.0;
-
-			if (vConfidenceMap[vNearGroundIdxs[i]].boundTerm > fBoundvalue)
+            //record the maximum boundary responde indicating the closest distance
+			if (vConfidenceMap[vNearGroundIdxs[i]].boundTerm < fBoundvalue)
 				vConfidenceMap[vNearGroundIdxs[i]].boundTerm = fBoundvalue;
 
             //also affect the travelable when the robot is too close to wall
@@ -699,8 +699,9 @@ Others: none
 void Confidence::OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	                                          PCLCloudXYZPtr & pNearAllCloud,
 	                                const std::vector<int> & vNearGroundIdxs,
-	                                    const pcl::PointXYZ & oPastViewPoint){ 
-    ROS_INFO("debug occlusion term");
+	                                    const pcl::PointXYZ & oPastViewPoint,
+	                                                  const int & iNodeTimes){ 
+    
 	//check the point cloud size (down sampling if point clouds is too large)
 	unsigned int iNonGrndPSize = pNearAllCloud->points.size() - vNearGroundIdxs.size();
 	unsigned int iSmplThr = 500000;
@@ -732,25 +733,27 @@ void Confidence::OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	}//end if iNonGrndPSize > iSmplThr
    
 	//using the GHPR algorithm 
-	GHPR oGHPRer(3.8);
-    std::cout<<"input point size: "<<pNearAllCloud->points.size()<<std::endl;
+	GHPR oGHPRer(3.7);
+    
 	//**********Measurement item************
 	//compute the visibility based on the history of view points
 	std::vector<bool> vVisableRes = oGHPRer.ComputeVisibility(*pNearAllCloud, oPastViewPoint);
-	std::cout<<"vVisableRes.size(): "<<vVisableRes.size()<<std::endl;
+	
 	//**********Incremental item************
 	//fv(p) = fv(n)  
 	for (int i = 0; i != vNearGroundIdxs.size(); ++i){
-		//if it is a ground point
-		if(vConfidenceMap[vNearGroundIdxs[i]].visiTerm != 2.0)
-		//get maximum value of occlusion term
-			vConfidenceMap[vNearGroundIdxs[i]].visiTerm = vVisableRes[i];
+		//if it is a new scanned ground grid
+		//if(vConfidenceMap[vNearGroundIdxs[i]].nodeCount == iNodeTimes){
+		//if it is occlusion and then is labelled
+			if(!vVisableRes[i])//get the occlusion result
+				vConfidenceMap[vNearGroundIdxs[i]].visiTerm = 0.0;
+		//}
 
 	}
-    std::cout<<"vNearGroundIdxs.size(): "<<vNearGroundIdxs.size()<<std::endl;
+    
 	//output the occlusion result of point clouds - for test only
-	OutputOcclusionClouds(*pNearAllCloud, vVisableRes, oPastViewPoint);
-    ROS_INFO("debug occlusion term completed");
+	//OutputOcclusionClouds(*pNearAllCloud, vVisableRes, oPastViewPoint);
+ 
 }
 
 
@@ -1013,11 +1016,12 @@ void Confidence::ComputeTotalCoffidence(std::vector<ConfidenceValue> & vConfiden
     //                + m_fBoundWeight * vBoundPartValue[i] 
     //                + m_fWeightVis * LinearKernel(vConfidenceMap[iQueryIdx].visibility, m_fVisTermThr);
 
-    float fTotalVal =  m_fLenWeight * vConfidenceMap[iQueryIdx].travelTerm 
-                     + m_fBoundWeight * vConfidenceMap[iQueryIdx].boundTerm;
-			
-	if (vConfidenceMap[iQueryIdx].totalValue < fTotalVal)
-		vConfidenceMap[iQueryIdx].totalValue = fTotalVal;
+    float fTotalVal =  m_fWeightDis * m_fLenWeight * vConfidenceMap[iQueryIdx].travelTerm 
+    	             + m_fWeightDis * m_fBoundWeight * vConfidenceMap[iQueryIdx].boundTerm
+                     + m_fWeightVis * vConfidenceMap[iQueryIdx].visiTerm;
+
+    //total value
+    vConfidenceMap[iQueryIdx].totalValue = fTotalVal;
 
 }
 
@@ -1327,7 +1331,6 @@ void Confidence::OutputOcclusionClouds(const pcl::PointCloud<pcl::PointXYZ> & vC
 	                                            const std::vector<bool> & vVisableRes,
 	                                                  const pcl::PointXYZ & viewpoint){
 
-    ROS_INFO("debug write occlusion");
 	std::stringstream sOutPCName;
 
     //set the current time stamp as a file name
@@ -1355,7 +1358,6 @@ void Confidence::OutputOcclusionClouds(const pcl::PointCloud<pcl::PointXYZ> & vC
                     << viewpoint.z << " " << 2 << " " << std::endl;
 
     oPointCloudFile.close();
-    ROS_INFO("debug write occlusion completed");
 
 }
 

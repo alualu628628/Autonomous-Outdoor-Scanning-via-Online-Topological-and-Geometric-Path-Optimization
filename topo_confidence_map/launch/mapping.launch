@@ -12,7 +12,7 @@
   <arg name="odomsamplingfreq" default="1.0" />
   <!--arg name="freshoctomapfreq" default="0.5" /-->
   <arg name="pointframesmpl" default="5" />
-  <arg name="pastduration" default="12.0" />
+  <arg name="pastduration" default="8.0" />
   <arg name="pastviewzoff" default="0.451"/> 
 
   <arg name="mapmaxrange" default="25" />
@@ -22,7 +22,7 @@
   <arg name="mapframeid" default="odom" />
 
   <arg name="robotlocalr" default="8.0"/>
-  <arg name="nodeminirate" default="0.5" />
+  <arg name="nodeminirate" default="0.3" />
   <arg name="initialr" default="4.5" />
 
   <arg name="shockduration" default="8.0"/>

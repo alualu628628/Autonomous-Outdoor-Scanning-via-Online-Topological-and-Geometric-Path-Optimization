@@ -89,8 +89,8 @@ struct ConfidenceValue{
 	ConfidenceValue() {
 
 		travelTerm = 0.0;//start with 1, which means no need to go there
-		boundTerm = 1.0;//start with 1, which means no need to go there
-		visiTerm = 0.0;
+		boundTerm = 0.0;//start with 1, which means no need to go there
+		visiTerm = 1.0;
 		qualTerm = 0.0;
 		totalValue = 0.0;//initial each grid as not need to move there
 		label = 0;//start with nothing
@@ -201,7 +201,8 @@ public:
 	void OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	                                  PCLCloudXYZPtr & pNearAllCloud,
 	                        const std::vector<int> & vNearGroundIdxs,
-	                            const pcl::PointXYZ & oPastViewPoint);
+	                            const pcl::PointXYZ & oPastViewPoint,
+	                                          const int & iNodeTimes);
 	
 
 	//2. quality term of confidence map
