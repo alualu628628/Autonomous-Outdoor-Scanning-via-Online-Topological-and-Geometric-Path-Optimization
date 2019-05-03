@@ -21,8 +21,8 @@ Confidence::Confidence(float f_fSigma,
 	                     m_fWeightDis(0.9),
                          m_fWeightVis(0.1),
 	                      m_fDensityR(0.3),
-                         m_fLenWeight(0.1),
-                       m_fBoundWeight(0.9){
+                         m_fLenWeight(0.6),
+                       m_fBoundWeight(0.4){
 
     //set sigma value
 	SetSigmaValue(f_fSigma);
