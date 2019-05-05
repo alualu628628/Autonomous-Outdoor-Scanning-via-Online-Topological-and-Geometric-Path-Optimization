@@ -13,9 +13,11 @@ Output: none
 Return: none
 Others: none
 *************************************************/
-OP::OP():m_iCurrNodeIdx(0){
+OP::OP():m_iCurrNodeIdx(0),
+               BBSolver(5){
 
-
+    //5 in BBSolver(5) is a placeholder
+    //it will be changed when using ObjectiveMatrix
 
 }
 
@@ -139,6 +141,31 @@ bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 
 
 /*************************************************
+Function: IsWideGrid
+Description: check whether grid is a wide grid or not
+Calls: none
+Called By: main function
+Table Accessed: none
+Table Updated: none
+Input: vConfidenceMap - the feature map
+       iQueryIdx - the query grid index
+Output: a flag indicats it is a wide grid (true) or not (false)
+Return: a bool value
+Others: none
+*************************************************/
+bool OP::IsWideGrid(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                              const int & iQueryIdx) {
+
+    //if this grid is not close to boundary and also visiable to current robot
+	if (vConfidenceMap[iQueryIdx].boundTerm == 0.0 &&
+		vConfidenceMap[iQueryIdx].visiTerm.value == 1.0)
+		return true;//true indicates it is a wide grid
+
+	return false;//false indicates it is NOT a wide grid
+
+}
+
+/*************************************************
 Function: TwoDDistance
 Description: compute distance
 Calls: none
@@ -151,8 +178,9 @@ Output: a Euclidean distance
 Return: float distance
 Others: none
 *************************************************/
-void OP::GetNewNode(const int & iNewNodeIdx,
-			        const pcl::PointXYZ & oNodePoints){
+void OP::GetNewNode(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                            const int & iNewNodeIdx,
+			                          const pcl::PointXYZ & oNodePoints){
 	
 	//a new node
 	Node oNewNode;
@@ -164,19 +192,27 @@ void OP::GetNewNode(const int & iNewNodeIdx,
 
 	//the corresponding grid idx of node
     oNewNode.gridIdx = iNewNodeIdx;
-    //the parent id
 
+    //the parent id
     oNewNode.parentIdx = m_iCurrNodeIdx;
+
     //visited or not
     oNewNode.visitedFlag = false;
 
+    //wide or not
+    oNewNode.wideFlag = IsWideGrid(vConfidenceMap, iNewNodeIdx);
+
     //get the new node
 	m_vAllNodes.push_back(oNewNode);
+    
+    //need update path strategy since the new input comes
+	m_vPlanNodeIdxs.clear();
 
 }
 //reload with multiple inputs
-void OP::GetNewNode(const std::vector<int> & vNewNodeIdxs,
-			        const std::vector<pcl::PointXYZ> & vNewNodeClouds){
+void OP::GetNewNode(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                              const std::vector<int> & vNewNodeIdxs,
+			          const std::vector<pcl::PointXYZ> & vNewNodeClouds){
 
 	if(vNewNodeIdxs.size() != vNewNodeClouds.size()){
 		ROS_INFO("Error: node index size and node point size are not the same.");
@@ -200,11 +236,15 @@ void OP::GetNewNode(const std::vector<int> & vNewNodeIdxs,
 	    oNewNode.parentIdx = m_iCurrNodeIdx;
 	    //visited or not
 	    oNewNode.visitedFlag = false;
-		
+		//wide or not
+        oNewNode.wideFlag = IsWideGrid(vConfidenceMap, vNewNodeIdxs[i]);
 		//get the grid idx of new node
 		m_vAllNodes.push_back(oNewNode);
 
 	}//end for int i = 0; i != vNewNodeIdxs.size(); ++i)
+
+    //need update path strategy since the new input comes
+	m_vPlanNodeIdxs.clear();
 
 }
 
@@ -221,9 +261,10 @@ Output: a Euclidean distance
 Return: float distance
 Others: none
 *************************************************/
-void OP::GetNewNodeSuppression(const int & iNewNodeIdx,
-			                   const pcl::PointXYZ & oNodePoint,
-					           float fSuppressionR){
+void OP::GetNewNodeSuppression(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                                       const int & iNewNodeIdx,
+			                                      const pcl::PointXYZ & oNodePoint,
+					                                           float fSuppressionR){
 
     //define a rule
 	float fMinDis = FLT_MAX;
@@ -259,17 +300,22 @@ void OP::GetNewNodeSuppression(const int & iNewNodeIdx,
         oNewNode.parentIdx = m_iCurrNodeIdx;
         //visited or not
         oNewNode.visitedFlag = false;
-
+        //wide or not
+        oNewNode.wideFlag = IsWideGrid(vConfidenceMap, iNewNodeIdx);
         //get the new node
 	    m_vAllNodes.push_back(oNewNode);
+
+	    //need update path strategy since the new input comes
+	    m_vPlanNodeIdxs.clear();
 
 	}
 
 }
 //reload with multiple inputs
-void OP::GetNewNodeSuppression(const std::vector<int> & vNewNodeIdxs,
-			                   const std::vector<pcl::PointXYZ> & vNewNodeClouds,
-					           float fSuppressionR){
+void OP::GetNewNodeSuppression(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                         const std::vector<int> & vNewNodeIdxs,
+			                     const std::vector<pcl::PointXYZ> & vNewNodeClouds,
+					                                           float fSuppressionR){
 
 	//new a point cloud to save thr unvisited point
     pcl::PointCloud<pcl::PointXYZ>::Ptr pUnVisitCloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -315,10 +361,13 @@ void OP::GetNewNodeSuppression(const std::vector<int> & vNewNodeIdxs,
                 oNewNode.parentIdx = m_iCurrNodeIdx;
                 //visited or not
                 oNewNode.visitedFlag = false;
-			   
+			    //wide or not
+                oNewNode.wideFlag = IsWideGrid(vConfidenceMap, vNewNodeIdxs[i]);
 	            //get the grid idx of new node
 			    m_vAllNodes.push_back(oNewNode);
-			    //m_vPlanNodeIdx.push_back(m_vAllNodes.size()-1);
+			    
+			    //need update path strategy since the new input comes
+	            m_vPlanNodeIdxs.clear();
 
 			}//end if
 
@@ -327,9 +376,67 @@ void OP::GetNewNodeSuppression(const std::vector<int> & vNewNodeIdxs,
 	}else{//there are not unvisited nodes
 
 	    //directly save input nodes
-        GetNewNode(vNewNodeIdxs,vNewNodeClouds);
+        GetNewNode(vConfidenceMap, vNewNodeIdxs, vNewNodeClouds);
+
+        //need update path strategy since the new input comes
+	    m_vPlanNodeIdxs.clear();
 
 	}//end else
+
+}
+
+/*************************************************
+Function: UpdateNodes
+Description: compute distance
+Calls: none
+Called By: main function
+Table Accessed: none
+Table Updated: none
+Input: oQueryPoint - one 3d point
+       oTargetPoint - another 3d point
+Output: a Euclidean distance
+Return: float distance
+Others: none
+*************************************************/
+bool OP::UpdateNodes(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                                 float fMinThreshold){
+
+    //count how many nodes need to be removed from plan
+    int iRemoveNum = 0;
+    	//wide node number
+	int iWideNodeNum = 0;
+
+	//a status indicating whether the node is removed or not
+	for (int i = 0; i != m_vAllNodes.size(); ++i) {
+		//search all unvisited node
+		if(!m_vAllNodes[i].visitedFlag){
+            //if it not need to go
+			if(vConfidenceMap[m_vAllNodes[i].gridIdx].totalValue > fMinThreshold){
+				m_vAllNodes[i].visitedFlag = true;
+			    iRemoveNum++;
+			    continue;
+			}//end if >
+
+			//also update the wide characteristic of nodes
+			m_vAllNodes[i].wideFlag = IsWideGrid(vConfidenceMap, m_vAllNodes[i].gridIdx);
+			//count if it is a wide node
+			if(m_vAllNodes[i].wideFlag)
+				iWideNodeNum++;
+
+		}//end if visitedFlag
+
+	}//end for
+
+    //need update path strategy since some nodes removed
+    if(iRemoveNum)
+    	m_vPlanNodeIdxs.clear();
+
+	//if there are still some wide areas
+	std::cout << "****remain wide node number: " << iWideNodeNum << std::endl;
+	if (iWideNodeNum)
+		return true;
+	else
+		return false;
 
 }
 
@@ -355,6 +462,8 @@ float OP::TwoDDistance(const pcl::PointXYZ & oQueryPoint,
 
 }
 
+
+
 /*************************************************
 Function: TwoDDistance
 Description: compute distance
@@ -368,17 +477,33 @@ Output: a Euclidean distance
 Return: float distance
 Others: none
 *************************************************/
-inline float OP::CostFunction(const Node & oQueryNode,
-	                          const Node & oTargetNode){
+inline float OP::ObjectiveFunction(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                                           const Node & oQueryNode,
+	                                                          const Node & oTargetNode){
 
-	//define 
-	float fCostValue = FLT_MAX;
+	//using measured method
 
-	//compute the final cost based on the cost and reward
-	fCostValue = TwoDDistance(oQueryNode.point, oTargetNode.point);
+	//compute the final cost value
+	float fCost = TwoDDistance(oQueryNode.point, oTargetNode.point);
 
-	//
-	return fCostValue;
+	//compute the reward value
+	float fReward = 1.0 - vConfidenceMap[oTargetNode.gridIdx].totalValue;
+	
+	//initial the objective value as inf limit
+	float fObjectValue = FLT_MAX;
+
+	//if reward is in normal
+	//objective = cost / reward, thereby to find the minimum cost
+	if (fReward > 0.0)
+		fObjectValue = fCost / fReward;
+
+	//check the target grid is a wide grid
+	//if it is a wide grid, then targetedly decreases the cost 
+	if (IsWideGrid(vConfidenceMap, oTargetNode.gridIdx))
+		fObjectValue = 0.8333333 * fObjectValue;
+
+	//return result
+	return fObjectValue;
 
 }
 
@@ -404,7 +529,7 @@ bool OP::GTR(const pcl::PointXYZ & oCurOdom,
 	//m_vAllNodes[m_iCurrNodeIdx].point.z = 0.0;
 	m_vAllNodes[m_iCurrNodeIdx].visitedFlag = true;
 	//record at node trajectory
-    m_vPastNodeIdx.push_back(m_iCurrNodeIdx);
+    m_vPastNodeIdxs.push_back(m_iCurrNodeIdx);
 
 	//check whether all are completed
 	std::vector<int> vPlanNodeIdxs;
@@ -413,7 +538,7 @@ bool OP::GTR(const pcl::PointXYZ & oCurOdom,
 			vPlanNodeIdxs.push_back(i);
     }
 
-	//define output
+    //define output
 	//if there are not any new nodes shoule be invoked
 	if (!vPlanNodeIdxs.size()){
 		return true;
@@ -421,19 +546,21 @@ bool OP::GTR(const pcl::PointXYZ & oCurOdom,
 
 
     int iMinIdx;
-    float fMinCost = FLT_MAX;
+    float fMinMeasure = FLT_MAX;
 	//to each unselected point
 	for (int i = 0; i != vPlanNodeIdxs.size(); ++i) {
 
-		int iQueryIdx = vPlanNodeIdxs[i];
+		int iTargetIdx = vPlanNodeIdxs[i];
 
 		//cost function which considers the reward and cost of node
-		float fPairCost = CostFunction(m_vAllNodes[m_iCurrNodeIdx], m_vAllNodes[iQueryIdx]);
+		float fPairMeasure = ObjectiveFunction(vConfidenceMap,
+			                                   m_vAllNodes[m_iCurrNodeIdx], 
+			                                   m_vAllNodes[iTargetIdx]);
 			   
 		//find the shorest route
-		if (fPairCost < fMinCost) {
-			fMinCost = fPairCost;
-			iMinIdx = iQueryIdx;
+		if (fPairMeasure < fMinMeasure) {
+			fMinMeasure = fPairMeasure;
+			iMinIdx = iTargetIdx;
 		}
 
 	}//end if(vUnVisitedStatus[i])
@@ -457,14 +584,137 @@ Output: a Euclidean distance
 Return: float distance
 Others: none
 *************************************************/
+bool OP::BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
+	                       const std::vector<ConfidenceValue> & vConfidenceMap) {
+
+    //whatever the robot successfully reached target node 
+	m_vAllNodes[m_iCurrNodeIdx].point.x = oCurOdom.x;
+	m_vAllNodes[m_iCurrNodeIdx].point.y = oCurOdom.y;
+	//m_vAllNodes[m_iCurrNodeIdx].point.z = 0.0;
+	m_vAllNodes[m_iCurrNodeIdx].visitedFlag = true;
+	//record at node trajectory
+    m_vPastNodeIdxs.push_back(m_iCurrNodeIdx);
+
+	//check whether a plan should be build up
+	//size = 0 means need new plan
+	//size = 1 means the travel is over
+	//size > 1 means continue raw plan
+
+	if(m_vPlanNodeIdxs.size()){
+
+	    //implement the raw plan
+		if(m_vPlanNodeIdxs.size() > 1){
+			//NEW plan
+			std::vector<int> vNewPlanIdxs;
+			for(int i = 1; i < m_vPlanNodeIdxs.size(); ++i)//start from 1
+				vNewPlanIdxs.push_back(m_vPlanNodeIdxs[i]);
+            //reset raw plan
+            m_vPlanNodeIdxs.clear();
+            for(int i = 0; i!= vNewPlanIdxs.size(); ++i)//start from 0
+				m_vPlanNodeIdxs.push_back(vNewPlanIdxs[i]);
+            //get current target grid index
+		    m_iCurrNodeIdx = m_vPlanNodeIdxs[0];
+            //ouput messages that some nodes are still not visited
+		    return false;
+	    }//end if m_vPlanNodeIdxs.size() > 1
+
+		//the current grid index stand alone
+		if(m_vPlanNodeIdxs.size() == 1)
+			m_vPlanNodeIdxs.pop_back();
+		//all nodes are visited
+		return true; 
+
+	}
+
+   	//check which points are need to be planed
+	std::vector<int> vPlanNodeIdxs;
+	vPlanNodeIdxs.push_back(m_iCurrNodeIdx);
+	for (int i = 0; i != m_vAllNodes.size();++i) {
+		if (!m_vAllNodes[i].visitedFlag)
+			vPlanNodeIdxs.push_back(i);
+    }
+
+	//still check again if some nodes has been removed in updating map
+	if (vPlanNodeIdxs.size() < 2){
+		return true;
+    }
+
+    //construct a directed graph for remained nodes
+	//effective matrix
+	std::vector<std::vector<float>> vEffectMatrix;
+	std::vector<float> vArray(vPlanNodeIdxs.size(), 0.0);
+	for (int i = 0; i != vPlanNodeIdxs.size(); ++i) {
+		vEffectMatrix.push_back(vArray);
+	}
+	
+	//construct a measured matrix among unvisited nodes
+	for (int i = 0; i != vPlanNodeIdxs.size(); ++i) {
+
+		int iSourceIdx = vPlanNodeIdxs[i];
+
+		for(int j = 0; j != vPlanNodeIdxs.size(); ++j) {
+			
+			//compute the real cost using the given cost function
+			int iTargetIdx = vPlanNodeIdxs[j];
+
+			//cost function which considers the reward and cost of node
+			vEffectMatrix[i][j] = ObjectiveFunction(vConfidenceMap,
+			                                        m_vAllNodes[iSourceIdx], 
+			                                        m_vAllNodes[iTargetIdx]);
+
+		}//end if(vUnVisitedStatus[i])
+	}
+
+    //input the matrix to bb object
+	BBSolver.ObjectiveMatrix(vEffectMatrix);
+	//get the plan result
+	std::vector<int> vResTour;
+	//output without the frist element, the frist one of output is the goal(next best node)
+	float bestCost = BBSolver.SolveOP(vResTour);  //\C6\F0\B5㶨Ϊ1\A3\AC\B4ӵڶ\FE\B2㿪ʼ  
+	std::cout << "best cost is " << bestCost << std::endl;
+	
+	for (int i = 1; i != vResTour.size(); ++i) {//start from 1
+	
+		int iBBNodeidx = vResTour[i];//note that bb node is beginning from 1 
+		//find the real index in unvisited nodes
+		int iNodeIdx = vPlanNodeIdxs[iBBNodeidx];
+		//fresh the plan
+	    m_vPlanNodeIdxs.push_back(iNodeIdx);
+        //print the plan
+		std::cout << iNodeIdx << " with bound "<< vConfidenceMap[iNodeIdx].boundTerm << " and visible "
+			      << vConfidenceMap[iNodeIdx].visiTerm.value << " -> ";
+	}
+	std::cout << std::endl;
+
+    //get the next best viewpoint
+	m_iCurrNodeIdx = m_vPlanNodeIdxs[0];
+
+	return false;
+
+}
+
+
+/*************************************************
+Function: TwoDDistance
+Description: compute distance
+Calls: none
+Called By: main function
+Table Accessed: none
+Table Updated: none
+Input: oQueryPoint - one 3d point
+       oTargetPoint - another 3d point
+Output: a Euclidean distance
+Return: float distance
+Others: none
+*************************************************/
 void OP::OutputPastNodes(std::vector<pcl::PointXYZ> & vOutputNodes){
 
 	vOutputNodes.clear();
-	vOutputNodes.reserve(m_vPastNodeIdx.size());
+	vOutputNodes.reserve(m_vPastNodeIdxs.size());
 
 	//assignment
-	for (int i = 0; i != m_vPastNodeIdx.size(); ++i){
-		vOutputNodes.push_back(m_vAllNodes[m_vPastNodeIdx[i]].point);
+	for (int i = 0; i != m_vPastNodeIdxs.size(); ++i){
+		vOutputNodes.push_back(m_vAllNodes[m_vPastNodeIdxs[i]].point);
 	}
 
 }
@@ -485,11 +735,11 @@ Others: none
 void OP::OutputPlanNodes(std::vector<pcl::PointXYZ> & vOutputNodes){
 
 	vOutputNodes.clear();
-	vOutputNodes.reserve(m_vPlanNodeIdx.size());
+	vOutputNodes.reserve(m_vPlanNodeIdxs.size());
 
 	//assignment
-	for (int i = 0; i != m_vPlanNodeIdx.size(); ++i){
-		vOutputNodes.push_back(m_vAllNodes[m_vPlanNodeIdx[i]].point);
+	for (int i = 0; i != m_vPlanNodeIdxs.size(); ++i){
+		vOutputNodes.push_back(m_vAllNodes[m_vPlanNodeIdxs[i]].point);
 	}
 
 }
@@ -548,3 +798,17 @@ void OP::OutputGoalPos(int & iGoalGridIdx){
 
 
 }/*namespace*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+

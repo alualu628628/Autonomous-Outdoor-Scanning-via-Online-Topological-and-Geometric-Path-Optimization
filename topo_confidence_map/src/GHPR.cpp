@@ -212,9 +212,6 @@ void GHPR::FindVisibleIndices(std::vector<bool> & vVisibleRes,
 	                          const pcl::PointCloud<pcl::PointXYZ>::Ptr & pTransforCloud,
 	                          const pcl::PointCloud<pcl::PointXYZ>::Ptr & pHullCloud) {
 
-	std::cout<<"pTransforCloud->points.size(): "<<pTransforCloud->points.size()<<std::endl;
-	std::cout<<"pHullCloud->points.size(): "<<pHullCloud->points.size()<<std::endl;
-
 	//define output
 	//remove the viewpoint from ouput list
 	vVisibleRes.clear();

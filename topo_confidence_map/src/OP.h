@@ -1,6 +1,7 @@
 #ifndef OP_H
 #define OP_H
 #include <queue>
+#include "BranchBound.h"
 #include "ConfidenceMap.h"
 
 
@@ -16,6 +17,14 @@ struct Node{
     int parentIdx;
     //visited or not
     bool visitedFlag;
+    //label wide grid 
+    bool wideFlag;
+
+    Node(){
+
+        visitedFlag = false;
+    	wideFlag = false;
+    };
 
 };
 
@@ -43,32 +52,50 @@ public:
 	                               float fDisDiffThr = 0.5,
 	                                int iFirstTripThr = 10);
 
+    //check whether the grid is wide
+	bool IsWideGrid(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                              const int & iQueryIdx);
+
 	//get the current node index
-	void GetNewNode(const int & iNewNodeIdx,
-			        const pcl::PointXYZ & oNodePoints);
-	void GetNewNode(const std::vector<int> & vNewNodeIdxs,
-			        const std::vector<pcl::PointXYZ> & vNewNodeClouds);
+	void GetNewNode(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                            const int & iNewNodeIdx,
+			                          const pcl::PointXYZ & oNodePoints);
+	void GetNewNode(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                              const std::vector<int> & vNewNodeIdxs,
+			          const std::vector<pcl::PointXYZ> & vNewNodeClouds);
 
 	//get the newly generated nodes
-	void GetNewNodeSuppression(const int & iNewNodeIdx,
-			                   const pcl::PointXYZ & oNodePoint,
-					           float fSuppressionR = 5.0);
-	void GetNewNodeSuppression(const std::vector<int> & vNewNodeIdxs,
-			                   const std::vector<pcl::PointXYZ> & vNewNodeClouds,
-					           float fSuppressionR = 5.0);
+	void GetNewNodeSuppression(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                                       const int & iNewNodeIdx,
+			                                      const pcl::PointXYZ & oNodePoint,
+					                                     float fSuppressionR = 1.0);
+
+	void GetNewNodeSuppression(const std::vector<ConfidenceValue> & vConfidenceMap,
+		                                     const std::vector<int> & vNewNodeIdxs,
+			                     const std::vector<pcl::PointXYZ> & vNewNodeClouds,
+					                                     float fSuppressionR = 1.0);
+
+    //update the node value
+	bool UpdateNodes(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                                 float fMinThreshold);
 
 	//compute the Euclidean distance
 	float TwoDDistance(const pcl::PointXYZ & oQueryPoint,
 		               const pcl::PointXYZ & oTargetPoint);
 
 
-	//the cost function of a pairs of nodes
-    float CostFunction(const Node & oQueryNode,
-	                   const Node & oTargetNode);
+	//the measured function of a pairs of nodes
+    float ObjectiveFunction(const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                                    const Node & oQueryNode,
+	                                                   const Node & oTargetNode);
 
     //greed method
     bool GTR(const pcl::PointXYZ & oCurOdom,
 	         const std::vector<ConfidenceValue> & vConfidenceMap);
+
+    //branch and bound method to solve op problem
+    bool BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
+	                       const std::vector<ConfidenceValue> & vConfidenceMap);
 
 	//Outout the history of traveling nodes
     void OutputPastNodes(std::vector<pcl::PointXYZ> & vOutputNodes);
@@ -84,16 +111,32 @@ public:
 private:
 
 	//the grid index of which current robot is 
-	int m_iCurrNodeIdx;//this value will be only changed in plan function
+	//it also will became the target idx after using plan function
+	int m_iCurrNodeIdx;//this value will be the core variable in path plan 
+
 	//unvisited nodes or nodes to be visited (id)
-    std::vector<int> m_vPlanNodeIdx;
+    std::vector<int> m_vPlanNodeIdxs;
+
     //past nodes or nodes has been visited (id)
-    std::vector<int> m_vPastNodeIdx;
+    std::vector<int> m_vPastNodeIdxs;
+
     //all generated nodes
 	std::vector<Node> m_vAllNodes;
+
+	//branch and bound based method's object
+	BranchBound BBSolver;
 
 };
 
 }/*namespace*/
 
 #endif
+
+
+
+
+
+
+
+
+

@@ -18,18 +18,17 @@ Confidence::Confidence(float f_fSigma,
 	                   float f_fGHPRParam,
 	                  float f_fVisTermThr,
 	                  float f_fMinNodeThr):
-	                     m_fWeightDis(0.9),
-                         m_fWeightVis(0.1),
+	                 m_fTraversWeight(0.9),
+                     m_fExploreWeight(0.1),
 	                      m_fDensityR(0.3),
-                         m_fLenWeight(0.6),
+                         m_fDisWeight(0.6),
                        m_fBoundWeight(0.4){
 
     //set sigma value
 	SetSigmaValue(f_fSigma);
 
     //set visibility parameters
-	SetVisParas(f_fGHPRParam, 
-		        f_fVisTermThr);
+	SetVisTermThr(f_fVisTermThr);
 
     //set node generation parameter
 	SetNodeGenParas(f_fMinNodeThr);
@@ -74,6 +73,25 @@ void Confidence::SetSigmaValue(const float & f_fSigma) {
 
 }
 
+
+/*************************************************
+Function: SetSigmaValue
+Description: set value to the private data member m_fSigma
+Calls: none
+Called By: Confidence
+Table Accessed: none
+Table Updated: none
+Input: f_fSigma - a given sigma value depends on the scanning region
+Output: none
+Return: none
+Others: none
+*************************************************/
+void Confidence::SetVisTermThr(const float & f_fVisTermThr) {
+
+	m_fVisTermThr = f_fVisTermThr;
+
+}
+
 /*************************************************
 Function: SetVisParas
 Description: set value to the parameters related to visibility term
@@ -88,14 +106,30 @@ Output: m_fGHPRParam
 Return: none
 Others: none
 *************************************************/
-void Confidence::SetVisParas(const float & f_fGHPRParam, 
-	                         const float & f_fVisTermThr){
+void Confidence::SetTermWeight(const float & f_fTraversWeight,
+	                           const float & f_fExploreWeight,
+	                           const float & f_fDisWeight,
+	                           const float & f_fBoundWeight){
 
-	m_fGHPRParam = f_fGHPRParam;
-
-	m_fVisTermThr = f_fVisTermThr;
+    //get input
+	m_fTraversWeight = f_fTraversWeight;
+	m_fExploreWeight = f_fExploreWeight;
+    m_fDisWeight = f_fDisWeight;
+	m_fBoundWeight = f_fBoundWeight;
 
 }
+//reload with normalization
+void Confidence::SetTermWeight(const float & f_fTraversWeight,
+	                           const float & f_fDisWeight){
+
+    //get input
+	m_fTraversWeight = f_fTraversWeight;
+	m_fExploreWeight = 1.0 - f_fTraversWeight;
+    m_fDisWeight = f_fDisWeight;
+	m_fBoundWeight = 1.0 - f_fDisWeight;
+
+}
+
 
 /*************************************************
 Function: SetVisParas
@@ -117,6 +151,26 @@ void Confidence::SetNodeGenParas(const float & f_fMinNodeThr){
 
 }
 
+/*************************************************
+Function: SetVisParas
+Description: set value to the parameters related to visibility term
+Calls: none
+Called By: Confidence
+Table Accessed: none
+Table Updated: none
+Input: f_fGHPRParam - a parameter of GHPR algorithm
+      f_fVisTermThr - a threshold of visibility value
+Output: m_fGHPRParam
+        m_fVisTermThr
+Return: none
+Others: none
+*************************************************/
+float Confidence::OutNodeGenParas(){
+
+	float fMinNodeThr = m_fMinNodeThr;
+	return fMinNodeThr;
+
+}
 /*************************************************
 Function: VectorInnerProduct
 Description: This is an inner product operation of two vectors
@@ -742,12 +796,14 @@ void Confidence::OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	//**********Incremental item************
 	//fv(p) = fv(n)  
 	for (int i = 0; i != vNearGroundIdxs.size(); ++i){
-		//if it is a new scanned ground grid
-		//if(vConfidenceMap[vNearGroundIdxs[i]].nodeCount == iNodeTimes){
-		//if it is occlusion and then is labelled
-			if(!vVisableRes[i])//get the occlusion result
-				vConfidenceMap[vNearGroundIdxs[i]].visiTerm = 0.0;
-		//}
+		//count in each view
+		vConfidenceMap[vNearGroundIdxs[i]].visiTerm.totaltimes++;
+		//if it is a clear view
+		if(vVisableRes[i])//get the occlusion result
+			vConfidenceMap[vNearGroundIdxs[i]].visiTerm.visibletimes += 1.0;
+
+		vConfidenceMap[vNearGroundIdxs[i]].visiTerm.value = vConfidenceMap[vNearGroundIdxs[i]].visiTerm.visibletimes /
+		                                                    vConfidenceMap[vNearGroundIdxs[i]].visiTerm.totaltimes;
 
 	}
     
@@ -1012,13 +1068,13 @@ void Confidence::ComputeTotalCoffidence(std::vector<ConfidenceValue> & vConfiden
 	                                                           const int & iQueryIdx){
 
     //get maximum value of distance term
-    //float fTotalVal =  m_fLenWeight * vDisPartValue[i] 
+    //float fTotalVal =  m_fDisWeight * vDisPartValue[i] 
     //                + m_fBoundWeight * vBoundPartValue[i] 
-    //                + m_fWeightVis * LinearKernel(vConfidenceMap[iQueryIdx].visibility, m_fVisTermThr);
+    //                + m_fExploreWeight * LinearKernel(vConfidenceMap[iQueryIdx].visibility, m_fVisTermThr);
 
-    float fTotalVal =  m_fWeightDis * m_fLenWeight * vConfidenceMap[iQueryIdx].travelTerm 
-    	             + m_fWeightDis * m_fBoundWeight * vConfidenceMap[iQueryIdx].boundTerm
-                     + m_fWeightVis * vConfidenceMap[iQueryIdx].visiTerm;
+    float fTotalVal =  m_fTraversWeight * m_fDisWeight * vConfidenceMap[iQueryIdx].travelTerm 
+    	             + m_fTraversWeight * m_fBoundWeight * vConfidenceMap[iQueryIdx].boundTerm
+                     + m_fExploreWeight * vConfidenceMap[iQueryIdx].visiTerm.value;
 
     //total value
     vConfidenceMap[iQueryIdx].totalValue = fTotalVal;

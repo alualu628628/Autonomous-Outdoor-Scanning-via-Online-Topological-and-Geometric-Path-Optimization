@@ -30,25 +30,22 @@
 
 namespace topology_map {
 
+
+//visible value
+struct Visible{
+
+	float visibletimes;
+	float totaltimes;
+	float value;
+
+	Visible(){
+		visibletimes = 0.0;
+		totaltimes = 0.0;
+		value = 0.0;
+	}
+};
+
 //status
-
-//************details of grid label value in m_vMapGridLabel
-// cover means rewrite if new sematic object appears in this grid
-// 0 nothing or unknown (0 is covered by 1)
-// 1 obstacles (1 is covered by 2)
-// 2 ground points (2 is covered by 3)
-// 3 boundary 
-// for example, boundary grid can not be defined as another classification, but obstacle can be recovered by ground or obstacles 
-// the "-" negetive means the grid has been computed in node generation
-
-//************details of grid status value in m_vMapGridTravel
-//status indicates whether the gird is travelable or not (can the robot reaches this grid right now)
-// -1 indicates it is an unknown grid
-// 0 indicates this grid is ground but not reachable now
-// 1 indicates this grid is a travelable region grid
-// 2 is the new scanned grids (input) without growing
-// 3 indicates the grid has been computed
-// 4 indicates this grid is a off groud grid (not reachable forever)
 struct ConfidenceValue{
 
 	//distance based term
@@ -56,26 +53,30 @@ struct ConfidenceValue{
 	//visibility based term
 	float boundTerm;
 	//bound term
-	float visiTerm;
+	Visible visiTerm;
 	//quality
 	float qualTerm;
 	//quality
 	float totalValue;
 
-	//labels of obstacle, travelable region and boundary
-	//0 nothing 
-	//1 obstacles
-	//2 ground points
-	//3 boundary
+	//************details of grid label value in m_vMapGridLabel
+    // cover means rewrite if new sematic object appears in this grid
+    // 0 nothing or unknown (0 is covered by 1)
+    // 1 obstacles (1 is covered by 2)
+    // 2 ground points (2 is covered by 3)
+    // 3 boundary 
+    // for example, boundary grid can not be defined as another classification, but obstacle can be recovered by ground or obstacles 
+    // the "-" negetive means the grid has been computed in node generation
 	short label;
 
-	//travelable or not (can the robot reaches this grid right now)
-	//-1 indicates it is an unknown grid
-	//0 indicates this grid is ground but not reachable now
-	//1 indicates this grid is a travelable region grid
-	//2 is the new scanned grids (input) without growing
-	//3 indicates the grid has been computed
-	//4 indicates this grid is a off groud grid (not reachable forever)
+    //************details of grid status value in m_vMapGridTravel
+    //status indicates whether the gird is travelable or not (can the robot reaches this grid right now)
+    // -1 indicates it is an unknown grid
+    // 0 indicates this grid is ground but not reachable now
+    // 1 indicates this grid is a travelable region grid
+    // 2 is the new scanned grids (input) without growing
+    // 3 indicates the grid has been computed
+    // 4 indicates this grid is a off groud grid (not reachable forever)
 	short travelable;
 
 	//quality computed flag
@@ -90,7 +91,7 @@ struct ConfidenceValue{
 
 		travelTerm = 0.0;//start with 1, which means no need to go there
 		boundTerm = 0.0;//start with 1, which means no need to go there
-		visiTerm = 1.0;
+		//visiTerm = 1.0;
 		qualTerm = 0.0;
 		totalValue = 0.0;//initial each grid as not need to move there
 		label = 0;//start with nothing
@@ -129,11 +130,21 @@ public:
 	void SetSigmaValue(const float & f_fSigma);
 
 	//set visibility term related paramters
-	void SetVisParas(const float & f_fGHPRParam, const float & f_fVisTermThr);
+	void SetVisTermThr(const float & f_fVisTermThr);
 
+    //set the weight of each terms
+	void SetTermWeight(const float & f_fTraversWeight,
+	                   const float & f_fExploreWeight,
+	                   const float & f_fDisWeight,
+	                   const float & f_fBoundWeight);
+    void SetTermWeight(const float & f_fTraversWeight,
+	                   const float & f_fDisWeight);
 
+    //set node minimum threshold
 	void SetNodeGenParas(const float & f_fMinNodeThr);
 
+	//output m_fMinNodeThr
+	float OutNodeGenParas();
 
 	//*******************Mathematical Formula Part********************
 	
@@ -271,16 +282,15 @@ private:
 	float m_fSigma;
 	
 	//visibility term based paramters
-	float m_fGHPRParam;///<parameter of GHPR algorithm
 	float m_fVisTermThr;///<the threshold of visibility term
 
 	//weighted of each term for total confidence value
-	const float m_fWeightDis;
-	const float m_fWeightVis;
+	float m_fTraversWeight;
+	float m_fExploreWeight;
 
 	//weighted of each term for total confidence value
-	const float m_fLenWeight;
-	const float m_fBoundWeight;
+	float m_fDisWeight;
+	float m_fBoundWeight;
 
 	//the searched radius of a query point in density estimation
 	const float m_fDensityR;

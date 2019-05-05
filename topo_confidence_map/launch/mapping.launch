@@ -16,8 +16,8 @@
   <arg name="pastviewzoff" default="0.451"/> 
 
   <arg name="mapmaxrange" default="25" />
-  <arg name="mapminz" default="-3.0" />
-  <arg name="mapmaxz" default="7.0" />
+  <arg name="mapminz" default="-5.0" />
+  <arg name="mapmaxz" default="20.0" />
   <arg name="mapresolution" default="0.2" />
   <arg name="mapframeid" default="odom" />
 
@@ -26,6 +26,11 @@
   <arg name="initialr" default="4.5" />
 
   <arg name="shockduration" default="8.0"/>
+
+  <!--parameter of three term travel term, bound term and visible term, respectively-->
+  <!--traversweight + exploreWeight = 1, and disWeight + boundWeight = 1 /-->
+  <arg name="traversweight" default="0.9" /><!--m_fExploreWeight = 1.0 - f_fTraversWeight;/-->
+  <arg name="traversdisweight" default="0.6" /><!-- m_fBoundWeight = 1.0 - f_fDisWeight;/-->
 
   <!-- Load the octomap -->
   <!--node pkg="octomap_server" type="octomap_server_node" name="octomap_server"-->
@@ -77,8 +82,12 @@
     <param name="nodegenerate_rate" type="double" value="$(arg nodeminirate)" />
     <param name="initial_r" type="double" value="$(arg initialr)" />
 
-     <!--moving action-->
-     <param name="shock_duration" type="double" value="$(arg shockduration)" /><!--second-->
+    <!--moving action-->
+    <param name="shock_duration" type="double" value="$(arg shockduration)" /><!--second-->
+
+    <!--parameter of three term travel term, bound term and visible term, respectively-->
+    <param name="travers_weight" type="double" value="$(arg traversweight)" />
+    <param name="traversdis_weight" type="double" value="$(arg traversdisweight)" />
 
   </node>
 

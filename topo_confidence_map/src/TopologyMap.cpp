@@ -207,7 +207,18 @@ bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
 	nodeHandle.param("initial_r", dInitialR, 4.5);
     m_oGMer.m_vInitialMask.clear();
 	m_oGMer.m_vInitialMask = m_oGMer.GenerateCircleMask(dInitialR);
-    
+
+	//about confidence feature weight
+	double dTraversWeight;
+	nodeHandle.param("travers_weight", dTraversWeight, 0.9);
+	float fTraversWeight = float(dTraversWeight);
+
+	double dDisWeight;
+	nodeHandle.param("traversdis_weight", dDisWeight, 0.6);
+	float fDisWeight = float(dDisWeight);
+
+	m_oCnfdnSolver.SetTermWeight(fTraversWeight, fDisWeight);
+
 	return true;
 
 }
@@ -547,12 +558,23 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 			std::vector<pcl::PointXYZ> vNodeClouds;
 			m_oCnfdnSolver.FindLocalMinimum(vNewNodeIdx, vNodeClouds,
 	                                        m_vConfidenceMap, m_oGMer, m_iNodeTimes);
-			//get new nodes
-			m_oOPSolver.GetNewNodeSuppression(vNewNodeIdx, vNodeClouds, 3.0);
-            
-		    m_oOPSolver.GTR(m_vOdomViews.back(),m_vConfidenceMap);
 
+			//get new nodes
+			m_oOPSolver.GetNewNodeSuppression(m_vConfidenceMap, 
+				                                   vNewNodeIdx, 
+				                                   vNodeClouds, 1.0);
+
+            //get the upper bound of generating node
+            float fMiniNodeThr = m_oCnfdnSolver.OutNodeGenParas();
+            //*******use op solver*********
+			if(m_oOPSolver.UpdateNodes(m_vConfidenceMap,fMiniNodeThr))
+				//use greedy based method
+				m_oOPSolver.GTR(m_vOdomViews.back(),m_vConfidenceMap);
+			else
+				//use branch and bound based method
+				m_oOPSolver.BranchBoundMethod(m_vOdomViews.back(),m_vConfidenceMap);
 		    
+		    //output
 		    std::vector<pcl::PointXYZ> vUnvisitedNodes;
 		    m_oOPSolver.OutputUnvisitedNodes(vUnvisitedNodes);
 
@@ -953,7 +975,7 @@ void TopologyMap::PublishGridMap(){
 		    gridMapData1(i, j) = m_vConfidenceMap[iGridIdx].nodeCount;
 		    gridMapData2(i, j) = m_vConfidenceMap[iGridIdx].travelTerm;
 		    gridMapData3(i, j) = m_vConfidenceMap[iGridIdx].boundTerm;
-		    gridMapData4(i, j) = m_vConfidenceMap[iGridIdx].visiTerm ;
+		    gridMapData4(i, j) = m_vConfidenceMap[iGridIdx].visiTerm.value;
 		    gridMapData5(i, j) = m_vConfidenceMap[iGridIdx].totalValue;
 		    gridMapData6(i, j) = m_vConfidenceMap[iGridIdx].travelable;
 		    gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].label;
@@ -1069,6 +1091,8 @@ void TopologyMap::OutputCoverRateFile(const int & iTravelableNum){
 		m_sCoverFileName << m_sFileHead << "CoverRes_" << ros::Time::now() << ".txt"; 
 
 		m_bCoverFileFlag = true;
+        //print coverage rate evaluation message
+		std::cout << "Attention a coverage rate evaluation file is created in " << m_sCoverFileName.str() << std::endl;
 	}
 
 	//output
@@ -1105,11 +1129,13 @@ void TopologyMap::OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory){
 
 	if(!m_bOutTrajFileFlag){
 
-	//set the current time stamp as a file name
-    //full name 
+	    //set the current time stamp as a file name
+        //full name 
 		m_sOutTrajFileName << m_sFileHead << "Traj_" << oTrajectory.header.stamp << ".txt"; 
 
 		m_bOutTrajFileFlag = true;
+        //print output file generation message
+		std::cout << "[*] Attention a trajectory recording file is created in " << m_sOutTrajFileName.str() << std::endl;
 	}
 
 	//output
