@@ -411,6 +411,7 @@ bool OP::UpdateNodes(const std::vector<ConfidenceValue> & vConfidenceMap,
 		//search all unvisited node
 		if(!m_vAllNodes[i].visitedFlag){
             //if it not need to go
+            std::cout<<"updating node totalvalue: "<<vConfidenceMap[m_vAllNodes[i].gridIdx].totalValue<<std::endl;
 			if(vConfidenceMap[m_vAllNodes[i].gridIdx].totalValue > fMinThreshold){
 				m_vAllNodes[i].visitedFlag = true;
 			    iRemoveNum++;
@@ -432,6 +433,7 @@ bool OP::UpdateNodes(const std::vector<ConfidenceValue> & vConfidenceMap,
     	m_vPlanNodeIdxs.clear();
 
 	//if there are still some wide areas
+	std::cout << "****remove node number: " << iRemoveNum << std::endl;
 	std::cout << "****remain wide node number: " << iWideNodeNum << std::endl;
 	if (iWideNodeNum)
 		return true;
@@ -604,14 +606,17 @@ bool OP::BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
 
 	    //implement the raw plan
 		if(m_vPlanNodeIdxs.size() > 1){
+			std::cout<<"use raw plan: "<<std::endl;
 			//NEW plan
 			std::vector<int> vNewPlanIdxs;
 			for(int i = 1; i < m_vPlanNodeIdxs.size(); ++i)//start from 1
 				vNewPlanIdxs.push_back(m_vPlanNodeIdxs[i]);
             //reset raw plan
             m_vPlanNodeIdxs.clear();
-            for(int i = 0; i!= vNewPlanIdxs.size(); ++i)//start from 0
+            for(int i = 0; i!= vNewPlanIdxs.size(); ++i){//start from 0
 				m_vPlanNodeIdxs.push_back(vNewPlanIdxs[i]);
+				PrintPlanNodes(m_vAllNodes[vNewPlanIdxs[i]].gridIdx, vConfidenceMap);
+			}
             //get current target grid index
 		    m_iCurrNodeIdx = m_vPlanNodeIdxs[0];
             //ouput messages that some nodes are still not visited
@@ -619,10 +624,13 @@ bool OP::BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
 	    }//end if m_vPlanNodeIdxs.size() > 1
 
 		//the current grid index stand alone
-		if(m_vPlanNodeIdxs.size() == 1)
+		if(m_vPlanNodeIdxs.size() == 1){
+			//remove current
 			m_vPlanNodeIdxs.pop_back();
-		//all nodes are visited
-		return true; 
+			std::cout<<"over from raw plan of bb"<<std::endl;
+		    //all nodes are visited
+		    return true; 
+		}
 
 	}
 
@@ -655,7 +663,7 @@ bool OP::BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
 		for(int j = 0; j != vPlanNodeIdxs.size(); ++j) {
 			
 			//compute the real cost using the given cost function
-			int iTargetIdx = vPlanNodeIdxs[j];
+			int iTargetIdx =vPlanNodeIdxs[j];
 
 			//cost function which considers the reward and cost of node
 			vEffectMatrix[i][j] = ObjectiveFunction(vConfidenceMap,
@@ -670,8 +678,8 @@ bool OP::BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
 	//get the plan result
 	std::vector<int> vResTour;
 	//output without the frist element, the frist one of output is the goal(next best node)
-	float bestCost = BBSolver.SolveOP(vResTour);  //\C6\F0\B5㶨Ϊ1\A3\AC\B4ӵڶ\FE\B2㿪ʼ  
-	std::cout << "best cost is " << bestCost << std::endl;
+	float fBestEffective = BBSolver.SolveOP(vResTour);  //\C6\F0\B5㶨Ϊ1\A3\AC\B4ӵڶ\FE\B2㿪ʼ  
+	std::cout << "new plan! and the best effective is " << fBestEffective << std::endl;
 	
 	for (int i = 1; i != vResTour.size(); ++i) {//start from 1
 	
@@ -681,8 +689,7 @@ bool OP::BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
 		//fresh the plan
 	    m_vPlanNodeIdxs.push_back(iNodeIdx);
         //print the plan
-		std::cout << iNodeIdx << " with bound "<< vConfidenceMap[iNodeIdx].boundTerm << " and visible "
-			      << vConfidenceMap[iNodeIdx].visiTerm.value << " -> ";
+		PrintPlanNodes(m_vAllNodes[iNodeIdx].gridIdx, vConfidenceMap);
 	}
 	std::cout << std::endl;
 
@@ -768,6 +775,8 @@ void OP::OutputUnvisitedNodes(std::vector<pcl::PointXYZ> & vOutputNodes){
 	}
 
 }
+
+
 /*************************************************
 Function: TwoDDistance
 Description: compute distance
@@ -795,6 +804,33 @@ void OP::OutputGoalPos(int & iGoalGridIdx){
 	iGoalGridIdx = m_iCurrNodeIdx;
 
 }
+
+
+/*************************************************
+Function: TwoDDistance
+Description: compute distance
+Calls: none
+Called By: main function
+Table Accessed: none
+Table Updated: none
+Input: oQueryPoint - one 3d point
+       oTargetPoint - another 3d point
+Output: a Euclidean distance
+Return: float distance
+Others: none
+*************************************************/
+void OP::PrintPlanNodes(const int & iQueryIdx,
+	                    const std::vector<ConfidenceValue> & vConfidenceMap){
+
+
+	std::cout << iQueryIdx
+	          << " bound " << vConfidenceMap[iQueryIdx].boundTerm 
+	          << " visible " << vConfidenceMap[iQueryIdx].visiTerm.value 
+	          << " -> " ;
+
+}
+
+
 
 
 }/*namespace*/

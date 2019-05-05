@@ -108,17 +108,22 @@ public:
     //get goal grid idx
     void OutputGoalPos(int & iGoalGridIdx);
 
+    //some functions for test
+    void PrintPlanNodes(const int & iQueryIdx,
+	                    const std::vector<ConfidenceValue> & vConfidenceMap);
+
 private:
 
 	//the grid index of which current robot is 
 	//it also will became the target idx after using plan function
-	int m_iCurrNodeIdx;//this value will be the core variable in path plan 
+	//this value will be the core variable in path plan 
+	int m_iCurrNodeIdx;//note that index is in m_vAllNodes
 
 	//unvisited nodes or nodes to be visited (id)
-    std::vector<int> m_vPlanNodeIdxs;
+    std::vector<int> m_vPlanNodeIdxs;//note that index is in m_vAllNodes
 
     //past nodes or nodes has been visited (id)
-    std::vector<int> m_vPastNodeIdxs;
+    std::vector<int> m_vPastNodeIdxs;//note that index is in m_vAllNodes
 
     //all generated nodes
 	std::vector<Node> m_vAllNodes;
