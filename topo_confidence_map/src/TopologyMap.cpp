@@ -564,10 +564,8 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 				                                   vNewNodeIdx, 
 				                                   vNodeClouds, 1.0);
 
-            //get the upper bound of generating node
-            float fMiniNodeThr = m_oCnfdnSolver.OutNodeGenParas();
             //*******use op solver*********
-			if(m_oOPSolver.UpdateNodes(m_vConfidenceMap,fMiniNodeThr))
+			if(m_oOPSolver.UpdateNodes(m_vConfidenceMap,0.7,0.8))
 				//use greedy based method
 				m_oOPSolver.GTR(m_vOdomViews.back(),m_vConfidenceMap);
 			else
@@ -971,22 +969,38 @@ void TopologyMap::PublishGridMap(){
 
 			int iGridIdx = ExtendedGM::TwotoOneDIdx(i, j);
 
-		//.travelTerm   //.boundTerm    //.visiTerm    //.qualTerm      //.totalValue //.travelable
-		    gridMapData1(i, j) = m_vConfidenceMap[iGridIdx].nodeCount;
-		    gridMapData2(i, j) = m_vConfidenceMap[iGridIdx].travelTerm;
-		    gridMapData3(i, j) = m_vConfidenceMap[iGridIdx].boundTerm;
-		    gridMapData4(i, j) = m_vConfidenceMap[iGridIdx].visiTerm.value;
-		    gridMapData5(i, j) = m_vConfidenceMap[iGridIdx].totalValue;
-		    gridMapData6(i, j) = m_vConfidenceMap[iGridIdx].travelable;
-		    gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].label;
-            //record the region that has been explored
-		    if(m_vConfidenceMap[iGridIdx].travelable == 1 &&
-		       m_vConfidenceMap[iGridIdx].label == 2)
-		    	iTravelableNum++;
-	
-		}//end i
+		    //render travelable ground grid    
+			if(m_vConfidenceMap[iGridIdx].label == 2){
+ 
+                //record the region that has been explored
+                if(m_vConfidenceMap[iGridIdx].travelable == 1)
+                	iTravelableNum++;
 
-	}//end j
+                //assign computed resultes
+		    	gridMapData1(i, j) = m_vConfidenceMap[iGridIdx].nodeCount;//.qualTerm
+		    	gridMapData2(i, j) = m_vConfidenceMap[iGridIdx].travelTerm;//.travelTerm
+		    	gridMapData3(i, j) = m_vConfidenceMap[iGridIdx].boundTerm;//.boundTerm
+		    	gridMapData4(i, j) = m_vConfidenceMap[iGridIdx].visiTerm.value;//.visiTerm
+		    	gridMapData5(i, j) = m_vConfidenceMap[iGridIdx].totalValue;//.totalValue
+		    	gridMapData6(i, j) = m_vConfidenceMap[iGridIdx].travelable;//.travelable
+		    	gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].label;//label
+            
+		    }else{
+		    	
+                //assign limited resultes
+		    	gridMapData1(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData2(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData3(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData4(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData5(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData6(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData7(i, j) = std::numeric_limits<float>::infinity();
+
+		    }//end else
+
+		}//end j
+
+	}//end i
 
     //output cover rate file
 	OutputCoverRateFile(iTravelableNum);

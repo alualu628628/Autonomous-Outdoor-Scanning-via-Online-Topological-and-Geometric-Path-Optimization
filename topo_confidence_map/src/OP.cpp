@@ -412,7 +412,12 @@ Return: float distance
 Others: none
 *************************************************/
 bool OP::UpdateNodes(const std::vector<ConfidenceValue> & vConfidenceMap,
-	                                                 float fMinThreshold){
+	                                                      float fWideThr,
+	                                                   float fNonWideThr){
+
+	//check the input is correct
+	if(fWideThr > fNonWideThr)
+	   fWideThr = fNonWideThr;//wide threshold has better larger than the one
 
     //count how many nodes need to be removed from plan
     int iRemoveNum = 0;
@@ -423,17 +428,34 @@ bool OP::UpdateNodes(const std::vector<ConfidenceValue> & vConfidenceMap,
 	//a status indicating whether the node is removed or not
 	for (int i = 0; i != m_vAllNodes.size(); ++i) {
 		//search all unvisited wide node
-		if(!m_vAllNodes[i].visitedFlag && m_vAllNodes[i].wideFlag){
+		if(!m_vAllNodes[i].visitedFlag){
             //if it not need to go
             
             PrintPlanNodes(m_vAllNodes[i].gridIdx, vConfidenceMap);
             std::cout<<std::endl;
+
+            float fWithDrawThr;
+            //if it is wide node
+            if(m_vAllNodes[i].wideFlag){
+            	fWithDrawThr = fWideThr;//use the wide threshold
+            }else{
+            	fWithDrawThr = fNonWideThr;//use the non wide threshold
+            }
+
+            //give a large threshold to original node
+            if(m_vAllNodes[i].parentIdx == 0)
+            	fWithDrawThr = 0.9;//because it will generated close to original robot at initialization
+
             //if it is up to a value and also not a near node from original node (original node can only generate near node)
-			if(vConfidenceMap[m_vAllNodes[i].gridIdx].travelTerm > fMinThreshold){
+			if(vConfidenceMap[m_vAllNodes[i].gridIdx].travelTerm > fWithDrawThr){
 			   m_vAllNodes[i].visitedFlag = true;
 			   iRemoveNum++;
 			   continue;
 			}//end if >
+
+            //original nodes are structure nodes forever
+            if(m_vAllNodes[i].parentIdx == 0)
+            	continue;
 
 			//also update the wide characteristic of nodes
 			m_vAllNodes[i].wideFlag = IsWideGrid(vConfidenceMap, m_vAllNodes[i].gridIdx);

@@ -77,7 +77,8 @@ public:
 
     //update the node value
 	bool UpdateNodes(const std::vector<ConfidenceValue> & vConfidenceMap,
-	                                                 float fMinThreshold);
+	                                                float fWideThr = 0.7,
+	                                             float fNonWideThr = 0.8);
 
 	//compute the Euclidean distance
 	float TwoDDistance(const pcl::PointXYZ & oQueryPoint,

@@ -660,6 +660,8 @@ void Confidence::DistanceTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 		    if(vConfidenceMap[iNearGridId].travelTerm < fGridTravelRes)
 		    	vConfidenceMap[iNearGridId].travelTerm = fGridTravelRes;
 
+            //update the total coffidence value for new distance value
+		    ComputeTotalCoffidence(vConfidenceMap,iNearGridId);
 
 		//}//end if 
 
@@ -804,6 +806,9 @@ void Confidence::OcclusionTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 
 		vConfidenceMap[vNearGroundIdxs[i]].visiTerm.value = vConfidenceMap[vNearGroundIdxs[i]].visiTerm.visibletimes /
 		                                                    vConfidenceMap[vNearGroundIdxs[i]].visiTerm.totaltimes;
+
+        //update the confidence map
+		ComputeTotalCoffidence(vConfidenceMap,vNearGroundIdxs[i]);                           
 
 	}
     
