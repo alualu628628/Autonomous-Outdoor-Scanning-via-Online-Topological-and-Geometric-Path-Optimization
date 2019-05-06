@@ -157,10 +157,11 @@ bool OP::IsWideGrid(const std::vector<ConfidenceValue> & vConfidenceMap,
 	                                              const int & iQueryIdx) {
 
     //if this grid is not close to boundary and also visiable to current robot
-	if (vConfidenceMap[iQueryIdx].boundTerm == 0.0 &&
+	if (vConfidenceMap[iQueryIdx].boundTerm < 0.1 ||
 		vConfidenceMap[iQueryIdx].visiTerm.value == 1.0)
 		return true;//true indicates it is a wide grid
 
+    //only the node which boundTerm >= 0.3 and visiTerm.value < 0.9 will be recorded as non wide node
 	return false;//false indicates it is NOT a wide grid
 
 }
@@ -200,7 +201,10 @@ void OP::GetNewNode(const std::vector<ConfidenceValue> & vConfidenceMap,
     oNewNode.visitedFlag = false;
 
     //wide or not
-    oNewNode.wideFlag = IsWideGrid(vConfidenceMap, iNewNodeIdx);
+    if(oNewNode.parentIdx != 0)
+    	oNewNode.wideFlag = IsWideGrid(vConfidenceMap, iNewNodeIdx);
+    else
+    	oNewNode.wideFlag = false;
 
     //get the new node
 	m_vAllNodes.push_back(oNewNode);
@@ -237,7 +241,10 @@ void OP::GetNewNode(const std::vector<ConfidenceValue> & vConfidenceMap,
 	    //visited or not
 	    oNewNode.visitedFlag = false;
 		//wide or not
-        oNewNode.wideFlag = IsWideGrid(vConfidenceMap, vNewNodeIdxs[i]);
+		if(oNewNode.parentIdx != 0)
+			oNewNode.wideFlag = IsWideGrid(vConfidenceMap, vNewNodeIdxs[i]);
+		else
+			oNewNode.wideFlag = false;
 		//get the grid idx of new node
 		m_vAllNodes.push_back(oNewNode);
 
@@ -301,7 +308,10 @@ void OP::GetNewNodeSuppression(const std::vector<ConfidenceValue> & vConfidenceM
         //visited or not
         oNewNode.visitedFlag = false;
         //wide or not
-        oNewNode.wideFlag = IsWideGrid(vConfidenceMap, iNewNodeIdx);
+        if(oNewNode.parentIdx != 0)
+        	oNewNode.wideFlag = IsWideGrid(vConfidenceMap, iNewNodeIdx);
+        else
+        	oNewNode.wideFlag = false;
         //get the new node
 	    m_vAllNodes.push_back(oNewNode);
 
@@ -362,7 +372,10 @@ void OP::GetNewNodeSuppression(const std::vector<ConfidenceValue> & vConfidenceM
                 //visited or not
                 oNewNode.visitedFlag = false;
 			    //wide or not
-                oNewNode.wideFlag = IsWideGrid(vConfidenceMap, vNewNodeIdxs[i]);
+			    if(oNewNode.parentIdx != 0)
+			    	oNewNode.wideFlag = IsWideGrid(vConfidenceMap, vNewNodeIdxs[i]);
+			    else
+			    	oNewNode.wideFlag = false;
 	            //get the grid idx of new node
 			    m_vAllNodes.push_back(oNewNode);
 			    
@@ -406,16 +419,20 @@ bool OP::UpdateNodes(const std::vector<ConfidenceValue> & vConfidenceMap,
     	//wide node number
 	int iWideNodeNum = 0;
 
+    std::cout<<"updating node totalvalue: "<<std::endl;
 	//a status indicating whether the node is removed or not
 	for (int i = 0; i != m_vAllNodes.size(); ++i) {
-		//search all unvisited node
-		if(!m_vAllNodes[i].visitedFlag){
+		//search all unvisited wide node
+		if(!m_vAllNodes[i].visitedFlag && m_vAllNodes[i].wideFlag){
             //if it not need to go
-            std::cout<<"updating node totalvalue: "<<vConfidenceMap[m_vAllNodes[i].gridIdx].totalValue<<std::endl;
-			if(vConfidenceMap[m_vAllNodes[i].gridIdx].totalValue > fMinThreshold){
-				m_vAllNodes[i].visitedFlag = true;
-			    iRemoveNum++;
-			    continue;
+            
+            PrintPlanNodes(m_vAllNodes[i].gridIdx, vConfidenceMap);
+            std::cout<<std::endl;
+            //if it is up to a value and also not a near node from original node (original node can only generate near node)
+			if(vConfidenceMap[m_vAllNodes[i].gridIdx].travelTerm > fMinThreshold){
+			   m_vAllNodes[i].visitedFlag = true;
+			   iRemoveNum++;
+			   continue;
 			}//end if >
 
 			//also update the wide characteristic of nodes
@@ -494,15 +511,20 @@ inline float OP::ObjectiveFunction(const std::vector<ConfidenceValue> & vConfide
 	//initial the objective value as inf limit
 	float fObjectValue = FLT_MAX;
 
-	//if reward is in normal
+	//Constrained magnification
+	//because some grids are too late to calculate feature value before generating node
+	//also prevent division by zero
+	if (fReward < 0.5)
+		fReward = 0.5;
+
+    //if reward is in normal
 	//objective = cost / reward, thereby to find the minimum cost
-	if (fReward > 0.0)
-		fObjectValue = fCost / fReward;
+	fObjectValue = fCost / fReward;
 
 	//check the target grid is a wide grid
 	//if it is a wide grid, then targetedly decreases the cost 
 	if (IsWideGrid(vConfidenceMap, oTargetNode.gridIdx))
-		fObjectValue = 0.8333333 * fObjectValue;
+		fObjectValue = fObjectValue;
 
 	//return result
 	return fObjectValue;
@@ -616,6 +638,7 @@ bool OP::BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
             for(int i = 0; i!= vNewPlanIdxs.size(); ++i){//start from 0
 				m_vPlanNodeIdxs.push_back(vNewPlanIdxs[i]);
 				PrintPlanNodes(m_vAllNodes[vNewPlanIdxs[i]].gridIdx, vConfidenceMap);
+				std::cout<<" -> ";
 			}
             //get current target grid index
 		    m_iCurrNodeIdx = m_vPlanNodeIdxs[0];
@@ -690,6 +713,7 @@ bool OP::BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
 	    m_vPlanNodeIdxs.push_back(iNodeIdx);
         //print the plan
 		PrintPlanNodes(m_vAllNodes[iNodeIdx].gridIdx, vConfidenceMap);
+		std::cout<<" -> ";
 	}
 	std::cout << std::endl;
 
@@ -823,10 +847,11 @@ void OP::PrintPlanNodes(const int & iQueryIdx,
 	                    const std::vector<ConfidenceValue> & vConfidenceMap){
 
 
-	std::cout << iQueryIdx
+	std::cout << " node id is " << iQueryIdx
+	          << " travel " << vConfidenceMap[iQueryIdx].travelTerm
 	          << " bound " << vConfidenceMap[iQueryIdx].boundTerm 
 	          << " visible " << vConfidenceMap[iQueryIdx].visiTerm.value 
-	          << " -> " ;
+	          << " totalvalue " << vConfidenceMap[iQueryIdx].totalValue;
 
 }
 
