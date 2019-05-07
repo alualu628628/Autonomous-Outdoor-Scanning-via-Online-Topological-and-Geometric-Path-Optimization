@@ -1,6 +1,6 @@
 #ifndef BRANCHBOUND_H
 #define BRANCHBOUND_H
-//#define _SCL_SECURE_NO_WARNINGS
+//#define _SCL_SECURE_NO_WARNINGS //if debug in windows
 
 #include <vector>
 #include <iostream>
@@ -173,7 +173,10 @@ public:
 	//get obejective value between each node pairs
 	void ObjectiveMatrix(const std::vector<std::vector<float>> & vObjectMatrix);
 
-	//using branch and bound to solve op (Orienteering problem) 
+    //using branch and bound to solve op (Orienteering problem) 
+    //solve the Hamiltonian travel (closed graph)
+	float SolveHamiltonianOP(std::vector<int> & vResTour);
+    //solve the non-loop travel (not closed graph)
 	float SolveOP(std::vector<int> & vResTour);
 
 private:

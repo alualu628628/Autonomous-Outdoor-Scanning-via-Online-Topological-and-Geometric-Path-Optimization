@@ -723,7 +723,8 @@ bool OP::BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
 	//get the plan result
 	std::vector<int> vResTour;
 	//output without the frist element, the frist one of output is the goal(next best node)
-	float fBestEffective = BBSolver.SolveOP(vResTour);  //\C6\F0\B5㶨Ϊ1\A3\AC\B4ӵڶ\FE\B2㿪ʼ  
+	//use the non-closed type
+	float fBestEffective = BBSolver.SolveOP(vResTour);  
 	std::cout << "new plan! and the best effective is " << fBestEffective << std::endl;
 	
 	for (int i = 1; i != vResTour.size(); ++i) {//start from 1
