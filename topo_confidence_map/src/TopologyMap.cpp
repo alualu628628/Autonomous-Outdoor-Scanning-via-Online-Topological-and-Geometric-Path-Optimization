@@ -295,6 +295,9 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
     //initial op solver
     m_oOPSolver.Initial(oRobotPos, m_oGMer.m_oFeatureMap);
 
+    //initial astar map
+    m_oAstar.InitAstarTravelMap(m_oGMer.m_oFeatureMap);
+
 	m_bGridMapReadyFlag = true;
 
 }
@@ -580,9 +583,29 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		    m_vOdomShocks = std::queue<pcl::PointXYZ>();
 
 		    std::cout<< "remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
+            //compute astar path for current target point
+            if(vUnvisitedNodes.size()){
+
+            	pcl::PointXYZ oTargetPoint;
+            	//get goal
+            	m_oOPSolver.OutputGoalPos(oTargetPoint);
+            	//update travelable map
+		        m_oAstar.UpdateTravelMap(m_oGMer.m_oFeatureMap, m_vConfidenceMap);
+                //get raw astar path point clouds
+                pcl::PointCloud<pcl::PointXYZ>::Ptr pAstarCloud(new pcl::PointCloud<pcl::PointXYZ>);
+   
+                //compute astar path
+		        bool bPathOptmFlag = m_oAstar.GetPath(pAstarCloud, m_oGMer.m_oFeatureMap,
+		                                              m_vOdomViews.back(), oTargetPoint, false);
+
+		        //PublishPointCloud(*pAstarCloud);//for test only
+
+		        std::cout << "optimal or not: " << bPathOptmFlag << std::endl;
+		    }
             
             //begin the next trip
-		    m_iNodeTimes++;
+            if(m_oOPSolver.CheckNodeTimes())
+            	m_iNodeTimes++;
 		    
 		}//end if m_oOPSolver.NearGoal
 
@@ -983,6 +1006,7 @@ void TopologyMap::PublishGridMap(){
 		    	gridMapData4(i, j) = m_vConfidenceMap[iGridIdx].visiTerm.value;//.visiTerm
 		    	gridMapData5(i, j) = m_vConfidenceMap[iGridIdx].totalValue;//.totalValue
 		    	gridMapData6(i, j) = m_vConfidenceMap[iGridIdx].travelable;//.travelable
+		    	//gridMapData6(i, j) = m_oAstar.maze[i][j];//test only
 		    	gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].label;//label
             
 		    }else{

@@ -141,6 +141,30 @@ bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 
 
 /*************************************************
+Function: ~OP
+Description: destruction of OP class
+Calls: none
+Called By: main function
+Table Accessed: none
+Table Updated: none
+Input: none
+Output: none
+Return: none
+Others: none
+*************************************************/ 
+bool OP::CheckNodeTimes(){
+
+    //if only the original node
+    //thereby stay at the original place for a more completed scanning
+	if(m_vAllNodes.size() > 1)
+		return true;//increase
+	else
+		return false;//dont increase
+
+}
+
+
+/*************************************************
 Function: IsWideGrid
 Description: check whether grid is a wide grid or not
 Calls: none

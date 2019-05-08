@@ -52,6 +52,9 @@ public:
 	                               float fDisDiffThr = 0.5,
 	                                int iFirstTripThr = 10);
 
+	//check the nodetime can be increased
+	bool CheckNodeTimes();
+
     //check whether the grid is wide
 	bool IsWideGrid(const std::vector<ConfidenceValue> & vConfidenceMap,
 	                                              const int & iQueryIdx);

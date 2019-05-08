@@ -13,7 +13,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 //#include "ConfidenceMap.h"
-#include "OP.h"
+#include "Astar.h"
 
 //octomap related
 //#include <octomap/octomap.h>
@@ -199,6 +199,9 @@ class TopologyMap{
 
   //a node object
   OP m_oOPSolver;
+
+  //a Astar estimator
+  Astar m_oAstar;
 
   //some paramters which is no more important
   //the radius which initial the travelable region around robot at original location

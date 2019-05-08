@@ -278,8 +278,8 @@ void ExtendedGM::TwoDIdxtoPoint(pcl::PointXYZ & oPoint,
 	oFeatureMap.getPosition(oGridIdx, oGridPos);
 
 	//get position in pcl type
-	oPoint.x = oGridIdx(0);
-	oPoint.y = oGridIdx(1);
+	oPoint.x = oGridPos(0);
+	oPoint.y = oGridPos(1);
 
 }
 //reload a grid_map::Position type output
