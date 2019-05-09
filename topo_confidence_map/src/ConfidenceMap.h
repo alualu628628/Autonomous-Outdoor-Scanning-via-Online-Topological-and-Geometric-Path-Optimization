@@ -6,6 +6,7 @@
 
 #include "GHPR.h"
 #include "ExtendedGridMap.h"
+#include "HausdorffMeasure.h"
 
 #include <stdlib.h>
 #include <time.h> 
@@ -226,13 +227,13 @@ public:
 	//	                               const PCLCloudXYZ & vObstacleCloud,
 	//	              const std::vector<std::vector<int>> & vGridObsPsIdx);
 
-	//2. quality term of confidence map
-	/*void QualityTerm(std::vector<ConfidenceValue> & vConfidenceVec,
-		                 const std::vector<int> & vNearByIdxs,
-		                      const PCLCloudXYZ & vAllBoundCloud,
-		   const std::vector<std::vector<int>> & vGridBoundPsIdx,
-		                      const PCLCloudXYZ & vObstacleCloud,
-		     const std::vector<std::vector<int>> & vGridObsPsIdx);*/
+	//4. quality term of confidence map
+	void QualityTerm(std::vector<ConfidenceValue> & vConfidenceVec,
+		                      const std::vector<int> & vNearByIdxs,
+		                        const PCLCloudXYZ & vAllBoundCloud,
+	         const std::vector<std::vector<int>> & vGridBoundPsIdx,
+		                        const PCLCloudXYZ & vObstacleCloud,
+		       const std::vector<std::vector<int>> & vGridObsPsIdx);
 
 
 	//4. Compute the boundary item

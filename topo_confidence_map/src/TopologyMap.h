@@ -44,14 +44,29 @@ class TopologyMap{
   //Initialize a fixed Grid Map
   void InitializeGridMap(const pcl::PointXYZ & oRobotPos);
 
-  //down sample the point clouds with grid idx
+  //down sample the point clouds with grid idxs
   void SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud,
-                           std::vector<std::vector<int> > & vPointMapIdx,
-                           int iSmplNum = 3);
+                          std::vector<std::vector<int> > & vPointMapIdx,
+                                                       int iSmplNum = 3);
+
+  //down sampling the point clouds with grid idxs and corresponding labels
+  void SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud,
+                          std::vector<std::vector<int> > & vPointMapIdx,
+                                        std::vector<int> & vCloudLabels,
+                                                       int iSmplNum = 3);
+
+  
   //*************Traversing / retrieving function*************
 
 
   //extract the point clouds from the given neighboring grids
+  void DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+                                   std::vector<int> & vNearGroundGridIdxs,
+                        pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
+                         pcl::PointCloud<pcl::PointXYZ> & vNearObstClouds,                                           
+                                const std::vector<MapIndex> & vNearByIdxs,
+                                                    const int & iNodeTime);
+
   void DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
                         pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
                           pcl::PointCloud<pcl::PointXYZ> & vNearAllClouds,
@@ -182,10 +197,12 @@ class TopologyMap{
   
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_pBoundCloud;//boundary point clouds
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_pObstacleCloud;//obstacle point clouds
+  std::vector<int> vObstNodeTimes;//records the acquired times (node times) of each obstacle point
 
   //std::vector<std::vector<int> > m_vGroundPntMapIdx;//ground point index in grid map
   std::vector<std::vector<int> > m_vBoundPntMapIdx;//boundary point index in grid map
   std::vector<std::vector<int> > m_vObstlPntMapIdx;//obstacle point index in grid map
+
 
   //the map - main body 
   ExtendedGM m_oGMer;

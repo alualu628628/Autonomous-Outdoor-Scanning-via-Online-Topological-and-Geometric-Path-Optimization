@@ -891,13 +891,12 @@ Output: the distance term value of each neighboring grid
 Return: a vector saves distance value of each neighboring grid
 Others: none
 *************************************************/
-/*
 void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
-	                          const std::vector<int> & vNearbyGridIdxs,
-	                               const PCLCloudXYZ & vAllBoundCloud,
-	            const std::vector<std::vector<int>> & vGridBoundPsIdx,
-	                               const PCLCloudXYZ & vObstacleCloud,
-	              const std::vector<std::vector<int>> & vGridObsPsIdx){
+	                              const std::vector<int> & vNearbyGridIdxs,
+	                                    const PCLCloudXYZ & vAllBoundCloud,
+	                 const std::vector<std::vector<int>> & vGridBoundPsIdx,
+	                                    const PCLCloudXYZ & vObstacleCloud,
+	                   const std::vector<std::vector<int>> & vGridObsPsIdx){
 
 	//point clouds to be seen
 	PCLCloudXYZPtr pNearCloud(new PCLCloudXYZ);
@@ -942,11 +941,11 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	//assigment
 	for (int i = 0; i != vMeasuredGridIdx.size(); ++i) {
 	
-		vConfidenceMap[vMeasuredGridIdx[i]].quality = fabs(fHausRes - 2.0f);
+		vConfidenceMap[vMeasuredGridIdx[i]].qualTerm = fabs(fHausRes - 2.0f);
 
 	}
 
-}//0412*/
+}
 
 
 

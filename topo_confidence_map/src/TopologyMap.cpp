@@ -324,7 +324,60 @@ Output: none
 Return: none
 Others: the HandlePointClouds is the kernel function
 *************************************************/
+void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+	                                          std::vector<int> & vNearGroundGridIdxs,
+                                   pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
+                                    pcl::PointCloud<pcl::PointXYZ> & vNearObstClouds,	                                          
+                                           const std::vector<MapIndex> & vNearByIdxs,
+                                                               const int & iNodeTime){
 
+	//prepare and clear
+	vNearGrndClouds.clear();
+    vNearBndryClouds.clear();
+    vNearObstClouds.clear();
+	vNearGroundGridIdxs.clear();
+
+	//to each nearby grids
+	for (int i = 0; i != vNearByIdxs.size(); ++i) {
+
+		int iNearGridId = vNearByIdxs[i].iOneIdx;
+		//assign to cooresponding point clouds based on its label
+        switch (m_vConfidenceMap[iNearGridId].label){
+
+        	case 1 : //the grid is a obstacle grid
+        	    for (int j = 0; j != m_vObstlPntMapIdx[iNearGridId].size(); ++j){
+        	    	if(vObstNodeTimes[m_vObstlPntMapIdx[iNearGridId][j]] == iNodeTime)//if it is recorded at current node time
+        	    		vNearObstClouds.points.push_back(m_pObstacleCloud->points[m_vObstlPntMapIdx[iNearGridId][j]]);
+        	    }//end for
+            break;
+
+            case 2 : //the grid is a ground grid
+                vNearGrndClouds.points.push_back(m_vConfidenceMap[iNearGridId].oCenterPoint);
+        	    vNearGroundGridIdxs.push_back(iNearGridId);
+        	    //if the obstacle is large (perhaps some obstacles above the ground,e.g.,leafs points, high vegetation)
+        	    if(m_vObstlPntMapIdx[iNearGridId].size() > 20){
+        	    	for (int j = 0; j != m_vObstlPntMapIdx[iNearGridId].size(); ++j)
+        	    		vNearObstClouds.points.push_back(m_pObstacleCloud->points[m_vObstlPntMapIdx[iNearGridId][j]]);
+        	    }
+            break;
+
+            case 3 : //the grid is a boundary grid
+                for (int j = 0; j != m_vBoundPntMapIdx[iNearGridId].size(); ++j)
+				    vNearBndryClouds.points.push_back(m_pBoundCloud->points[m_vBoundPntMapIdx[iNearGridId][j]]);
+				for (int j = 0; j != m_vObstlPntMapIdx[iNearGridId].size(); ++j){
+					if(vObstNodeTimes[m_vObstlPntMapIdx[iNearGridId][j]] == iNodeTime)//if it is recorded at current node time
+						vNearObstClouds.points.push_back(m_pObstacleCloud->points[m_vObstlPntMapIdx[iNearGridId][j]]);
+        	    }//end for j
+            break;
+
+            default:
+            break;
+        }//end switch 
+
+    }//end for i
+
+}
+//reload without label input
 void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
                                   pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
                                     pcl::PointCloud<pcl::PointXYZ> & vNearAllClouds,
@@ -387,7 +440,7 @@ void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndCl
     	vNearAllClouds.push_back(vNearObstClouds.points[i]);
 
 }
-//reload without generating vNearAllClouds
+//reload without generating vNearAllClouds and label
 void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
                                   pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
 	                                         std::vector<int> & vNearGroundGridIdxs,
@@ -440,8 +493,8 @@ Return: none
 Others: none
 *************************************************/
 void TopologyMap::SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud,
-	                                  std::vector<std::vector<int> > & vPointMapIdx,
-	                                  int iSmplNum){
+	                                 std::vector<std::vector<int> > & vPointMapIdx,
+	                                                                  int iSmplNum){
 
     //point clouds sampling based on the idx vector
 	for(int i = 0; i != vPointMapIdx.size(); ++i){
@@ -476,6 +529,55 @@ void TopologyMap::SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pClo
 	pCloud->points.clear();
 	for(int i = 0; i != vSmplClouds.size(); ++i)
 		pCloud->points.push_back(vSmplClouds.points[i]);
+
+
+}
+//reload sampling with point number
+void TopologyMap::SamplingPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud,
+	                                 std::vector<std::vector<int> > & vPointMapIdx,
+	                                               std::vector<int> & vCloudLabels,
+	                                                                  int iSmplNum){
+
+
+
+    //point clouds sampling based on the idx vector
+	for(int i = 0; i != vPointMapIdx.size(); ++i){
+		//retain at least one point in grid
+		if(vPointMapIdx[i].size()){
+
+			std::vector<int> vOneSmplIdx;
+		    //sampling
+			for(int j = 0; j != vPointMapIdx[i].size(); j = j + iSmplNum)
+				vOneSmplIdx.push_back(vPointMapIdx[i][j]);
+			
+            //clear row data and the turn other rows
+            vPointMapIdx[i].clear();
+            for(int j = 0; j != vOneSmplIdx.size(); ++j)
+                vPointMapIdx[i].push_back(vOneSmplIdx[j]);
+
+        }//end if
+
+    }//end for
+
+
+    pcl::PointCloud<pcl::PointXYZ> vSmplClouds;
+    std::vector<int> vSmpCLoudLabels;
+
+    //save each corresponding points
+    for(int i = 0; i != vPointMapIdx.size(); ++i){
+    	for(int j = 0; j != vPointMapIdx[i].size(); ++j){
+			vSmplClouds.push_back(pCloud->points[vPointMapIdx[i][j]]);	
+			vSmpCLoudLabels.push_back(vCloudLabels[vPointMapIdx[i][j]]);
+        }
+	}
+
+    //clear the point vector and save the new sampled points
+	pCloud->points.clear();
+	vCloudLabels.clear();
+	for(int i = 0; i != vSmplClouds.size(); ++i){
+		pCloud->points.push_back(vSmplClouds.points[i]);
+		vCloudLabels.push_back(vSmpCLoudLabels[i]);
+	}
 
 
 }
@@ -754,9 +856,9 @@ void TopologyMap::HandleBoundClouds(const sensor_msgs::PointCloud2 & vBoundRosDa
 		}//end for
 
 
-		if(m_pObstacleCloud->points.size()>3000000){
+		if(m_pBoundCloud->points.size()>3000000){
 			SamplingPointClouds(m_pBoundCloud, m_vBoundPntMapIdx);
-		}//end if if(m_pObstacleCloud->points.size()>X)
+		}//end if if(m_pBoundCloud->points.size()>X)
 
 	}//if m_bGridMapReadyFlag
 
@@ -789,10 +891,14 @@ void TopologyMap::HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacl
 		for (int i = 0; i != vOneOCloud.size(); ++i) {
 			//sampling
 			if (!(i%m_iPCSmplNum)) {
-
+                //if this point is inside the map
 				if (m_oGMer.CheckInSidePoint(vOneOCloud.points[i])) {
-
+                    //if the obstacle cloud 
+                    //save the obstacle point
 					m_pObstacleCloud->points.push_back(vOneOCloud.points[i]);
+					//save the corresponding node times
+					vObstNodeTimes.push_back(m_iNodeTimes);
+                    //send point index to grid member
 					int iPointIdx = ExtendedGM::PointoOneDIdx(vOneOCloud.points[i],m_oGMer.m_oFeatureMap);
 					//to point idx
 					m_vObstlPntMapIdx[iPointIdx].push_back(m_iObstacleFrames);
@@ -814,7 +920,7 @@ void TopologyMap::HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacl
 
 
 		if(m_pObstacleCloud->points.size()>8000000){
-			SamplingPointClouds(m_pObstacleCloud, m_vObstlPntMapIdx);
+			SamplingPointClouds(m_pObstacleCloud, m_vObstlPntMapIdx, vObstNodeTimes);
 		}//end if if(m_pObstacleCloud->points.size()>X)
 
 
@@ -903,7 +1009,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
 	//PublishPointCloud(*pNearBndryClouds);//for test
-	PublishPointCloud(*pNearAllClouds);//for test
+	//PublishPointCloud(*pNearAllClouds);//for test
 	PublishGridMap();
 
 }
@@ -912,6 +1018,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearGrndClouds(new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearBndryClouds(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearObstClouds(new pcl::PointCloud<pcl::PointXYZ>);
     std::vector<int> vNearGrndGrdIdxs;
 
     //find the neighboring point clouds
@@ -930,9 +1037,11 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 
     //extract point clouds with different labels, respectively
     DevidePointClouds(*pNearGrndClouds,
-    	              *pNearBndryClouds,
 	                  vNearGrndGrdIdxs,
-                      vNearByIdxs);
+                     *pNearBndryClouds,
+                      *pNearObstClouds,	                                          
+                           vNearByIdxs,
+                          m_iNodeTimes);
 
     //compute distance term
     m_oCnfdnSolver.DistanceTerm(m_vConfidenceMap,
@@ -951,6 +1060,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
 	//PublishPointCloud(*pNearBndryClouds);//for test
+	PublishPointCloud(*pNearObstClouds);//for test
 	
 	PublishGridMap();
 

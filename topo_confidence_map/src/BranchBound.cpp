@@ -2,6 +2,8 @@
 
 namespace topology_map {
 
+
+
 BranchBound::BranchBound(const int & f_iNodeNum){
 
 	//int 
@@ -23,6 +25,9 @@ BranchBound::~BranchBound(){
 }
 
 
+
+
+
 //compute distance in two dimension
 float BranchBound::TwoDDistance(const pcl::PointXYZ & oPointOne,
 	const pcl::PointXYZ & oPointTwo) {
@@ -32,6 +37,9 @@ float BranchBound::TwoDDistance(const pcl::PointXYZ & oPointOne,
 	//ouput
 	return fDis;
 }
+
+
+
 
 //initial the objective value between each node pairs
 void BranchBound::SimpleInitial(const pcl::PointCloud<pcl::PointXYZ> & vNodeCloud){
