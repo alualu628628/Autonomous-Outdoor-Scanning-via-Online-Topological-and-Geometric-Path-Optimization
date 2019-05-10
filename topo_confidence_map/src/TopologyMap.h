@@ -197,7 +197,7 @@ class TopologyMap{
   
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_pBoundCloud;//boundary point clouds
   pcl::PointCloud<pcl::PointXYZ>::Ptr m_pObstacleCloud;//obstacle point clouds
-  std::vector<int> vObstNodeTimes;//records the acquired times (node times) of each obstacle point
+  std::vector<int> m_vObstNodeTimes;//records the acquired times (node times) of each obstacle point
 
   //std::vector<std::vector<int> > m_vGroundPntMapIdx;//ground point index in grid map
   std::vector<std::vector<int> > m_vBoundPntMapIdx;//boundary point index in grid map

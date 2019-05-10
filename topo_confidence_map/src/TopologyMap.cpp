@@ -207,6 +207,9 @@ bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
 	nodeHandle.param("initial_r", dInitialR, 4.5);
     m_oGMer.m_vInitialMask.clear();
 	m_oGMer.m_vInitialMask = m_oGMer.GenerateCircleMask(dInitialR);
+ 
+	m_oGMer.m_vLocalQualityMask.clear();//the local region of dimension based method
+	m_oGMer.m_vLocalQualityMask = m_oGMer.GenerateCircleMask(1.0);
 
 	//about confidence feature weight
 	double dTraversWeight;
@@ -346,7 +349,7 @@ void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndCl
 
         	case 1 : //the grid is a obstacle grid
         	    for (int j = 0; j != m_vObstlPntMapIdx[iNearGridId].size(); ++j){
-        	    	if(vObstNodeTimes[m_vObstlPntMapIdx[iNearGridId][j]] == iNodeTime)//if it is recorded at current node time
+        	    	if(m_vObstNodeTimes[m_vObstlPntMapIdx[iNearGridId][j]] == iNodeTime)//if it is recorded at current node time
         	    		vNearObstClouds.points.push_back(m_pObstacleCloud->points[m_vObstlPntMapIdx[iNearGridId][j]]);
         	    }//end for
             break;
@@ -365,7 +368,7 @@ void TopologyMap::DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndCl
                 for (int j = 0; j != m_vBoundPntMapIdx[iNearGridId].size(); ++j)
 				    vNearBndryClouds.points.push_back(m_pBoundCloud->points[m_vBoundPntMapIdx[iNearGridId][j]]);
 				for (int j = 0; j != m_vObstlPntMapIdx[iNearGridId].size(); ++j){
-					if(vObstNodeTimes[m_vObstlPntMapIdx[iNearGridId][j]] == iNodeTime)//if it is recorded at current node time
+					if(m_vObstNodeTimes[m_vObstlPntMapIdx[iNearGridId][j]] == iNodeTime)//if it is recorded at current node time
 						vNearObstClouds.points.push_back(m_pObstacleCloud->points[m_vObstlPntMapIdx[iNearGridId][j]]);
         	    }//end for j
             break;
@@ -897,7 +900,7 @@ void TopologyMap::HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacl
                     //save the obstacle point
 					m_pObstacleCloud->points.push_back(vOneOCloud.points[i]);
 					//save the corresponding node times
-					vObstNodeTimes.push_back(m_iNodeTimes);
+					m_vObstNodeTimes.push_back(m_iNodeTimes);
                     //send point index to grid member
 					int iPointIdx = ExtendedGM::PointoOneDIdx(vOneOCloud.points[i],m_oGMer.m_oFeatureMap);
 					//to point idx
@@ -920,7 +923,7 @@ void TopologyMap::HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacl
 
 
 		if(m_pObstacleCloud->points.size()>8000000){
-			SamplingPointClouds(m_pObstacleCloud, m_vObstlPntMapIdx, vObstNodeTimes);
+			SamplingPointClouds(m_pObstacleCloud, m_vObstlPntMapIdx, m_vObstNodeTimes);
 		}//end if if(m_pObstacleCloud->points.size()>X)
 
 
@@ -1006,10 +1009,11 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
 	                         pNearGrndClouds,
     	                     pNearBndryClouds);
 
+
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
 	//PublishPointCloud(*pNearBndryClouds);//for test
-	//PublishPointCloud(*pNearAllClouds);//for test
+	PublishPointCloud(*pNearAllClouds);//for test
 	PublishGridMap();
 
 }
@@ -1018,7 +1022,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearGrndClouds(new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearBndryClouds(new pcl::PointCloud<pcl::PointXYZ>);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pNearObstClouds(new pcl::PointCloud<pcl::PointXYZ>);
+	
     std::vector<int> vNearGrndGrdIdxs;
 
     //find the neighboring point clouds
@@ -1037,11 +1041,9 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 
     //extract point clouds with different labels, respectively
     DevidePointClouds(*pNearGrndClouds,
-	                  vNearGrndGrdIdxs,
                      *pNearBndryClouds,
-                      *pNearObstClouds,	                                          
-                           vNearByIdxs,
-                          m_iNodeTimes);
+                      vNearGrndGrdIdxs,
+                           vNearByIdxs);
 
     //compute distance term
     m_oCnfdnSolver.DistanceTerm(m_vConfidenceMap,
@@ -1057,11 +1059,22 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
     	                     pNearBndryClouds);
 
 
+    //compute quality term
+    m_oCnfdnSolver.QualityTerm(m_vConfidenceMap,
+    	                       m_pObstacleCloud,
+                               m_vObstNodeTimes,
+                              m_vObstlPntMapIdx, 
+		                                m_oGMer,
+		                            vNearByIdxs,
+                                   m_iNodeTimes, 5);
+
+
+
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
 	//PublishPointCloud(*pNearBndryClouds);//for test
-	PublishPointCloud(*pNearObstClouds);//for test
 	
+	//output result on screen
 	PublishGridMap();
 
 }
@@ -1093,7 +1106,7 @@ void TopologyMap::PublishGridMap(){
 	grid_map::Matrix& gridMapData4 = m_oGMer.m_oFeatureMap["observability"];
 	grid_map::Matrix& gridMapData5 = m_oGMer.m_oFeatureMap["confidence"];
 	grid_map::Matrix& gridMapData6 = m_oGMer.m_oFeatureMap["travelable"];
-	grid_map::Matrix& gridMapData7 = m_oGMer.m_oFeatureMap["label"];
+	grid_map::Matrix& gridMapData7 = m_oGMer.m_oFeatureMap["quality"];
 
 	//initial elevation map and center point clouds
 	for (int i = 0; i != m_oGMer.m_oFeatureMap.getSize()(0); ++i) {//i
@@ -1103,7 +1116,7 @@ void TopologyMap::PublishGridMap(){
 			int iGridIdx = ExtendedGM::TwotoOneDIdx(i, j);
 
 		    //render travelable ground grid    
-			if(m_vConfidenceMap[iGridIdx].label == 2){
+			//if(m_vConfidenceMap[iGridIdx].label == 2){
  
                 //record the region that has been explored
                 if(m_vConfidenceMap[iGridIdx].travelable == 1)
@@ -1117,20 +1130,23 @@ void TopologyMap::PublishGridMap(){
 		    	gridMapData5(i, j) = m_vConfidenceMap[iGridIdx].totalValue;//.totalValue
 		    	gridMapData6(i, j) = m_vConfidenceMap[iGridIdx].travelable;//.travelable
 		    	//gridMapData6(i, j) = m_oAstar.maze[i][j];//test only
-		    	gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].label;//label
+		    	//gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].qualTerm;//quality term
             
-		    }else{
+		   // }else{
 		    	
                 //assign limited resultes
-		    	gridMapData1(i, j) = std::numeric_limits<float>::infinity();
-		    	gridMapData2(i, j) = std::numeric_limits<float>::infinity();
-		    	gridMapData3(i, j) = std::numeric_limits<float>::infinity();
-		    	gridMapData4(i, j) = std::numeric_limits<float>::infinity();
-		    	gridMapData5(i, j) = std::numeric_limits<float>::infinity();
-		    	gridMapData6(i, j) = std::numeric_limits<float>::infinity();
-		    	gridMapData7(i, j) = std::numeric_limits<float>::infinity();
+		  //  	gridMapData1(i, j) = std::numeric_limits<float>::infinity();
+		  //  	gridMapData2(i, j) = std::numeric_limits<float>::infinity();
+		   // 	gridMapData3(i, j) = std::numeric_limits<float>::infinity();
+		   // 	gridMapData4(i, j) = std::numeric_limits<float>::infinity();
+		   // 	gridMapData5(i, j) = std::numeric_limits<float>::infinity();
+		   // 	gridMapData6(i, j) = std::numeric_limits<float>::infinity();
+		    	//gridMapData7(i, j) = std::numeric_limits<float>::infinity();
 
-		    }//end else
+		   // }//end else
+
+            //quality is in boundary and obstacle grid
+		    gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].qualTerm;//quality term
 
 		}//end j
 

@@ -118,6 +118,9 @@ public:
     //a mask intialing the origianl travelable region
 	std::vector<MapIndex> m_vInitialMask;
 
+	//a mask to compute quality of a local region
+	std::vector<MapIndex> m_vLocalQualityMask;
+
 private:
 
 	//note that the map size is fixed, thus it must be initialied large enough to pick the scene 

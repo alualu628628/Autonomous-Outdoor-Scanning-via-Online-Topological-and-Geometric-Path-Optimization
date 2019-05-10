@@ -15,7 +15,7 @@
 // created and edited by Huang Pengdi, 2018.12.27
 // Email: alualu628628@gmail.com
 ///************************************************************************///
-
+namespace topology_map {
 
 //a structe records the non-emptys voxels number and its corresponding measured scale
 //scale is in meter
@@ -155,6 +155,9 @@ private:
 	bool m_bMinDisFlag;
 
 };
+
+
+}/*namespace*/
 
 #endif
 

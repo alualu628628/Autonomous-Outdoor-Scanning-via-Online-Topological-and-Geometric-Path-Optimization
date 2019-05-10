@@ -137,7 +137,7 @@ void ExtendedGM::GenerateMap(const pcl::PointXYZ & oRobotPos){
 	m_oFeatureMap.add("observability", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
 	m_oFeatureMap.add("confidence", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
 	m_oFeatureMap.add("travelable", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
-	m_oFeatureMap.add("label", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
+	m_oFeatureMap.add("quality", grid_map::Matrix::Zero(m_oFeatureMap.getSize()(0), m_oFeatureMap.getSize()(1)));
 
 }
 

@@ -1,6 +1,8 @@
 #include "HausdorffMeasure.h"
 //Edited by Huang Pengdi 2018.12.30 
 
+namespace topology_map {
+
 /*************************************************
 Function: HausdorffDimension
 Description: constrcution function for HausdorffDimension class
@@ -635,3 +637,6 @@ void HausdorffDimension::ClearAll(){
 
 }
 
+
+
+}/*namespace*/

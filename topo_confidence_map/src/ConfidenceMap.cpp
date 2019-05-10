@@ -848,27 +848,27 @@ Others: none
 //	for (int i = 0; i != vNearbyGridIdxs.size(); ++i) {
 //
 //		//point clouds to be seen
-//		PCLCloudXYZPtr pNearCloud(new PCLCloudXYZ);
+//		PCLCloudXYZPtr pMeasuredCloud(new PCLCloudXYZ);
 //
 //		int iOneGridIdx = vNearbyGridIdxs[i];
 //
 //		//record the ground point
 //		for (int j = 0; j != vGridTravelPsIdx[iOneGridIdx].size(); ++j)
-//			pNearCloud->points.push_back(vTravelCloud.points[vGridTravelPsIdx[iOneGridIdx][j]]);
+//			pMeasuredCloud->points.push_back(vTravelCloud.points[vGridTravelPsIdx[iOneGridIdx][j]]);
 //
 //		//record the boundary point
 //		for (int j = 0; j != vGridBoundPsIdx[iOneGridIdx].size(); ++j)
-//			pNearCloud->points.push_back(vAllBoundCloud.points[vGridBoundPsIdx[iOneGridIdx][j]]);
+//			pMeasuredCloud->points.push_back(vAllBoundCloud.points[vGridBoundPsIdx[iOneGridIdx][j]]);
 //
 //		//record the obstacle point
 //		for (int j = 0; j != vGridObsPsIdx[iOneGridIdx].size(); ++j)
-//			pNearCloud->points.push_back(vObstacleCloud.points[vGridObsPsIdx[iOneGridIdx][j]]);
+//			pMeasuredCloud->points.push_back(vObstacleCloud.points[vGridObsPsIdx[iOneGridIdx][j]]);
 //		
 //		//estimate the quality of feature
 //		//compute the quality using the density feature
-//		//vConfidenceMap[iOneGridIdx].quality = ComputeDensity(*pNearCloud,5);
+//		//vConfidenceMap[iOneGridIdx].quality = ComputeDensity(*pMeasuredCloud,5);
 //		//compute the quality using the standard deviation feature
-//		vConfidenceMap[iOneGridIdx].quality = StandardDeviation(*pNearCloud);
+//		vConfidenceMap[iOneGridIdx].quality = StandardDeviation(*pMeasuredCloud);
 //
 //	}//end for i
 //
@@ -892,61 +892,93 @@ Return: a vector saves distance value of each neighboring grid
 Others: none
 *************************************************/
 void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
-	                              const std::vector<int> & vNearbyGridIdxs,
-	                                    const PCLCloudXYZ & vAllBoundCloud,
-	                 const std::vector<std::vector<int>> & vGridBoundPsIdx,
-	                                    const PCLCloudXYZ & vObstacleCloud,
-	                   const std::vector<std::vector<int>> & vGridObsPsIdx){
+	                                 const PCLCloudXYZPtr & pObstacleCloud,
+                                   const std::vector<int> & vObstNodeTimes,
+                    const std::vector<std::vector<int> > & vObstlPntMapIdx,
+		                                 const ExtendedGM & oExtendGridMap,
+		                         const std::vector<MapIndex> & vNearByIdxs,
+                                                     const int & iNodeTime,
+                                                              int iSmplNum){
 
-	//point clouds to be seen
-	PCLCloudXYZPtr pNearCloud(new PCLCloudXYZ);
-	std::vector<int> vMeasuredGridIdx;
-
-	//save the point that is in an unreachable grid
-	for (int i = 0; i != vNearbyGridIdxs.size(); ++i) {
-
-		int iOneGridIdx = vNearbyGridIdxs[i];
-
-		//if this grid is a obstacle grid or boundary grid
-		if(vConfidenceMap[iOneGridIdx].label == 1
-		   || vConfidenceMap[iOneGridIdx].label == 3){
-			
-			//record this grid idx
-			vMeasuredGridIdx.push_back(iOneGridIdx);
-
-			//record the boundary point
-			//for (int j = 0; j != vGridBoundPsIdx[iOneGridIdx].size(); ++j)
-			//	pNearCloud->points.push_back(vAllBoundCloud.points[vGridBoundPsIdx[iOneGridIdx][j]]);
-			
-			//record the obstacle point
-			for (int j = 0; j != vGridObsPsIdx[iOneGridIdx].size(); ++j)
-				pNearCloud->points.push_back(vObstacleCloud.points[vGridObsPsIdx[iOneGridIdx][j]]);
-			
-			//estimate the quality using Hausdorff measure based method
-	
-		}//end if
-
-	}//end for i
-
-	//using Hausdorff Dimension to measure point clouds
-	HausdorffDimension oHDor(5, 1);
-	//set the 
-	oHDor.SetMinDis(0.1);
-	//set the dimension type
-	oHDor.SetParaQ(0);
-	//compute the Hausdorff result
-
-	float fHausRes = oHDor.BoxCounting(*pNearCloud);
+	//define non ground grid indexes
+    std::vector<int> vNonGrndGrids;
     
-	//assigment
-	for (int i = 0; i != vMeasuredGridIdx.size(); ++i) {
-	
-		vConfidenceMap[vMeasuredGridIdx[i]].qualTerm = fabs(fHausRes - 2.0f);
+    //record 
+	for(int i = 0; i != vNearByIdxs.size(); ++i){
 
-	}
+		int iOneNearIdx = vNearByIdxs[i].iOneIdx;
+						//if it is a obstacle grid
+		if(vConfidenceMap[iOneNearIdx].label == 1 || vConfidenceMap[iOneNearIdx].label == 3){
+			//if it has been scanned
+			vNonGrndGrids.push_back(iOneNearIdx);
+
+		}//end if
+    }//end for
+
+    //check distribution
+    if(!vNonGrndGrids.size())
+    	return;
+
+    //construct a candidates
+    //choose a grid (randomly), which is equal to down sampling
+    std::vector<int> vSelectedGrids = GetRandom(vNonGrndGrids.size(), iSmplNum);
+
+    //compute the dimension feature of each selected obstacle grid
+    for(int is = 0; is != vSelectedGrids.size(); ++is){
+
+    	int iOneSlctIdx = vNonGrndGrids[vSelectedGrids[is]];
+        std::cout << "random number: " << vSelectedGrids[is] << std::endl;
+        //point clouds to be measured
+	    PCLCloudXYZPtr pMeasuredCloud(new PCLCloudXYZ);
+
+	    //compute the local region based on the selected grid
+        std::vector<int> vMeasuredGridIdx; 
+		ExtendedGM::CircleNeighborhood(vMeasuredGridIdx,
+						               oExtendGridMap.m_oFeatureMap, 
+									   oExtendGridMap.m_vLocalQualityMask,
+		                               iOneSlctIdx);
+
+	    //save the point that is in an unreachable grid
+	    for (int i = 0; i != vMeasuredGridIdx.size(); ++i) {
+
+		    int iOneGridIdx = vMeasuredGridIdx[i];
+		    //if this grid is a obstacle grid or boundary grid
+		    if(vConfidenceMap[iOneGridIdx].label == 1 || vConfidenceMap[iOneGridIdx].label == 3){
+
+			    for (int j = 0; j != vObstlPntMapIdx[iOneGridIdx].size(); ++j){
+        	        if(vObstNodeTimes[vObstlPntMapIdx[iOneGridIdx][j]] == iNodeTime)//if it is recorded at current node time
+        	    	    pMeasuredCloud->points.push_back(pObstacleCloud->points[vObstlPntMapIdx[iOneGridIdx][j]]);
+
+        	    }//end for j
+	
+		    }//end if
+
+	    }//end for i
+
+        //if not points input
+        if(pMeasuredCloud->size() < 10)
+        	continue;
+	    //using Hausdorff Dimension to measure point clouds
+	    HausdorffDimension oHDor(5, 1);
+	    
+	    //set the 
+	    oHDor.SetMinDis(0.1);
+	    
+	    //set the dimension type
+	    oHDor.SetParaQ(0);
+	   
+	    //compute the Hausdorff result
+	    float fHausRes = oHDor.BoxCounting(*pMeasuredCloud);
+	    //record each measured point clouds for test only
+        //OutputQualityClouds(*pMeasuredCloud, fHausRes);
+	    //assig at the selected grid because it is grid
+        //quality term
+        vConfidenceMap[iOneSlctIdx].qualTerm = fabs(fHausRes - 2.0f);
+        //vConfidenceMap[iOneSlctIdx].selectedFlag = true;
+
+    }//end for is
 
 }
-
 
 
 /*************************************************
@@ -1420,6 +1452,54 @@ void Confidence::OutputOcclusionClouds(const pcl::PointCloud<pcl::PointXYZ> & vC
     oPointCloudFile.close();
 
 }
+
+
+
+/*************************************************
+Function: OutputOcclusionClouds
+Description: constrcution function for TopologyMap class
+Calls: all member functions
+Called By: main function of project
+Table Accessed: none
+Table Updated: none
+Input: global node,
+       privare node
+       flag of generating output file
+       original frame value
+Output: none
+Return: none
+Others: the HandFindLocalMinimumlePointClouds is the kernel function
+*************************************************/
+void Confidence::OutputQualityClouds(const pcl::PointCloud<pcl::PointXYZ> & vCloud,
+	                                                       const float & fHausRes){
+
+	std::stringstream sOutPCName;
+
+    //set the current time stamp as a file name
+    //full name 
+    sOutPCName << "/home/ludy/Q" << ros::Time::now()<<"_"<< fHausRes << ".txt"; 
+
+    //output file
+    std::ofstream oPointCloudFile;
+    oPointCloudFile.open(sOutPCName.str(), std::ios::out | std::ios::app);
+
+
+    //record the point clouds
+    for(int i = 0; i != vCloud.size(); ++i ){
+
+        //output in a txt file
+        //the storage type of output file is x y z time frames right/left_sensor
+        oPointCloudFile << vCloud.points[i].x << " "
+                        << vCloud.points[i].y << " "
+                        << vCloud.points[i].z << " " 
+                        << std::endl;
+    }//end for         
+
+    oPointCloudFile.close();
+
+}
+
+
 
 
 }/*namespace*/

@@ -228,12 +228,14 @@ public:
 	//	              const std::vector<std::vector<int>> & vGridObsPsIdx);
 
 	//4. quality term of confidence map
-	void QualityTerm(std::vector<ConfidenceValue> & vConfidenceVec,
-		                      const std::vector<int> & vNearByIdxs,
-		                        const PCLCloudXYZ & vAllBoundCloud,
-	         const std::vector<std::vector<int>> & vGridBoundPsIdx,
-		                        const PCLCloudXYZ & vObstacleCloud,
-		       const std::vector<std::vector<int>> & vGridObsPsIdx);
+	void QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
+		                     const PCLCloudXYZPtr & pObstacleCloud,
+                           const std::vector<int> & vObstNodeTimes,
+            const std::vector<std::vector<int> > & vObstlPntMapIdx,
+		                         const ExtendedGM & oExtendGridMap,
+		                 const std::vector<MapIndex> & vNearByIdxs,
+                                             const int & iNodeTime,
+                                                  int iSmplNum = 5);
 
 
 	//4. Compute the boundary item
@@ -272,6 +274,9 @@ public:
 	void OutputOcclusionClouds(const pcl::PointCloud<pcl::PointXYZ> & vCloud,
 	                                   const std::vector<bool> & vVisableRes,
 	                                         const pcl::PointXYZ & viewpoint);
+
+	void OutputQualityClouds(const pcl::PointCloud<pcl::PointXYZ> & vCloud,
+	                                                const float & fHausRes);
 
 	//*******************Public Data Part********************
 	pcl::PointXYZ oShowCenter;
