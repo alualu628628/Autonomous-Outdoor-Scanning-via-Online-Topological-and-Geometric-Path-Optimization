@@ -101,6 +101,11 @@ public:
     bool BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
 	                       const std::vector<ConfidenceValue> & vConfidenceMap);
 
+    //local path
+    bool LocalPathOptimization(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pAttractorCloud, 
+		                       const std::vector<float> & vQualityFeature,
+		                       const pcl::PointCloud<pcl::PointXYZ>::Ptr & pAstarCloud);
+
 	//Outout the history of traveling nodes
     void OutputPastNodes(std::vector<pcl::PointXYZ> & vOutputNodes);
 

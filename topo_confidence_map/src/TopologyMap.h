@@ -14,6 +14,7 @@
 
 //#include "ConfidenceMap.h"
 #include "Astar.h"
+#include "LocalPathOptimization.h"
 
 //octomap related
 //#include <octomap/octomap.h>
@@ -219,6 +220,9 @@ class TopologyMap{
 
   //a Astar estimator
   Astar m_oAstar;
+
+  //a local path optimer
+  PathOptimization oLclPthOptimer;
 
   //some paramters which is no more important
   //the radius which initial the travelable region around robot at original location

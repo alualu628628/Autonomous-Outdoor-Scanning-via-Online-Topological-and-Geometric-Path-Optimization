@@ -46,6 +46,25 @@ struct Visible{
 	}
 };
 
+
+struct Quality{
+
+    float means;
+	float total;
+	float num;
+	bool seletedflag;
+
+    Quality(){
+
+        means = 0.0;
+	    total = 0.0;
+	    num = 0.0;
+	    seletedflag = false;
+
+    }
+
+};
+
 //status
 struct ConfidenceValue{
 
@@ -56,7 +75,7 @@ struct ConfidenceValue{
 	//bound term
 	Visible visiTerm;
 	//quality
-	float qualTerm;
+	Quality qualTerm;
 	//quality
 	float totalValue;
 
@@ -93,7 +112,7 @@ struct ConfidenceValue{
 		travelTerm = 0.0;//start with 1, which means no need to go there
 		boundTerm = 0.0;//start with 1, which means no need to go there
 		//visiTerm = 1.0;
-		qualTerm = 0.0;
+		//qualTerm = 0.0;
 		totalValue = 0.0;//initial each grid as not need to move there
 		label = 0;//start with nothing
 		travelable = -1;//start with unknown

@@ -60,12 +60,22 @@ public:
 	                     const std::vector<ConfidenceValue> & vConfidenceMap);
 
 	std::list<AstarPoint *> GetPath(AstarPoint &startPoint, AstarPoint &endPoint, bool isIgnoreCorner);
-    //roload for a confidence map input
-	bool GetPath(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pAstarCloud, 
-	                            const grid_map::GridMap & oExtendGridMap,
-	                                    const pcl::PointXYZ & oHeadPoint, 
-	                                    const pcl::PointXYZ & oTailPoint, 
-	                                                 bool isIgnoreCorner);
+    //roload for a point cloud path output
+	bool GetPath(pcl::PointCloud<pcl::PointXYZ>::Ptr & pAstarCloud, 
+	                      const grid_map::GridMap & oExtendGridMap,
+	                              const pcl::PointXYZ & oHeadPoint, 
+	                              const pcl::PointXYZ & oTailPoint, 
+	                                           bool isIgnoreCorner);
+
+	//roload for a path region map index output
+	bool GetPath(pcl::PointCloud<pcl::PointXYZ>::Ptr & pAttractorCloud, 
+		                          std::vector<float> & vQualityFeature,
+		             pcl::PointCloud<pcl::PointXYZ>::Ptr & pAstarCloud, 
+	                                 const ExtendedGM & oExtendGridMap,
+	               const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                  const pcl::PointXYZ & oHeadPoint, 
+	                                  const pcl::PointXYZ & oTailPoint, 
+	                                               bool isIgnoreCorner);
 
 	//the obstacle map
 	std::vector<std::vector<int>> maze;

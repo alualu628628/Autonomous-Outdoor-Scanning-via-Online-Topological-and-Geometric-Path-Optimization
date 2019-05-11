@@ -771,6 +771,27 @@ bool OP::BranchBoundMethod(const pcl::PointXYZ & oCurOdom,
 
 }
 
+/*************************************************
+Function: TwoDDistance
+Description: compute distance
+Calls: none
+Called By: main function
+Table Accessed: none
+Table Updated: none
+Input: oQueryPoint - one 3d point
+       oTargetPoint - another 3d point
+Output: a Euclidean distance
+Return: float distance
+Others: none
+*************************************************/
+bool OP::LocalPathOptimization(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pAttractorCloud, 
+		                       const std::vector<float> & vQualityFeature,
+		                       const pcl::PointCloud<pcl::PointXYZ>::Ptr & pAstarCloud){
+
+
+
+	
+}
 
 /*************************************************
 Function: TwoDDistance

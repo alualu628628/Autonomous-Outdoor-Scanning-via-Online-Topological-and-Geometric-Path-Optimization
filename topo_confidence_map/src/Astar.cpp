@@ -168,11 +168,11 @@ std::list<AstarPoint *> Astar::GetPath(AstarPoint &startPoint, AstarPoint &endPo
 
 }
 //reload as a pcl::PointCLoud output
-bool Astar::GetPath(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pAstarCloud, 
-	                               const grid_map::GridMap & oExtendGridMap,
-	                                       const pcl::PointXYZ & oHeadPoint, 
-	                                       const pcl::PointXYZ & oTailPoint, 
-	                                                    bool isIgnoreCorner)
+bool Astar::GetPath(pcl::PointCloud<pcl::PointXYZ>::Ptr & pAstarCloud, 
+	                         const grid_map::GridMap & oExtendGridMap,
+	                                 const pcl::PointXYZ & oHeadPoint, 
+	                                 const pcl::PointXYZ & oTailPoint, 
+	                                              bool isIgnoreCorner)
 {
 
     //clear output
@@ -219,6 +219,103 @@ bool Astar::GetPath(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pAstarCloud,
 		return true;
 	else
 		return false;
+
+}
+
+//reload as a one dimension grid output
+bool Astar::GetPath(pcl::PointCloud<pcl::PointXYZ>::Ptr & pAttractorCloud, 
+		                             std::vector<float> & vQualityFeature,
+		                pcl::PointCloud<pcl::PointXYZ>::Ptr & pAstarCloud, 
+	                                    const ExtendedGM & oExtendGridMap,
+	                  const std::vector<ConfidenceValue> & vConfidenceMap,
+	                                     const pcl::PointXYZ & oHeadPoint, 
+	                                     const pcl::PointXYZ & oTailPoint, 
+	                                                  bool isIgnoreCorner)
+{
+
+    //clear output
+    pAstarCloud->clear();
+    pAttractorCloud->clear();
+    vQualityFeature.clear();
+
+    //define a status vector presenting the point clouds of data
+    std::vector<bool> vRegionStatus(vConfidenceMap.size(),false);
+
+    //set input
+    MapIndex oHeadIdx = ExtendedGM::PointoAllTypeIdx(oHeadPoint, oExtendGridMap.m_oFeatureMap);
+    AstarPoint startPoint(oHeadIdx.oTwoIndex(0),oHeadIdx.oTwoIndex(1));
+    MapIndex oTailIdx = ExtendedGM::PointoAllTypeIdx(oTailPoint, oExtendGridMap.m_oFeatureMap);
+    AstarPoint endPoint(oTailIdx.oTwoIndex(0),oTailIdx.oTwoIndex(1));
+
+    //compute the path
+	AstarPoint *result = findPath(startPoint, endPoint, isIgnoreCorner);
+
+	std::list<AstarPoint *> path;
+
+	//Return the path, if no path is found, return the empty list 
+	while (result)
+	{
+
+		path.push_front(result);
+        //get path member 2D index
+		grid_map::Index oPathGridIdx;
+		oPathGridIdx(0) = result->x;
+		oPathGridIdx(1) = result->y;
+
+        pcl::PointXYZ oPathGridPoint;
+        //get path point
+        ExtendedGM::TwoDIdxtoPoint(oPathGridPoint,
+    	                           oPathGridIdx,
+		                           oExtendGridMap.m_oFeatureMap);
+
+        //construct path
+        oPathGridPoint.z = 0.0;
+		pAstarCloud->points.push_back(oPathGridPoint);
+
+        //computed the neighboring grid of one astar path grid
+        std::vector<MapIndex> vOneAstarNearIdxs;
+        ExtendedGM::CircleNeighborhood(vOneAstarNearIdxs,
+	                                   oExtendGridMap.m_oFeatureMap,
+	                                   oExtendGridMap.m_vAstarPathMask,
+	                                   oPathGridPoint);
+
+        //record in total map status
+        for(int i = 0; i!= vOneAstarNearIdxs.size(); ++i)
+        	vRegionStatus[vOneAstarNearIdxs[i].iOneIdx] = true;
+
+
+		result = result->parent;
+
+	}
+
+	openList.clear();
+
+	closeList.clear();
+
+	if(pAstarCloud->size() == 0)
+		return false;
+
+	//save the attractor
+    for(int i = 0; i != vRegionStatus.size(); ++i){
+    	//if it is neiboring region of astar point
+        if(vRegionStatus[i]){
+            //if it is a selected grid
+        	if(vConfidenceMap[i].qualTerm.seletedflag){
+                //record point instead of grid
+        	   pcl::PointXYZ oAttractorPoint;
+               ExtendedGM::OneDIdxtoPoint(oAttractorPoint, i, oExtendGridMap.m_oFeatureMap);
+               oAttractorPoint.z = 0.0;
+        	   //add it at attractor point clouds
+               pAttractorCloud->push_back(oAttractorPoint);
+               //record the corresponding quality value
+               vQualityFeature.push_back(vConfidenceMap[i].qualTerm.means);
+            }
+        }
+
+    }
+
+    //output whether path is generated
+    return true;
 
 }
 

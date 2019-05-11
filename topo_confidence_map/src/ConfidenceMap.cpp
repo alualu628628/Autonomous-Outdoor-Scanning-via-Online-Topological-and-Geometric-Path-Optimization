@@ -927,7 +927,7 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
     for(int is = 0; is != vSelectedGrids.size(); ++is){
 
     	int iOneSlctIdx = vNonGrndGrids[vSelectedGrids[is]];
-        std::cout << "random number: " << vSelectedGrids[is] << std::endl;
+        
         //point clouds to be measured
 	    PCLCloudXYZPtr pMeasuredCloud(new PCLCloudXYZ);
 
@@ -969,11 +969,28 @@ void Confidence::QualityTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 	   
 	    //compute the Hausdorff result
 	    float fHausRes = oHDor.BoxCounting(*pMeasuredCloud);
+        //give large weight for less scan
+	    fHausRes = fHausRes - 2.0f;
+	    if(fHausRes < 0.0)
+	       fHausRes = -1.5f*fHausRes;
+
 	    //record each measured point clouds for test only
         //OutputQualityClouds(*pMeasuredCloud, fHausRes);
 	    //assig at the selected grid because it is grid
         //quality term
-        vConfidenceMap[iOneSlctIdx].qualTerm = fabs(fHausRes - 2.0f);
+        for(int i = 0; i!= vMeasuredGridIdx.size(); ++i){
+            
+            int iOneGridIdx = vMeasuredGridIdx[i];
+		    //if this grid is a obstacle grid or boundary grid
+		    if(vConfidenceMap[iOneGridIdx].label == 1 || vConfidenceMap[iOneGridIdx].label == 3){
+               vConfidenceMap[iOneGridIdx].qualTerm.total += fHausRes;
+	           vConfidenceMap[iOneGridIdx].qualTerm.num += 1.0; 
+	           vConfidenceMap[iOneGridIdx].qualTerm.means = vConfidenceMap[iOneGridIdx].qualTerm.total / 
+	                                                        vConfidenceMap[iOneGridIdx].qualTerm.num;
+	        }//end if  vConfidenceMap[iOneGridIdx].label == 1 || vConfidenceMap[iOneGridIdx].label == 3
+	    }//end for i = 0; i!= vMeasuredGridIdx.size(); ++i
+
+	    vConfidenceMap[iOneSlctIdx].qualTerm.seletedflag = true;
         //vConfidenceMap[iOneSlctIdx].selectedFlag = true;
 
     }//end for is

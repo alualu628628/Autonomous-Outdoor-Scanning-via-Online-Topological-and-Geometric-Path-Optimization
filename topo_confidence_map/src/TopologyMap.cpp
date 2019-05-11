@@ -199,17 +199,25 @@ bool TopologyMap::ReadTopicParams(ros::NodeHandle & nodeHandle) {
 	nodeHandle.param("regiongrow_r", dRegionGrowR, 0.5);
 	m_oGMer.m_vGrowSearchMask.clear();
 	m_oGMer.m_vGrowSearchMask = m_oGMer.GenerateCircleMask(dRegionGrowR);
-
+    
+    //bound region
 	m_oGMer.m_vBoundDefendMask.clear();
     m_oGMer.m_vBoundDefendMask = m_oGMer.GenerateCircleMask(1.5*dRegionGrowR);
 
+    //initial free travelable region
 	double dInitialR;
 	nodeHandle.param("initial_r", dInitialR, 4.5);
     m_oGMer.m_vInitialMask.clear();
 	m_oGMer.m_vInitialMask = m_oGMer.GenerateCircleMask(dInitialR);
  
+    //local region for quality measurement
 	m_oGMer.m_vLocalQualityMask.clear();//the local region of dimension based method
 	m_oGMer.m_vLocalQualityMask = m_oGMer.GenerateCircleMask(1.0);
+
+	//a mask to compute astar path neighboring grid
+	float fAstarPathR = dRbtLocalRadius * 0.5;
+	m_oGMer.m_vAstarPathMask.clear();
+	m_oGMer.m_vAstarPathMask = m_oGMer.GenerateCircleMask(fAstarPathR);
 
 	//about confidence feature weight
 	double dTraversWeight;
@@ -688,6 +696,7 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		    m_vOdomShocks = std::queue<pcl::PointXYZ>();
 
 		    std::cout<< "remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
+		    std::cout<<"bug 1"<<std::endl;
             //compute astar path for current target point
             if(vUnvisitedNodes.size()){
 
@@ -698,12 +707,39 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		        m_oAstar.UpdateTravelMap(m_oGMer.m_oFeatureMap, m_vConfidenceMap);
                 //get raw astar path point clouds
                 pcl::PointCloud<pcl::PointXYZ>::Ptr pAstarCloud(new pcl::PointCloud<pcl::PointXYZ>);
-   
+                pcl::PointCloud<pcl::PointXYZ>::Ptr pAttractorCloud(new pcl::PointCloud<pcl::PointXYZ>);
+                std::vector<float> vQualityFeature;
+                std::cout<<"bug 2"<<std::endl;
                 //compute astar path
-		        bool bPathOptmFlag = m_oAstar.GetPath(pAstarCloud, m_oGMer.m_oFeatureMap,
-		                                              m_vOdomViews.back(), oTargetPoint, false);
+		        bool bPathOptmFlag = m_oAstar.GetPath(pAttractorCloud, 
+		                                              vQualityFeature,
+		                                              pAstarCloud, 
+	                                                  m_oGMer,
+	                                                  m_vConfidenceMap,
+	                                                  m_vOdomViews.back(), oTargetPoint, false);
 
-		        //PublishPointCloud(*pAstarCloud);//for test only
+                pcl::PointCloud<pcl::PointXY>::Ptr pAttractorSeq(new pcl::PointCloud<pcl::PointXY>);
+		        //sort the controls from max to min
+		        std::cout<<"bug 3"<<std::endl;
+	            oLclPthOptimer.SortFromBigtoSmall(pAttractorSeq,
+	                                              pAttractorCloud, 
+		                                          vQualityFeature);
+
+                std::cout<<"bug 4"<<std::endl;
+	            ////generate new local path
+	            pcl::PointCloud<pcl::PointXYZ> vNewAncherClouds;
+	            oLclPthOptimer.NewLocalPath(vNewAncherClouds,
+	                                           pAttractorSeq, 
+		                                     vQualityFeature,
+		                                         pAstarCloud, 
+	                                                 m_oGMer,
+	                                        m_vConfidenceMap,1.5, 1);
+
+		        //if(bPathOptmFlag)
+
+                std::cout<<"bug 5"<<std::endl;
+		        PublishPointCloud(*pAttractorCloud);//for test only
+		        PublishPointCloud(vNewAncherClouds);//for test only
 
 		        std::cout << "optimal or not: " << bPathOptmFlag << std::endl;
 		    }
@@ -1013,7 +1049,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
 	//PublishPointCloud(*pNearBndryClouds);//for test
-	PublishPointCloud(*pNearAllClouds);//for test
+	//PublishPointCloud(*pNearAllClouds);//for test
 	PublishGridMap();
 
 }
@@ -1146,7 +1182,7 @@ void TopologyMap::PublishGridMap(){
 		   // }//end else
 
             //quality is in boundary and obstacle grid
-		    gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].qualTerm;//quality term
+		    gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].qualTerm.means;//quality term
 
 		}//end j
 
