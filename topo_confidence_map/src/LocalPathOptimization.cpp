@@ -79,9 +79,6 @@ bool PathOptimization::NewLocalPath(pcl::PointCloud<pcl::PointXYZ> & vNewAncherC
 	                                const std::vector<ConfidenceValue> & vConfidenceMap,
 		                            float fMoveDis,
 		                            int iAnchorNum){
-    
-    std::cout<<"bug 4.1"<<std::endl;
-    std::cout<<"pAttractorSeq->points.size(): "<<pAttractorSeq->points.size()<<std::endl;
 
 	vNewAncherClouds.clear();
 
@@ -108,8 +105,6 @@ bool PathOptimization::NewLocalPath(pcl::PointCloud<pcl::PointXYZ> & vNewAncherC
 		pLineCloud->points.push_back(oXYPoint);
 	}
 
-    std::cout<<"bug 4.2"<<std::endl;
-
 	//construct a kdtree
 	pcl::KdTreeFLANN<pcl::PointXY> oLineTree;
 	oLineTree.setInputCloud(pLineCloud);
@@ -131,7 +126,7 @@ bool PathOptimization::NewLocalPath(pcl::PointCloud<pcl::PointXYZ> & vNewAncherC
 		oLineTree.nearestKSearch(pAttractorSeq->points[iCnddtCount], 1, vSearchIdx, vSearchDis);
         
 		//if the searched point is at the head or tail of path, it means the searched point is out of the line region
-		if (vSearchIdx[0] > 2 && vSearchIdx[0] < pLineCloud->points.size() - 2) {
+		if (vSearchIdx[0] > 7 && vSearchIdx[0] < pLineCloud->points.size() - 7) {
 
 			//if this point has not been computed yet
 			if (vAstarPointStatus[vSearchIdx[0]]) {
@@ -149,7 +144,7 @@ bool PathOptimization::NewLocalPath(pcl::PointCloud<pcl::PointXYZ> & vNewAncherC
                 
                 //compute the move action twice if necessary 
                 while(!fAtTravelFlag && iMDCount < 2){
-                    std::cout<<"bug 4.3"<<std::endl;
+                    
                     //compute the shift location
 				    pcl::PointXY oNewAncher = ShiftPosition(pLineCloud->points[vSearchIdx[0]],
 						                                    pAttractorSeq->points[iCnddtCount], 
@@ -172,7 +167,7 @@ bool PathOptimization::NewLocalPath(pcl::PointCloud<pcl::PointXYZ> & vNewAncherC
                 
                 //if the anchor point is at the travelable region
                 if(fAtTravelFlag){
-                    std::cout<<"bug 4.5"<<std::endl;
+                    
                     //set the point as 
                 	std::vector<int> vRadiuSIdx;
 				    std::vector<float> vRadiuSDis;
@@ -202,15 +197,18 @@ bool PathOptimization::NewLocalPath(pcl::PointCloud<pcl::PointXYZ> & vNewAncherC
     //if not any anchor be generated
     if(!iAnchorSucess)
     	return false;
-    std::cout<<"bug 4.6"<<std::endl;
-	//get a sequance
+    
+	//get a sequance from astar path with covering labels
 	std::vector<int> vSequanceIdx;
-	//assigment
+	//assigment value
 	int iLabel = -1;
 	for (int i = 0; i != vAstarPointStatus.size(); ++i) {
-		//if changed
-		if (vAstarPointStatus[i] != iLabel) {
-
+		//-1 -1 -1 2 2 2 -1 -1 -1 0 0 0 1 1 1 -1 -1
+		//the result is:
+		// 2 0 1
+		if (vAstarPointStatus[i] != -1 &&
+			vAstarPointStatus[i] != iLabel) {
+            //get covering label
 			vSequanceIdx.push_back(vAstarPointStatus[i]);
 			iLabel = vAstarPointStatus[i];
 		}
@@ -222,7 +220,7 @@ bool PathOptimization::NewLocalPath(pcl::PointCloud<pcl::PointXYZ> & vNewAncherC
 		vNewAncherClouds.push_back(vNewAnchorPoints[vSequanceIdx[i]]);
 
 	return true;
-    std::cout<<"sucess find anchor point"<<std::endl;
+
 }
 
 

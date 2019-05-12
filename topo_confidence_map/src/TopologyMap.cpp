@@ -31,10 +31,12 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_iObstacleFrames(0),
 	                     m_iComputedFrame(0),
 	                     m_iNodeTimes(0),
+	                     m_iAncherCount(0),
 	                     m_iOdomSampingNum(25),
 	                     m_bGridMapReadyFlag(false),
 	                     m_bCoverFileFlag(false),
-	                     m_bOutTrajFileFlag(false){
+	                     m_bOutTrajFileFlag(false),
+	                     m_bAnchorGoalFlag(false){
 
 	//read parameters
 	ReadTopicParams(nodeHandle);
@@ -289,7 +291,7 @@ void TopologyMap::InitializeGridMap(const pcl::PointXYZ & oRobotPos) {
 		}//end i
 
 	}//end j
-
+    
     //get the neighborhood of original coordiante value and initial a rough travelable region
 	std::vector<MapIndex> vOriginalNearIdx;
 	ExtendedGM::CircleNeighborhood(vOriginalNearIdx,
@@ -662,13 +664,42 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		    	ComputeConfidence(m_vOdomViews.back(), m_vOdomViews.front());
 			}//end else
 		}//end if m_bGridMapReadyFlag
-        
-        //if the robot is close to the target or the robot is standing in place in a long time
-		//if(fRemainDis < 0.5 || fHistoryDis < 0.005){
-        if(m_oOPSolver.NearGoal(m_vOdomShocks, 
-        	                    m_iShockNum,
-        	                    m_iComputedFrame, 2.0, 10)){
+     
+        //if move in local way
+		if(m_bAnchorGoalFlag){
+            //near
+            float fTouchAnchorGoal = false;
+            fTouchAnchorGoal =  m_oOPSolver.NearGoal(m_vOdomShocks,m_iShockNum, m_iComputedFrame, 
+        	                                         m_vAncherGoals[m_iAncherCount], 2.0, 10);
+            //
+            if(fTouchAnchorGoal){
 
+            	m_iAncherCount++;
+
+            	if(m_iAncherCount >= m_vAncherGoals.size()){
+                   m_bAnchorGoalFlag = false;
+                   m_iAncherCount = 0;
+            	}
+
+            }
+
+		}
+        
+		float fTouchNodeGoal = false;
+        //if move in global way
+		if(!m_bAnchorGoalFlag){
+            //check the robot is near the target node
+            //if the robot is close to the target or the robot is standing in place in a long time
+            fTouchNodeGoal =  m_oOPSolver.NearGoal(m_vOdomShocks, 
+        	                                        m_iShockNum,
+        	                                        m_iComputedFrame, 
+        	                                        m_oNodeGoal, 2.0, 10);
+
+		}
+        
+        //if it arrivals at the target node
+        if(fTouchNodeGoal){
+            
 			//get the new nodes
 			std::vector<int> vNewNodeIdx;
 			std::vector<pcl::PointXYZ> vNodeClouds;
@@ -688,61 +719,69 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 				//use branch and bound based method
 				m_oOPSolver.BranchBoundMethod(m_vOdomViews.back(),m_vConfidenceMap);
 		    
-		    //output
+		    //output node
+		    m_oOPSolver.OutputGoalPos(m_oNodeGoal);
+
 		    std::vector<pcl::PointXYZ> vUnvisitedNodes;
 		    m_oOPSolver.OutputUnvisitedNodes(vUnvisitedNodes);
+
+
+		    std::cout<< "remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
+
 
             //clear old data of last trip
 		    m_vOdomShocks = std::queue<pcl::PointXYZ>();
 
-		    std::cout<< "remain unvisited nodes are " << vUnvisitedNodes.size()<< std::endl;
-		    std::cout<<"bug 1"<<std::endl;
+		    //if there are still some regions to explore
             //compute astar path for current target point
             if(vUnvisitedNodes.size()){
-
-            	pcl::PointXYZ oTargetPoint;
-            	//get goal
-            	m_oOPSolver.OutputGoalPos(oTargetPoint);
+            	
             	//update travelable map
 		        m_oAstar.UpdateTravelMap(m_oGMer.m_oFeatureMap, m_vConfidenceMap);
                 //get raw astar path point clouds
                 pcl::PointCloud<pcl::PointXYZ>::Ptr pAstarCloud(new pcl::PointCloud<pcl::PointXYZ>);
                 pcl::PointCloud<pcl::PointXYZ>::Ptr pAttractorCloud(new pcl::PointCloud<pcl::PointXYZ>);
                 std::vector<float> vQualityFeature;
-                std::cout<<"bug 2"<<std::endl;
+                
                 //compute astar path
 		        bool bPathOptmFlag = m_oAstar.GetPath(pAttractorCloud, 
 		                                              vQualityFeature,
 		                                              pAstarCloud, 
 	                                                  m_oGMer,
 	                                                  m_vConfidenceMap,
-	                                                  m_vOdomViews.back(), oTargetPoint, false);
+	                                                  m_vOdomViews.back(), m_oNodeGoal, false);
 
-                pcl::PointCloud<pcl::PointXY>::Ptr pAttractorSeq(new pcl::PointCloud<pcl::PointXY>);
-		        //sort the controls from max to min
-		        std::cout<<"bug 3"<<std::endl;
-	            oLclPthOptimer.SortFromBigtoSmall(pAttractorSeq,
+                //if the goal has a very clear and credible path
+		        if(bPathOptmFlag){
+
+                    pcl::PointCloud<pcl::PointXY>::Ptr pAttractorSeq(new pcl::PointCloud<pcl::PointXY>);
+		            //sort the controls from max to min
+		        
+	                oLclPthOptimer.SortFromBigtoSmall(pAttractorSeq,
 	                                              pAttractorCloud, 
 		                                          vQualityFeature);
 
-                std::cout<<"bug 4"<<std::endl;
-	            ////generate new local path
-	            pcl::PointCloud<pcl::PointXYZ> vNewAncherClouds;
-	            oLclPthOptimer.NewLocalPath(vNewAncherClouds,
-	                                           pAttractorSeq, 
-		                                     vQualityFeature,
-		                                         pAstarCloud, 
-	                                                 m_oGMer,
-	                                        m_vConfidenceMap,1.5, 1);
+	                ////generate new local path
+	                m_vAncherGoals.clear();
+	                
+	                m_bAnchorGoalFlag = oLclPthOptimer.NewLocalPath(m_vAncherGoals,
+	                                                            pAttractorSeq, 
+		                                                        vQualityFeature,
+		                                                        pAstarCloud, 
+	                                                            m_oGMer,
+	                                                            m_vConfidenceMap,1.5, 1);
 
-		        //if(bPathOptmFlag)
+                    //print to screen
+                    if(m_bAnchorGoalFlag)
+                    	std::cout<<"walking in local curve. "<<std::endl;
 
-                std::cout<<"bug 5"<<std::endl;
-		        PublishPointCloud(*pAttractorCloud);//for test only
-		        PublishPointCloud(vNewAncherClouds);//for test only
+		            //PublishPointCloud(*pAttractorCloud);//for test only
+		            //PublishPointCloud(m_vAncherGoals);//for test only
 
-		        std::cout << "optimal or not: " << bPathOptmFlag << std::endl;
-		    }
+		        }//end if bPathOptmFlag
+
+
+		    }//end if vUnvisitedNodes.size()
             
             //begin the next trip
             if(m_oOPSolver.CheckNodeTimes())
@@ -750,14 +789,26 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		    
 		}//end if m_oOPSolver.NearGoal
 
+		pcl::PointXYZ oRealGoalPoint;
+
         //send generated goal
 		if(m_iNodeTimes > 0){
+			
+            //get goal from achor vector
+            if(m_bAnchorGoalFlag){
+
+            	oRealGoalPoint.x = m_vAncherGoals.points[m_iAncherCount].x;
+                oRealGoalPoint.y = m_vAncherGoals.points[m_iAncherCount].y;
+                oRealGoalPoint.z = m_vAncherGoals.points[m_iAncherCount].z;
+			//get goal from node
+		    }else{
+                oRealGoalPoint.x = m_oNodeGoal.x;
+                oRealGoalPoint.y = m_oNodeGoal.y;
+		        oRealGoalPoint.z = m_oNodeGoal.z;
+		    }
             
-			pcl::PointXYZ oTargetPoint;
-			//get goal
-		    m_oOPSolver.OutputGoalPos(oTargetPoint);
 		    //publish goal
-            PublishGoalOdom(oTargetPoint);
+            PublishGoalOdom(oRealGoalPoint);
         }
 
     }//end if (!(m_iTrajFrameNum % m_iOdomSampingNum))
@@ -1049,7 +1100,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
 	//PublishPointCloud(*pNearBndryClouds);//for test
-	//PublishPointCloud(*pNearAllClouds);//for test
+	PublishPointCloud(*pNearAllClouds);//for test
 	PublishGridMap();
 
 }
@@ -1152,7 +1203,7 @@ void TopologyMap::PublishGridMap(){
 			int iGridIdx = ExtendedGM::TwotoOneDIdx(i, j);
 
 		    //render travelable ground grid    
-			//if(m_vConfidenceMap[iGridIdx].label == 2){
+			if(m_vConfidenceMap[iGridIdx].label == 2){
  
                 //record the region that has been explored
                 if(m_vConfidenceMap[iGridIdx].travelable == 1)
@@ -1168,18 +1219,18 @@ void TopologyMap::PublishGridMap(){
 		    	//gridMapData6(i, j) = m_oAstar.maze[i][j];//test only
 		    	//gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].qualTerm;//quality term
             
-		   // }else{
+		   }else{
 		    	
                 //assign limited resultes
-		  //  	gridMapData1(i, j) = std::numeric_limits<float>::infinity();
-		  //  	gridMapData2(i, j) = std::numeric_limits<float>::infinity();
-		   // 	gridMapData3(i, j) = std::numeric_limits<float>::infinity();
-		   // 	gridMapData4(i, j) = std::numeric_limits<float>::infinity();
-		   // 	gridMapData5(i, j) = std::numeric_limits<float>::infinity();
-		   // 	gridMapData6(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData1(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData2(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData3(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData4(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData5(i, j) = std::numeric_limits<float>::infinity();
+		    	gridMapData6(i, j) = std::numeric_limits<float>::infinity();
 		    	//gridMapData7(i, j) = std::numeric_limits<float>::infinity();
 
-		   // }//end else
+		   }//end else
 
             //quality is in boundary and obstacle grid
 		    gridMapData7(i, j) = m_vConfidenceMap[iGridIdx].qualTerm.means;//quality term

@@ -139,6 +139,56 @@ bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
 
 }
 
+//reload as a general input
+bool OP::NearGoal(const std::queue<pcl::PointXYZ> & vOdoms,
+	                              const int & iShockNumThr,
+                                 const int & iProcessFrame,
+                               const pcl::PointXYZ & oGoal,
+	                                     float fDisDiffThr,
+	                                     int iFirstTripThr){
+
+	pcl::PointXYZ oCurrOdomTwoD;
+	oCurrOdomTwoD.x = vOdoms.back().x;
+	oCurrOdomTwoD.y = vOdoms.back().y;
+	oCurrOdomTwoD.z = 0.0;
+
+	pcl::PointXYZ oPastOdomTwoD;
+	oPastOdomTwoD.x = vOdoms.front().x;
+	oPastOdomTwoD.y = vOdoms.front().y;
+	oPastOdomTwoD.z = 0.0;
+
+    
+    //if it is at the orginal point
+	if(m_vAllNodes.size() == 1){
+        //if the confidence map at original location has been computed enough
+        int iRemain = iFirstTripThr - iProcessFrame;
+        ROS_INFO("Initial the first goal: remain confidence computed time is: [%d].", iRemain);
+        //"<=" rather than "=" is to defend sampling error
+		if(iRemain <= 0)
+			return true;
+
+	}
+    
+    //normal situation
+	if(m_vAllNodes.size() > 1){
+		//compute the distance difference between current odom and current target node
+		float fDisDiff = TwoDDistance(oCurrOdomTwoD, oGoal);
+
+		if(fDisDiff <= fDisDiffThr)
+			return true;
+        //check shock (shock is a situation in navigation pakcage)
+        //shock may happen when robot is too close to the obstacle 
+		float fDisShock = TwoDDistance(oCurrOdomTwoD, oPastOdomTwoD);
+
+		if(vOdoms.size() >= iShockNumThr && fDisShock <= 0.5){
+		    ROS_INFO("robot is standing at same place up to a given time, thereby a new goal is generated for it");	
+			return true;
+        }
+	}
+
+	return false;
+
+}
 
 /*************************************************
 Function: ~OP

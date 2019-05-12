@@ -204,7 +204,6 @@ class TopologyMap{
   std::vector<std::vector<int> > m_vBoundPntMapIdx;//boundary point index in grid map
   std::vector<std::vector<int> > m_vObstlPntMapIdx;//obstacle point index in grid map
 
-
   //the map - main body 
   ExtendedGM m_oGMer;
 
@@ -227,6 +226,19 @@ class TopologyMap{
   //some paramters which is no more important
   //the radius which initial the travelable region around robot at original location
   float m_fInitialR;
+
+  //follow anchor path or not
+  //flag indicate the path selection
+  bool m_bAnchorGoalFlag; 
+  
+  //goal point of global path planning
+  pcl::PointXYZ m_oNodeGoal;
+
+  //anchor goals - local path
+  pcl::PointCloud<pcl::PointXYZ> m_vAncherGoals;
+
+  //count visited anchor in a trip
+  int m_iAncherCount;
   
 };
 
