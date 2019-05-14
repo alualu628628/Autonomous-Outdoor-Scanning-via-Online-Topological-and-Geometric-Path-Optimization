@@ -38,6 +38,9 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_bOutTrajFileFlag(false),
 	                     m_bAnchorGoalFlag(false){
 
+
+	srand((unsigned)time(NULL));
+
 	//read parameters
 	ReadTopicParams(nodeHandle);
 

@@ -2,6 +2,7 @@
 #ifndef TOPOLOGYMAP_H
 #define TOPOLOGYMAP_H
 #include <string>
+#include <ctime>
 
 //ros related
 #include <ros/ros.h>
