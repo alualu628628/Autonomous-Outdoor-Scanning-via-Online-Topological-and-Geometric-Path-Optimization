@@ -114,6 +114,10 @@ class TopologyMap{
   //publish point clouds
   void PublishPointCloud(pcl::PointCloud<pcl::PointXYZ> & vCloud);
 
+  void PublishPlanNodeClouds();
+
+  void PublishPastNodeClouds();
+
   void PublishGoalOdom(pcl::PointXYZ & oGoalPoint);
 
   //output data in file
@@ -158,6 +162,10 @@ class TopologyMap{
   ros::Publisher m_oCloudPublisher;// point cloud publisher for test
 
   ros::Publisher m_oGoalPublisher;// goal odometry information publisher
+
+  ros::Publisher m_oPlanNodePublisher;// planning nodes publisher for display
+
+  ros::Publisher m_oPastNodePublisher;// past nodes publisher for display
 
   //**frenquency related**
   

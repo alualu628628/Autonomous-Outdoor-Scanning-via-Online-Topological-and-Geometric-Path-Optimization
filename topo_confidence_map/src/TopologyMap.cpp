@@ -60,6 +60,10 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 
 	m_oCloudPublisher = nodeHandle.advertise<sensor_msgs::PointCloud2>("test_clouds", 1, true);
 
+	m_oPlanNodePublisher = nodeHandle.advertise<sensor_msgs::PointCloud2>("plannode_clouds", 1, true);
+
+	m_oPastNodePublisher = nodeHandle.advertise<sensor_msgs::PointCloud2>("pastnode_clouds", 1, true);
+
 	m_oGoalPublisher = nodeHandle.advertise<nav_msgs::Odometry>("goal_odom", 1, true);
 
 }
@@ -1163,7 +1167,10 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
 	//PublishPointCloud(*pNearBndryClouds);//for test
-	
+
+    PublishPlanNodeClouds();
+    PublishPastNodeClouds();
+
 	//output result on screen
 	PublishGridMap();
 
@@ -1286,7 +1293,68 @@ void TopologyMap::PublishPointCloud(pcl::PointCloud<pcl::PointXYZ> & vCloud){
 
 }
 
+void TopologyMap::PublishPlanNodeClouds(){
+  //publish obstacle points
+    pcl::PointCloud<pcl::PointXYZ> vCloud;
 
+    for(int i = 0; i != m_oOPSolver.m_vAllNodes.size(); ++i){
+
+       if(!m_oOPSolver.m_vAllNodes[i].visitedFlag){
+
+       	    pcl::PointXYZ oNodePoint;
+       	    oNodePoint.x = m_oOPSolver.m_vAllNodes[i].point.x;
+            oNodePoint.y = m_oOPSolver.m_vAllNodes[i].point.y;
+            oNodePoint.z = m_oOPSolver.m_vAllNodes[i].point.z + 0.583;
+       	    vCloud.push_back(oNodePoint);
+
+       }
+
+
+    }
+
+    sensor_msgs::PointCloud2 vCloudData;
+
+    pcl::toROSMsg(vCloud, vCloudData);
+
+    vCloudData.header.frame_id = m_oGMer.m_oFeatureMap.getFrameId();
+
+    vCloudData.header.stamp = ros::Time::now();
+
+    m_oPlanNodePublisher.publish(vCloudData);
+
+}
+
+void TopologyMap::PublishPastNodeClouds(){
+  //publish obstacle points
+
+    pcl::PointCloud<pcl::PointXYZ> vCloud;
+
+    for(int i = 0; i != m_oOPSolver.m_vAllNodes.size(); ++i){
+
+       if(m_oOPSolver.m_vAllNodes[i].visitedFlag){
+
+       	    pcl::PointXYZ oNodePoint;
+       	    oNodePoint.x = m_oOPSolver.m_vAllNodes[i].point.x;
+            oNodePoint.y = m_oOPSolver.m_vAllNodes[i].point.y;
+            oNodePoint.z = m_oOPSolver.m_vAllNodes[i].point.z + 0.583;
+       	    vCloud.push_back(oNodePoint);
+
+       }
+
+
+    }
+
+    sensor_msgs::PointCloud2 vCloudData;
+
+    pcl::toROSMsg(vCloud, vCloudData);
+
+    vCloudData.header.frame_id = m_oGMer.m_oFeatureMap.getFrameId();
+
+    vCloudData.header.stamp = ros::Time::now();
+
+    m_oPastNodePublisher.publish(vCloudData);
+
+}
 /*************************************************
 Function: TopologyMap
 Description: constrcution function for TopologyMap class

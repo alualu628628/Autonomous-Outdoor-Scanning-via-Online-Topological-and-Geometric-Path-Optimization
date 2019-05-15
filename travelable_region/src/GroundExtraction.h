@@ -97,6 +97,7 @@ private:
     ros::Publisher m_oGroundPub;
     ros::Publisher m_oObstaclePub;
     ros::Publisher m_oBoundPub;
+    ros::Publisher m_oHighOdomPub;
 
     //topic name of point clouds published by sensor
     std::string m_sLaserTopic;///<laser topic name
@@ -121,6 +122,7 @@ private:
 
     //the history data among a given secs of trajectory points
     CircularVector<TrajectoryPoint> vTrajHistory;
+
 
 };
 

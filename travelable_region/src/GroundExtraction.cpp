@@ -51,6 +51,8 @@ GroundExtraction::GroundExtraction(ros::NodeHandle & node,
     m_oBoundPub = node.advertise<sensor_msgs::PointCloud2>("/boundary_points", 2);
     //publish topic of point clouds 
     m_oObstaclePub  = node.advertise<sensor_msgs::PointCloud2>("/obstacle_points", 2);
+    //publish odometry with high value
+    m_oHighOdomPub = node.advertise<nav_msgs::Odometry>("odom_lidar", 2);
 }
 
 /*************************************************
@@ -638,6 +640,16 @@ void GroundExtraction::HandleTrajectory(const nav_msgs::Odometry & oTrajectory)
   oTrajPoint.oTimeStamp =  oTrajectory.header.stamp;
 
   vTrajHistory.push(oTrajPoint);
+
+  nav_msgs::Odometry oCurrOdom = oTrajectory;
+  //oCurrOdom.header.stamp = ros::Time::now();
+  //oCurrOdom.header.frame_id = "odom";
+
+  //set the position
+  //oCurrOdom.pose.pose.position.x = oTrajPoint.position.x;
+  //oCurrOdom.pose.pose.position.y = oTrajPoint.position.y;
+  oCurrOdom.pose.pose.position.z = oCurrOdom.pose.pose.position.z + 0.583;
+  m_oHighOdomPub.publish(oCurrOdom);
 
   if(m_bTxtOutFlag){
 
