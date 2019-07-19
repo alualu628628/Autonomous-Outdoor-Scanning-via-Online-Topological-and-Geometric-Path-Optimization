@@ -317,9 +317,6 @@ private:
 	float m_fDisWeight;
 	float m_fBoundWeight;
 
-	//the searched radius of a query point in density estimation
-	const float m_fDensityR;
-
     //node generation
 	float m_fMinNodeThr;
 

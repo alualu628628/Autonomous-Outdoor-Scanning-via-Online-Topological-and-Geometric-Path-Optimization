@@ -12,13 +12,31 @@ Calls: all member functions
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
-Input: global node,
-       privare node
-	   flag of generating output file
-	   original frame value
-	   Output: none
-Return: none
-Others: the HandlePointClouds is the kernel function
+Input: node - a ros node class
+	   nodeHandle - a private ros node class
+Return: Parameter initialization
+Others: m_oCnfdnSolver - (f_fSigma - the computed radius of robot
+	                      f_fGHPRParam - the parameter of GHPR algorithm
+	                      f_fVisTermThr - the threshold of visbility term - useless
+	                      f_fMinNodeThr - minimum value to generate node
+                          m_fTraversWeight - traverel weight
+                          m_fExploreWeight - visibility weight
+                          m_fDisWeight - distance term weight
+                          m_fBoundWeight - bound term weight)
+	    m_pBoundCloud - a point clouds storing the received boundary points
+	    m_pObstacleCloud - a point clouds storing the received obstacle points
+	    m_iTrajFrameNum - record received odometry frame
+	    m_iGroundFrames - record received ground point cloud frame
+	    m_iBoundFrames - record received boundary point cloud frame
+	    m_iObstacleFrames - record received obstacle point cloud frame 
+	    m_iComputedFrame - record computed times of processing point cloud frame
+	    m_iNodeTimes - count node generation times
+	    m_iAncherCount - count visited anchor in a trip 
+	    m_iOdomSampingNum - smapling number of odometry points
+	    m_bGridMapReadyFlag - a flag indicating the grid map has been initialized (true) or not (false)
+	    m_bCoverFileFlag - a flag indicating whether an coverage file is generated (true) or not (false)
+	    m_bOutTrajFileFlag - a flag indicating whether an out trajectroy file is generated
+	    m_bAnchorGoalFlag - a flag indicating the robot is moving Moving on a local optimization path
 *************************************************/
 TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     ros::NodeHandle & nodeHandle):

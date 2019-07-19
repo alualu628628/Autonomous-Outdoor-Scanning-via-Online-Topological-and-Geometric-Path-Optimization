@@ -20,7 +20,6 @@ Confidence::Confidence(float f_fSigma,
 	                  float f_fMinNodeThr):
 	                 m_fTraversWeight(0.9),
                      m_fExploreWeight(0.1),
-	                      m_fDensityR(0.3),
                          m_fDisWeight(0.6),
                        m_fBoundWeight(0.4){
 
