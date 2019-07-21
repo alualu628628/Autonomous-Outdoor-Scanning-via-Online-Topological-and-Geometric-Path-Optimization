@@ -13,7 +13,7 @@
 #include "pcl_ros/transforms.h"  
 #include <pcl_conversions/pcl_conversions.h>
 
-//#include "ConfidenceMap.h"
+
 #include "Astar.h"
 #include "LocalPathOptimization.h"
 
@@ -27,7 +27,22 @@
 
 namespace topology_map{
 
-//this class below is to compute topological guidance map for SLAM
+//******************************************************************
+// this class below is to compute topological guidance map based on SLAM
+//
+// this class need input of data below:
+// 1. odometry position
+// 2. ground point clouds
+// 3. obstacle point clouds
+// 4. boundary point clouds 
+//
+// the output of this class is below:
+// 1. the next best view position
+// 
+// created and edited by Huang Pengdi, 2019.04.07
+// Email: alualu628628@gmail.com
+//******************************************************************
+
 class TopologyMap{
 
  public:
@@ -41,7 +56,7 @@ class TopologyMap{
   virtual ~TopologyMap();
 
   //Reads and verifies the ROS parameters.
-  bool ReadTopicParams(ros::NodeHandle & nodeHandle);
+  bool ReadLaunchParams(ros::NodeHandle & nodeHandle);
 
   //Initialize a fixed Grid Map
   void InitializeGridMap(const pcl::PointXYZ & oRobotPos);
@@ -62,20 +77,20 @@ class TopologyMap{
 
 
   //extract the point clouds from the given neighboring grids
-  void DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+  void ExtractLabeledPCs(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
                                    std::vector<int> & vNearGroundGridIdxs,
                         pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
                          pcl::PointCloud<pcl::PointXYZ> & vNearObstClouds,                                           
                                 const std::vector<MapIndex> & vNearByIdxs,
                                                     const int & iNodeTime);
 
-  void DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+  void ExtractLabeledPCs(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
                         pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
                           pcl::PointCloud<pcl::PointXYZ> & vNearAllClouds,
                                    std::vector<int> & vNearGroundGridIdxs,
                                 const std::vector<MapIndex> & vNearByIdxs);
 
-  void DevidePointClouds(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
+  void ExtractLabeledPCs(pcl::PointCloud<pcl::PointXYZ> & vNearGrndClouds,
                         pcl::PointCloud<pcl::PointXYZ> & vNearBndryClouds,
                                    std::vector<int> & vNearGroundGridIdxs,
                                 const std::vector<MapIndex> & vNearByIdxs);
