@@ -16,7 +16,12 @@
 namespace topology_map {
 
 
+///************************************************************************///
+// a class to extend the function of grid_map, which is at https://github.com/ANYbotics/grid_map.git
+// created and edited by Huang Pengdi
 
+///************************************************************************///
+	
 //index of grid cell
 struct MapIndex{
 
@@ -27,12 +32,15 @@ struct MapIndex{
 
 };
 
+//Expanded Grid_map library
+//a class to index and traverse robot's neighborhood grid
+//this class is based on grid_map class
 class ExtendedGM{
 
 public:
-
+    //construction function
 	ExtendedGM();
-
+    //deconstruction function
 	~ExtendedGM();
 
 	void GetParam(const double & dMapMaxRange,

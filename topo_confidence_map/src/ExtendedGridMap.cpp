@@ -7,19 +7,16 @@ int ExtendedGM::iGridRawNum = 0;//Placeholder in ExtendedGridMap.h
 
 
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
+Function: ExtendedGM
+Description: constrcution function for ExtendedGM class
+Calls: none
 Called By: main function of project
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
+Input: none
 Output: none
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: Initial naming the grid_map layer as "elevation"
 *************************************************/
 ExtendedGM::ExtendedGM():m_oFeatureMap({ "elevation" }){
 
@@ -28,19 +25,16 @@ ExtendedGM::ExtendedGM():m_oFeatureMap({ "elevation" }){
 }
 
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: ExtendedGM
+Description: destrcution function for ExtendedGM class
+Calls: none
+Called By: none
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
+Input: none
 Output: none
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
 ExtendedGM::~ExtendedGM(){
 
@@ -50,19 +44,20 @@ ExtendedGM::~ExtendedGM(){
 
 
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: GetParam
+Description: get parameter value for private variances to generate a grid map
+Calls: none
+Called By: external call
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
+Input: dMapMaxRange - the half of length of map (map is 2d square)
+	   dResolution - the resolution of map
+	   dMinMapZ - the minimum elevation value the map can received
+	   dMaxMapZ - the maximum elevation value the map can received
+	   sMapFrameID - the robot structure name (called frame in ros) of map
+Output: get value
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
 
 void ExtendedGM::GetParam(const double & dMapMaxRange,
@@ -86,23 +81,19 @@ void ExtendedGM::GetParam(const double & dMapMaxRange,
 }
 	
 
-
-
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: GenerateMap
+Description: generate a grid map
+Calls: none
+Called By: external call
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
+Input: oRobotPos - the current robot position (odometry)
 Output: none
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
+
 void ExtendedGM::GenerateMap(const pcl::PointXYZ & oRobotPos){
 
 	m_oMapOriginalPos(0) = oRobotPos.x;
@@ -144,19 +135,19 @@ void ExtendedGM::GenerateMap(const pcl::PointXYZ & oRobotPos){
 
 
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: PointoOneDIdx
+Description: convert a point coordinate to a 1D grid index
+             where 1D means the index is a linear sequence in grid_map
+             //index(1D) = ix * size(cols) + iy
+Calls: all none
+Called By: external call
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
-Return: none
-Others: the HandlePointClouds is the kernel function
+Input: oPoint - point position
+	   oFeatureMap - the grid_map
+Output: 1d index
+Return: a int index variance
+Others: none
 *************************************************/
 
 int ExtendedGM::PointoOneDIdx(const pcl::PointXYZ & oPoint,
@@ -175,23 +166,22 @@ int ExtendedGM::PointoOneDIdx(const pcl::PointXYZ & oPoint,
 }
 
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: PointoAllTypeIdx
+Description: convert a point coordinate to a 1D and 2D grid index
+             where 1D means the index is a linear sequence in grid_map
+             and 2D index consists of a row number and a column number
+Calls: all none
+Called By: external call
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
-Return: none
-Others: the HandlePointClouds is the kernel function
+Input: oPoint - point position
+	   oFeatureMap - the grid_map
+Output: 1d and 2d indinces
+Return: a MapIndex tyed index variance, which consists of 1d and 2d index
+Others: none
 *************************************************/
-
 MapIndex ExtendedGM::PointoAllTypeIdx(const pcl::PointXYZ & oPoint,
-	                                         const grid_map::GridMap & oFeatureMap) {
+	                                  const grid_map::GridMap & oFeatureMap) {
 
 	MapIndex oAllTypeIdx;
 
@@ -211,18 +201,17 @@ MapIndex ExtendedGM::PointoAllTypeIdx(const pcl::PointXYZ & oPoint,
 
 /*************************************************
 Function: OneDIdxtoPoint
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Description: convert 1D grid index to a point coordinate
+Calls: all none
+Called By: external call
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
+Input: oPoint - a point position
+       iQueryIdx - a 1d grid index
+       oFeatureMap - the grid map
+Output: oPoint - query grid center position
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
 void  ExtendedGM::OneDIdxtoPoint(pcl::PointXYZ & oPoint,
     	                          const int & iQueryIdx,
@@ -255,20 +244,18 @@ void  ExtendedGM::OneDIdxtoPoint(grid_map::Position & oPointPos,
 
 /*************************************************
 Function: TwoDIdxtoPoint
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Description: convert 2D grid index to a point coordinate
+Calls: all none
+Called By: external call
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
+Input: oPoint - a point position
+       oGridIdx - a 2d grid index
+       oFeatureMap - the grid map
+Output: oPoint - query grid center position
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
-
 void ExtendedGM::TwoDIdxtoPoint(pcl::PointXYZ & oPoint,
     	                       const grid_map::Index & oGridIdx,
 		                       const grid_map::GridMap & oFeatureMap){
@@ -292,22 +279,20 @@ void ExtendedGM::TwoDIdxtoPoint(grid_map::Position & oPointPos,
 
 }
 
+
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: TwotoOneDIdx
+Description: convert 2D grid index to 1D grid index
+Calls: all none
+Called By: external call
+           CircleNeighborhood()
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
-Return: none
-Others: the HandlePointClouds is the kernel function
+Input: oIndex - 2D index
+Output: a 1D index
+Return: a int type variance
+Others: none
 *************************************************/
-
 int ExtendedGM::TwotoOneDIdx(const grid_map::Index & oIndex) {
 
 	//get the 1d index of point
@@ -315,8 +300,7 @@ int ExtendedGM::TwotoOneDIdx(const grid_map::Index & oIndex) {
 	return oIndex(0) * iGridRawNum + oIndex(1);
 
 }
-
-//reload TwotoOneDIdx function
+//reload TwotoOneDIdx function with a individal x, y input
 int ExtendedGM::TwotoOneDIdx(const int & iIndexX, const int & iIndexY){
     //function: ix * size(cols) + iy
 	return iIndexX * iGridRawNum + iIndexY;
@@ -325,45 +309,41 @@ int ExtendedGM::TwotoOneDIdx(const int & iIndexX, const int & iIndexY){
 
 
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: OneDtoTwoDIdx
+Description: convert 1D grid index to 2D grid index
+Calls: all none
+Called By: external call
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare node
-flag of generating output file
-original frame value
-Output: none
+Input: iOneDIdx - 1D grid index
+Output: oTwoDIdx - 2D gird index
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
-
 void ExtendedGM::OneDtoTwoDIdx(grid_map::Index & oTwoDIdx,
-	const int & iOneDIdx) {
+	                           const int & iOneDIdx) {
 
 	oTwoDIdx(1) = iOneDIdx % iGridRawNum;
 	oTwoDIdx(0) = (iOneDIdx - oTwoDIdx(1)) / iGridRawNum;
 
 }
 
+
+
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: GenerateCircleMask
+Description: generate a circle mask for searching
+             this generated mask should be maintained in memory so that it dont need a repeatl generation
+             the value of mask gird is in local 
+Calls: all none
+Called By: external call
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare nodem_dMapMaxRange
-flag of generating output file
-original frame value
-Output: none
-Return: none
-Others: the HandlePointClouds is the kernel function
+Input: dRadius - the radius of circle mask
+Output: vSearchMask - a mask with local grid index related to the center grid
+Return: vSearchMask - a MapIndex type vector
+Others: none
 *************************************************/
-
 std::vector<MapIndex> ExtendedGM::GenerateCircleMask(const double & dRadius) {
 
 	//define output
@@ -400,21 +380,19 @@ std::vector<MapIndex> ExtendedGM::GenerateCircleMask(const double & dRadius) {
 
 
 /*************************************************
-Function: TopologyMap
-Description: constrcution function for TopologyMap class
-Calls: all member functions
-Called By: main function of project
+Function: CircleNeighborhood
+Description: search neighborhood index (1d and 2d together) of a given query point
+Calls: TwotoOneDIdx()
+Called By: external call
 Table Accessed: none
 Table Updated: none
-Input: global node,
-privare nodem_dMapMaxRange
-flag of generating output file
-original frame value
-Output: none
+Input: oFeatureMap - the grid_map
+	   vSearchMask - the generated searhing mask
+	   oQueryPoint - a query point position
+Output: vNearbyGrids - the grid index which is near the robot
 Return: none
-Others: the HandlePointClouds is the kernel function
+Others: none
 *************************************************/
-
 void ExtendedGM::CircleNeighborhood(std::vector<MapIndex> & vNearbyGrids,
 	                               const grid_map::GridMap & oFeatureMap,
 	                           const std::vector<MapIndex> & vSearchMask,
@@ -446,7 +424,7 @@ void ExtendedGM::CircleNeighborhood(std::vector<MapIndex> & vNearbyGrids,
 	}
 
 }
-//reload 
+//reload with grid index input and 1d index output
 void ExtendedGM::CircleNeighborhood(std::vector<int> & vNearbyGrids,
 	                          const grid_map::GridMap & oFeatureMap,
 	                      const std::vector<MapIndex> & vSearchMask,
@@ -482,22 +460,17 @@ void ExtendedGM::CircleNeighborhood(std::vector<int> & vNearbyGrids,
 }
 
 
-
-
 /*************************************************
-	Function: TopologyMap
-	Description: constrcution function for TopologyMap class
-	Calls: all member functions
-	Called By: main function of project
-	Table Accessed: none
-	Table Updated: none
-	Input: global node,
-	privare node
-	flag of generating output file
-	original frame value
-	Output: none
-	Return: none
-	Others: the HandlePointClouds is the kernel function
+Function: CheckInSidePoint
+Description: check whether a point is inside the map (grid map)
+Calls: all none
+Called By: external call
+Table Accessed: none
+Table Updated: none
+Input: oPoint - a query point
+Output: a flag indicates the point is inside the map (true) or not (false)
+Return: a bool variance
+Others: none
 *************************************************/
 bool ExtendedGM::CheckInSidePoint(const pcl::PointXYZ & oPoint) {
 

@@ -13,7 +13,7 @@
 
 
 ///************************************************************************///
-// a class to implement the Gaussian Process Regression algorithm
+// a class to implement the confidence map generation based on point clouds
 // created and edited by Huang Pengdi
 
 //Version 1.1 2018.11.25
@@ -25,20 +25,22 @@
 // - add noting
 // - complete distance term
 //version 2.0 2019.04.12
-// - real time processing modification
+// - real time processing version
 ///************************************************************************///
 
 
 namespace topology_map {
 
 
-//visible value
+//visible measured value
+//a variable type of visibility
 struct Visible{
 
-	float visibletimes;
-	float totaltimes;
+	float visibletimes;//the number of times that this point is visible in observation
+	float totaltimes;//total observation times
 	float value;
-
+    
+    //initialization
 	Visible(){
 		visibletimes = 0.0;
 		totaltimes = 0.0;
@@ -46,14 +48,16 @@ struct Visible{
 	}
 };
 
-
+//quality measured value
+//a variable type of quality
 struct Quality{
 
-    float means;
-	float total;
-	float num;
-	bool seletedflag;
+    float means;//
+	float total;//total measured value
+	float num;//total computed time
+	bool seletedflag;//whether a point is selected 
 
+    //initialization
     Quality(){
 
         means = 0.0;
@@ -65,7 +69,9 @@ struct Quality{
 
 };
 
-//status
+
+//grid status
+//a variable type of confidence feature
 struct ConfidenceValue{
 
 	//distance based term
@@ -127,7 +133,9 @@ struct ConfidenceValue{
 };
 
 
-
+//a class computing confidence value of each map grid
+//there is a lot of geometrical features in it
+//it depends on pcl and grid_map lib
 class Confidence {
 
 	typedef pcl::PointCloud<pcl::PointXYZ> PCLCloudXYZ;
