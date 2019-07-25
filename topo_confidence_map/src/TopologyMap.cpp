@@ -45,6 +45,7 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_pBoundCloud(new pcl::PointCloud<pcl::PointXYZ>),
 	                     m_pObstacleCloud(new pcl::PointCloud<pcl::PointXYZ>),
 	                     m_iTrajFrameNum(0),
+	                     m_iRecordPCNum(0),
 	                     m_iGroundFrames(0),
 	                     m_iBoundFrames(0),
 	                     m_iObstacleFrames(0),
@@ -55,6 +56,7 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_bGridMapReadyFlag(false),
 	                     m_bCoverFileFlag(false),
 	                     m_bOutTrajFileFlag(false),
+	                     m_bOutPCFileFlag(false),
 	                     m_bAnchorGoalFlag(false){
 
 
@@ -907,6 +909,9 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 			}//end if (!(i%m_iPCSmplNum))
 		}//end for (int i = 0; i != vOneGCloud.size();
 
+		//record one frame of point clouds in txt file
+		OutputScannedPCFile(vOneGCloud);
+
 	}//end if m_bGridMapReadyFlag
 
 }
@@ -968,6 +973,8 @@ void TopologyMap::HandleBoundClouds(const sensor_msgs::PointCloud2 & vBoundRosDa
 
 		}//end for
 
+		//record one frame of point clouds in txt file
+		OutputScannedPCFile(vOneBCloud);
 
 		if(m_pBoundCloud->points.size()>3000000){
 			SamplingPointClouds(m_pBoundCloud, m_vBoundPntMapIdx);
@@ -1032,11 +1039,12 @@ void TopologyMap::HandleObstacleClouds(const sensor_msgs::PointCloud2 & vObstacl
 			}//end if i%m_iPCSmplNum
 		}//end for i
 
+        //record one frame of point clouds in txt file
+		OutputScannedPCFile(vOneOCloud);
 
 		if(m_pObstacleCloud->points.size()>8000000){
 			SamplingPointClouds(m_pObstacleCloud, m_vObstlPntMapIdx, m_vObstNodeTimes);
 		}//end if if(m_pObstacleCloud->points.size()>X)
-
 
 	}//end if (m_bGridMapReadyFlag) 
 
@@ -1124,6 +1132,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
 	//PublishPointCloud(*pNearBndryClouds);//for test
 	PublishPointCloud(*pNearAllClouds);//for test
 	PublishGridMap();
+
 
 }
 //reload without occlusion calculation
@@ -1468,7 +1477,7 @@ Called By: HandleTrajectory
 Table Accessed: none
 Table Updated: none
 Input: oTrajectory - odometry data in ros type
-Output: none
+Output: a trajectory txt file
 Return: none
 Others: none
 *************************************************/
@@ -1502,6 +1511,56 @@ void TopologyMap::OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory){
 
 }
 
+
+/*************************************************
+Function: OutputScannedPCFile
+Description: output scanned point clouds in a txt file
+Calls: none
+Called By: HandleTrajectory
+Table Accessed: none
+Table Updated: none
+Input: vCloud - one frame scanning point cloud data
+Output: a point cloud txt file
+Return: none
+Others: none
+*************************************************/
+void TopologyMap::OutputScannedPCFile(pcl::PointCloud<pcl::PointXYZ> & vCloud){
+  
+    //generate a output file if possible
+	if(!m_bOutPCFileFlag){
+
+	    //set the current time stamp as a file name
+        //full name 
+		m_sOutPCFileName << m_sFileHead << "PC_" << ros::Time::now() << ".txt"; 
+
+		m_bOutPCFileFlag = true;
+        //print output file generation message
+		std::cout << "[*] Attention, a point cloud recording file is created in " << m_sOutPCFileName.str() << std::endl;
+	}
+
+    //output
+	m_oPCFile.open(m_sOutPCFileName.str(), std::ios::out | std::ios::app);
+
+	//output in a txt file
+	//the storage type of output file is x y z time frames 
+    //record the point clouds
+    for(int i = 0; i != vCloud.size(); ++i ){
+
+        //output in a txt file
+        //the storage type of output file is x y z time frames right/left_sensor
+        m_oPCFile << vCloud.points[i].x << " "
+                  << vCloud.points[i].y << " "
+                  << vCloud.points[i].z << " " 
+                  << m_iRecordPCNum << " " 
+                  << std::endl;
+    }//end for         
+
+    m_oPCFile.close();
+
+    //count new point cloud input (plus frame) 
+    m_iRecordPCNum++;
+
+}
 
 
 

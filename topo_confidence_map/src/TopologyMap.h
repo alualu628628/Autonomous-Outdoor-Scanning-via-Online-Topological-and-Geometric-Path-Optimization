@@ -128,16 +128,24 @@ class TopologyMap{
   
   //publish point clouds
   void PublishPointCloud(pcl::PointCloud<pcl::PointXYZ> & vCloud);
-
+  
+  //publish unvisited nodes
   void PublishPlanNodeClouds();
 
+  //publish visited nodes
   void PublishPastNodeClouds();
 
+  //publish goal position
   void PublishGoalOdom(pcl::PointXYZ & oGoalPoint);
 
   //output data in file
   void OutputCoverRateFile(const int & iTravelableNum);
+
+  //publish recording odometry file
   void OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory);
+
+  //publish scanned/obtained point clouds
+  void OutputScannedPCFile(pcl::PointCloud<pcl::PointXYZ> & vCloud); 
 
  private:
 
@@ -146,12 +154,16 @@ class TopologyMap{
   std::string m_sFileHead;
 
   std::stringstream m_sCoverFileName; ///<full name of output txt that records the point clouds//defind it in the function
-  bool m_bCoverFileFlag; //whether the outfile got a full name or not 
+  bool m_bCoverFileFlag; //whether the coverage file got a full name or not 
   std::ofstream m_oCoverFile;
 
   std::stringstream m_sOutTrajFileName;///<full name of output txt that records the trajectory point 
-  bool m_bOutTrajFileFlag;//whether the outfile got a full name or not 
+  bool m_bOutTrajFileFlag;//whether the trajectory file got a full name or not 
   std::ofstream m_oTrajFile;
+
+  std::stringstream m_sOutPCFileName;///<full name of output txt that records the scanning point clouds 
+  bool m_bOutPCFileFlag;//whether the point cloud recording file got a full name or not 
+  std::ofstream m_oPCFile;
 
   //input topics:
   ros::Subscriber m_oOdomSuber;//the subscirber is to hear (record) odometry from gazebo
@@ -198,11 +210,13 @@ class TopologyMap{
   
   //int m_iMapFreshNum; //received octomap updated time interval is equal to int(m_dOdomRawHz / m_dOctomapFreshHz);
 
-  int m_iComputedFrame;
+  int m_iComputedFrame;//the times of actual calculations
 
   int m_iPastOdomNum; //the past view interval number for occlusion calculation
 
   int m_iShockNum;//the shock duration that robot can tolerate 
+
+  int m_iRecordPCNum;//the times of recording point cloud frame (any category) in output file
 
   //the frame count of trajectory point
   unsigned int m_iTrajFrameNum;
