@@ -57,7 +57,8 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_bCoverFileFlag(false),
 	                     m_bOutTrajFileFlag(false),
 	                     m_bOutPCFileFlag(false),
-	                     m_bAnchorGoalFlag(false){
+	                     m_bAnchorGoalFlag(false),
+	                     m_bOutNodeFileFlag(false){
 
 
 	srand((unsigned)time(NULL));
@@ -744,6 +745,23 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		    
 		    //output node
 		    m_oOPSolver.OutputGoalPos(m_oNodeGoal);
+
+
+		    if(!m_bOutNodeFileFlag){
+		    	m_sOutNodeFileName << m_sFileHead << "Node_" << ros::Time::now() << ".txt";
+		    	m_bOutNodeFileFlag = true;
+		    }
+
+		    //output txt file recording node position
+		    m_oNodeFile.open(m_sOutNodeFileName.str(), std::ios::out | std::ios::app);
+
+		    //record data
+            m_oNodeFile << m_oNodeGoal.x << " "
+                        << m_oNodeGoal.y << " "
+                        << m_oNodeGoal.z << " "  
+                        << std::endl;
+
+            m_oNodeFile.close();
 
 		    std::vector<pcl::PointXYZ> vUnvisitedNodes;
 		    m_oOPSolver.OutputUnvisitedNodes(vUnvisitedNodes);
@@ -1562,6 +1580,9 @@ void TopologyMap::OutputScannedPCFile(pcl::PointCloud<pcl::PointXYZ> & vCloud){
 
 }
 
+
+
+  
 
 
 
