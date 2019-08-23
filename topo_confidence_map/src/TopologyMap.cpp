@@ -910,7 +910,7 @@ void TopologyMap::HandleGroundClouds(const sensor_msgs::PointCloud2 & vGroundRos
 		}//end for (int i = 0; i != vOneGCloud.size();
 
 		//record one frame of point clouds in txt file
-		OutputScannedPCFile(vOneGCloud);
+		//OutputScannedPCFile(vOneGCloud);
 
 	}//end if m_bGridMapReadyFlag
 
