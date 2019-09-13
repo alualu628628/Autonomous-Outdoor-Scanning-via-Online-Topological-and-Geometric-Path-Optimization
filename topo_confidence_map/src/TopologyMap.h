@@ -277,6 +277,14 @@ class TopologyMap{
 
   //count visited anchor in a trip
   int m_iAncherCount;
+
+  //time recorded
+  double oDisTermDur;
+  double oBoundTermDur;
+  double oVisTermDur;
+  double oNodeDur;
+  double oFractTermDur;
+  double oLocalPathTermDur;
   
 };
 

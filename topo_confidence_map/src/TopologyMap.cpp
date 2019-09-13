@@ -57,7 +57,13 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_bCoverFileFlag(false),
 	                     m_bOutTrajFileFlag(false),
 	                     m_bOutPCFileFlag(false),
-	                     m_bAnchorGoalFlag(false){
+	                     m_bAnchorGoalFlag(false),
+	                     oDisTermDur(0.0),
+                         oBoundTermDur(0.0),
+                         oVisTermDur(0.0),
+                         oNodeDur(0.0),
+                         oFractTermDur(0.0),
+                         oLocalPathTermDur(0.0){
 
 
 	srand((unsigned)time(NULL));
@@ -721,8 +727,11 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 		}
         
         //if it arrivals at the target node
+        
         if(fTouchNodeGoal){
-            
+
+            clock_t oBeforeNode = clock();
+
 			//get the new nodes
 			std::vector<int> vNewNodeIdx;
 			std::vector<pcl::PointXYZ> vNodeClouds;
@@ -754,11 +763,12 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 
             //clear old data of last trip
 		    m_vOdomShocks = std::queue<pcl::PointXYZ>();
-
+            oNodeDur = oNodeDur + (double)(clock() - oBeforeNode)/ CLOCKS_PER_SEC;
 		    //if there are still some regions to explore
             //compute astar path for current target point
             if(vUnvisitedNodes.size()){
-            	
+
+            	clock_t  oBeforeLocalPath = clock();
             	//update travelable map
 		        m_oAstar.UpdateTravelMap(m_oGMer.m_oFeatureMap, m_vConfidenceMap);
                 //get raw astar path point clouds
@@ -803,15 +813,19 @@ void TopologyMap::HandleTrajectory(const nav_msgs::Odometry & oTrajectory) {
 
 		        }//end if bPathOptmFlag
 
-
+            oLocalPathTermDur = oLocalPathTermDur + (double)(clock()-oBeforeLocalPath)/ CLOCKS_PER_SEC;
 		    }//end if vUnvisitedNodes.size()
             
+            
+
             //begin the next trip
             if(m_oOPSolver.CheckNodeTimes())
             	m_iNodeTimes++;
 		    
 		}//end if m_oOPSolver.NearGoal
 
+        
+       
 		pcl::PointXYZ oRealGoalPoint;
 
         //send generated goal
@@ -1099,11 +1113,13 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
 
 
     //compute distance term
+
+    clock_t oBeforeDis = clock();
     m_oCnfdnSolver.DistanceTerm(m_vConfidenceMap,
     	                           oCurrRobotPos,
                                 vNearGrndGrdIdxs,
 	                            *pNearGrndClouds);
-
+    oDisTermDur = oDisTermDur + (double)(clock() - oBeforeDis)/ CLOCKS_PER_SEC;
 
     //in this case, robot position is based on odom frame, it need to be transfored to lidar sensor frame 
     pcl::PointXYZ oPastView;
@@ -1112,20 +1128,24 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos,
     oPastView.z = oPastRobotPos.z + m_fViewZOffset;
 
     //compute visibiity
-    if(vNearGrndGrdIdxs.size() >= 3)
+    if(vNearGrndGrdIdxs.size() >= 3){
+    	clock_t oBeforeVis = clock();
     	m_oCnfdnSolver.OcclusionTerm(m_vConfidenceMap,
 	                                   pNearAllClouds,
 	                                 vNearGrndGrdIdxs,
 	                                        oPastView,
 	                                     m_iNodeTimes);
+        oVisTermDur = oVisTermDur + (double)(clock() - oBeforeVis )/ CLOCKS_PER_SEC;
+    }
 
 
     //compute boundary term
+    clock_t oBeforeBound = clock();
     m_oCnfdnSolver.BoundTerm(m_vConfidenceMap,
                              vNearGrndGrdIdxs,
 	                         pNearGrndClouds,
     	                     pNearBndryClouds);
-
+    oBoundTermDur = oBoundTermDur + (double)(clock() - oBeforeBound)/ CLOCKS_PER_SEC;
 
     //publish result
 	//PublishPointCloud(*pNearGrndClouds);//for test
@@ -1164,20 +1184,25 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
                            vNearByIdxs);
 
     //compute distance term
+    clock_t oBeforeDis = clock();
     m_oCnfdnSolver.DistanceTerm(m_vConfidenceMap,
     	                           oCurrRobotPos,
                                 vNearGrndGrdIdxs,
 	                            *pNearGrndClouds);
+    oDisTermDur = oDisTermDur + (double)(clock() - oBeforeDis)/ CLOCKS_PER_SEC;
 
 
     //compute boundary term
+    clock_t oBeforeBound = clock();
     m_oCnfdnSolver.BoundTerm(m_vConfidenceMap,
                              vNearGrndGrdIdxs,
 	                          pNearGrndClouds,
     	                     pNearBndryClouds);
+    oBoundTermDur = oBoundTermDur + (double)(clock() - oBeforeBound)/ CLOCKS_PER_SEC;
 
 
     //compute quality term
+    clock_t oBeforeFract = clock();
     m_oCnfdnSolver.QualityTerm(m_vConfidenceMap,
     	                       m_pObstacleCloud,
                                m_vObstNodeTimes,
@@ -1185,6 +1210,7 @@ void TopologyMap::ComputeConfidence(const pcl::PointXYZ & oCurrRobotPos) {
 		                                m_oGMer,
 		                            vNearByIdxs,
                                    m_iNodeTimes, 5);
+    oFractTermDur = oFractTermDur + (double)(clock() - oBeforeFract)/ CLOCKS_PER_SEC;
 
 
 
@@ -1463,6 +1489,12 @@ void TopologyMap::OutputCoverRateFile(const int & iTravelableNum){
     //the storage type of output file is x y z time frames right/left_sensor
     m_oCoverFile << iTravelableNum << " "
                  << ros::Time::now() << " "
+                 << oDisTermDur << " "
+                 << oBoundTermDur << " "
+                 << oVisTermDur << " "
+                 << oNodeDur << " "
+                 << oFractTermDur << " "
+                 << oLocalPathTermDur << " "
                  << std::endl;
 
     m_oCoverFile.close();
