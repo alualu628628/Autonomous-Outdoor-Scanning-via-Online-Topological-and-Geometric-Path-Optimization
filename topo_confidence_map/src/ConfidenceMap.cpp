@@ -727,7 +727,7 @@ void Confidence::BoundTerm(std::vector<ConfidenceValue> & vConfidenceMap,
 			oBoundTree.nearestKSearch(pGroundCloud->points[i], 1, vSearchIdx, vSearchDis);
 
 			//compute the boundary distance 
-			float fBoundvalue = (m_fSigma - vSearchDis[0]) / m_fSigma;
+			float fBoundvalue = (m_fSigma - sqrt(vSearchDis[0])) / m_fSigma;
 			if (fBoundvalue < 0)
 				fBoundvalue = 0.0;
             //record the maximum boundary responde indicating the closest distance

@@ -165,6 +165,10 @@ class TopologyMap{
   bool m_bOutPCFileFlag;//whether the point cloud recording file got a full name or not 
   std::ofstream m_oPCFile;
 
+  std::stringstream m_sOutNodeFileName;///<full name of output txt that records the visited node position 
+  bool m_bOutNodeFileFlag;//whether the point cloud recording file got a full name or not 
+  std::ofstream m_oNodeFile;
+
   //input topics:
   ros::Subscriber m_oOdomSuber;//the subscirber is to hear (record) odometry from gazebo
 
