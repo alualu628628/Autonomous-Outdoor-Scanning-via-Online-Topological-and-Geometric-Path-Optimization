@@ -11,7 +11,7 @@ Please follow the following steps in order to install the package along with its
 
 - Install Husky official package ([guide](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky))
 
-- Install the grid_map package that can be optionally used for mapping ([guide](https://github.com/ANYbotics/grid_map))(i.e.,sudo apt-get install ros-$ROS_indigo-grid-map)
+- Install the grid_map package that can be optionally used for mapping ([guide](https://github.com/ANYbotics/grid_map))(i.e.,sudo apt-get install ros-indigo-grid-map)
 
 - check whether other dependences of Husky package is need. Assuming Husky package is cloned under `$HUSKY_DIR$`:
 ```
