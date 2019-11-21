@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<!--
+Software License Agreement (BSD)
+
+\file      publish_SLAM_res.launch
+\authors   Pengdi Huang <alualu628628@163.com>
+\copyright Copyright (c) 2019, XXX, All rights reserved.
+
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WAR-
+RANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, IN-
+DIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<launch>
+
+    <arg name="lidartopic" default="/velodyne_cloud_registered" />
+    <arg name="trajtopic" default="/integrated_to_init" />
+
+    <arg name="lidarouttopic" default="/slam_points" />
+    <arg name="trajouttopic" default="/husky_velocity_controller/odom" />
+
+    <arg name="odomtargetframe" default="odom" />
+    <arg name="odomrawframe" default="camera_init" />
+    <arg name="cloudstargetframe" default="odom"/>
+    <arg name="cloudsrawframe" default="camera_init"/>
+
+    <arg name="samplingnumber"  default="1" />
+    <!-- height offset-->
+    <!-- this value is obtained using rosrun tf traget_frame source_frame-->
+    <arg name="odomzoffset" default="0.0"/> 
+    <!-- this value is obtained by camera_init-base_link-(base_link-base_footprint)- -->
+    <arg name="pointzoffset" default="0.451"/> 
+
+<!-- slam_trans node in slam_transfor pkg-->
+    <node name="slam_transfor" pkg="slam_trans" type="slam_transfor" output="screen">
+
+    <!-- parameters-->	
+        <!-- define input topic name-->
+		<param name="lidar_topic" type="string" value="$(arg lidartopic)"  />
+		<param name="traj_topic" type="string" value="$(arg trajtopic)" />
+        <!-- define output topic name-->
+	    <param name="lidarout_topic" type="string" value="$(arg lidarouttopic)" />
+		<!--param name="trajout_topic" type="string" value="/slam_odom" /-->
+		<param name="trajout_topic" type="string" value="$(arg trajouttopic)" />
+		
+        <!-- frame id related-->
+	    <param name="odom_targetframe" type="string" value="$(arg odomtargetframe)" />
+		<param name="odom_rawframe" type="string" value="$(arg odomrawframe)" />
+        <param name="clouds_targetframe" type="string" value="$(arg cloudstargetframe)"/>
+        <param name="clouds_rawframe" type="string" value="$(arg cloudsrawframe)"/>
+
+        <!-- sampling number-->
+	    <param name="sampling_number"  type="int" value="$(arg samplingnumber)" />
+
+	    <param name="odom_zoffset" type="double" value="$(arg odomzoffset)" />
+
+        <param name="point_zoffset" type="double" value="$(arg pointzoffset)"/>
+
+	</node>
+
+</launch>

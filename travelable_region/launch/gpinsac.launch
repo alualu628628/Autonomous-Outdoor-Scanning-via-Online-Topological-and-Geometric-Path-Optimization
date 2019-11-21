@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<!--
+Software License Agreement (BSD)
+
+\file      intxt.launch
+\authors   Pengdi Huang <alualu628628@163.com>
+\copyright Copyright (c) 2019, XXX, All rights reserved.
+
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WAR-
+RANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, IN-
+DIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<launch>
+
+    <arg name="outputpath" default="/home/ludy/" />
+    <arg name="txtoutputflag" default="false" />
+
+    <!--input parameters--> 
+    <arg name="samplingnumber" default="5" />
+
+    <arg name="lidartopic" default="/slam_points" />
+    <arg name="trajtopic" default="/odometry/filtered" />
+    <!-- GP-INSAC method parameters-->
+    <!-- getParam does not have float type--> 
+    <arg name="sectornum" default="360"/>
+    <arg name="seedradius" default="4.2"/>
+    <!-- this arrange is arround the height between base_link and base_footprint-->
+    <!-- -0.132 is suggested by using rosrun tf tf_echo base_link base_footprint-->
+    <arg name="seedlower" default="-0.2"/>
+    <arg name="seedupper" default="-0.05"/>
+
+    <arg name="gplscale" default="28.01"/>
+    <arg name="gpsigmaF" default="1.76"/>
+    <arg name="gpsigmaN" default="0.12"/>
+    <arg name="insacmodel" default="0.2"/>
+    <arg name="insacdata" default="0.8"/>
+
+    <!-- driving_area node in travelable_region pkg-->
+    <node name="driving_area" pkg="travelable_region" type="gp_insac" output="screen">
+
+        <!-- system parameters-->	
+        <param name="output_path" type="string" value="$(arg outputpath)" />
+        <param name="txtoutput_flag" type="bool" value="$(arg txtoutputflag)" />
+
+        <param name="sampling_number"  type="int" value="$(arg samplingnumber)"  />
+        <!--input parameters-->	
+        <param name="traj_topic" type="string" value="$(arg trajtopic)" />
+        <param name="lidar_topic" type="string" value="$(arg lidartopic)" />
+        <!-- GP-INSAC method parameters-->
+        <!-- getParam does not have float type--> 
+        <param name="sector_num" type="int" value="$(arg sectornum)"/>
+        <param name="seed_radius" type="double" value="$(arg seedradius)"/>
+        <!-- this arrange is arround the height between base_link and base_footprint-->
+        <!-- -0.132 is suggested by using rosrun tf tf_echo base_link base_footprint-->
+        <param name="seed_lower" type="double" value="$(arg seedlower)"/>
+        <param name="seed_upper" type="double" value="$(arg seedupper)"/>
+
+        <param name="gp_lscale" type="double" value="$(arg gplscale)"/>
+        <param name="gp_sigmaF" type="double" value="$(arg gpsigmaF)"/>
+        <param name="gp_sigmaN" type="double" value="$(arg gpsigmaN)"/>
+        <param name="insac_model" type="double" value="$(arg insacmodel)"/>
+        <param name="insac_data" type="double" value="$(arg insacdata)"/>
+
+    </node>
+
+</launch>
