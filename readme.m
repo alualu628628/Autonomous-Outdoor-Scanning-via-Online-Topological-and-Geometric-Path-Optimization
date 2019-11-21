@@ -29,7 +29,7 @@ catkin_make -DCMAKE_BUILD_TYPE=Release
 gedit ~/.bashrc 
 ```
 
-2. set the correct path of customized and official husky description in gazebo and others
+2. add (write) the correct path of customized and official husky description in gazebo and others
 ```
 export HUSKY_GAZEBO_DESCRIPTION=$(rospack find husky_gazebo)/urdf/description.gazebo.xacro
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
