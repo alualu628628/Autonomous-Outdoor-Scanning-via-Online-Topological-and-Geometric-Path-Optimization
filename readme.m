@@ -3,20 +3,20 @@
 This is a simulated system (based on ros gazebo) for outdoor mobile robot Husky to explore the unknown outdoor scenes.
 
 ## Installation
-The system is based on [ROS - Indigo](http://www.ros.org/) and particularly the [Gazebo](gazebosim.org). 
-We suggest building this system on Ubuntu 14.04. 
+The version is based on [ROS - Kinetic](http://www.ros.org/) and particularly the [Gazebo](gazebosim.org). 
+Though this system in Ubuntu 16.04 is avaliable, we still suggest building this system on Ubuntu 14.04 due to the stability. 
 Please follow the following steps in order to install the package along with its dependences:
 
-- Install ROS-Indigo full desktop ([guide](http://wiki.ros.org/indigo/Installation/Ubuntu)).
+- Install ROS-Kinetic full desktop ([guide](http://wiki.ros.org/kinetic/Installation/Ubuntu)).
 
 - Install Husky official package ([guide](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky))
 
-- Install the Octomap package that can be optionally used for mapping ([guide](http://wiki.ros.org/octomap))
+- Install the grid_map package that can be optionally used for mapping ([guide](https://github.com/ANYbotics/grid_map))(i.e.,sudo apt-get install ros-kinetic-grid-map)
 
 - check whether other dependences of Husky package is need. Assuming Husky package is cloned under `$HUSKY_DIR$`:
 ```
 cd $HUSKY_DIR$
-rosdep install --from-path src --ignore-src --rosdistro=indigo -y
+rosdep install --from-path src --ignore-src --rosdistro=kinetic -y
 ```
 - Install this package:
 ```
@@ -28,24 +28,11 @@ catkin_make -DCMAKE_BUILD_TYPE=Release
 ```
 gedit ~/.bashrc 
 ```
-2. comment the environment variable of HUSKY_GAZEBO_DESCRIPTION if you have claimed it:
-```
-#export HUSKY_GAZEBO_DESCRIPTION=$(rospack find husky_gazebo)/urdf/description.gazebo.xacro
-```
 
-3. use husky_custom_description as the HUSKY_DESCRIPTION value instead of raw package
+2. set the correct path of customized and official husky description in gazebo and others
 ```
-sh $(rospack find husky_custom_description)/env-hooks/50.husky_custom_description.sh
-```
-
-4. set the correct path of official placeholder where the system could locate the entry of extension
-```
-export HUSKY_URDF_EXTRAS=$(rospack find husky_description)/urdf/empty.urdf
-```
-
-5. use husky_custom_gazebo as the HUSKY_GAZEBO_DESCRIPTION value instead of raw package
-```
-sh $(rospack find husky_custom_gazebo)/env-hooks/50.husky_custom_gazebo.sh
+export HUSKY_GAZEBO_DESCRIPTION=$(rospack find husky_gazebo)/urdf/description.gazebo.xacro
+export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
 
 
