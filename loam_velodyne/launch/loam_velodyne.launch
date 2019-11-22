@@ -1,0 +1,80 @@
+<launch>
+
+  <arg name="rviz" default="true" />
+  <arg name="scanPeriod" default="0.1" />
+
+  <node pkg="loam_velodyne" type="multiScanRegistration" name="multiScanRegistration" output="screen">
+    <param name="lidar" value="VLP-16" /> <!-- options: VLP-16  HDL-32  HDL-64E -->
+    <param name="scanPeriod" value="$(arg scanPeriod)" />
+
+    <remap from="/multi_scan_points" to="/velodyne_points" />
+    <!--in this simulation, imu is not necessary for SLAM-->
+    <remap from="/imu/data" to="/imu/noneed" />
+  </node>
+
+  <node pkg="loam_velodyne" type="laserOdometry" name="laserOdometry" output="screen" respawn="true">
+    <param name="scanPeriod" value="$(arg scanPeriod)" />
+    <remap from="/imu/data" to="/imu/noneed" />
+  </node>
+
+  <node pkg="loam_velodyne" type="laserMapping" name="laserMapping" output="screen">
+    <param name="scanPeriod" value="$(arg scanPeriod)" />
+    <remap from="/imu/data" to="/imu/noneed" />
+  </node>
+
+  <node pkg="loam_velodyne" type="transformMaintenance" name="transformMaintenance" output="screen">
+     <remap from="/imu/data" to="/imu/noneed" />
+  </node>
+
+
+  <!--A node transposes LOAM output to the custom robot coordinate system-->
+  <include file="$(find slam_trans)/launch/publish_SLAM_res.launch">
+
+    <arg name="lidartopic" value="/velodyne_points" />
+    <arg name="trajtopic" value="/integrated_to_init" />
+
+    <arg name="lidarouttopic" value="/slam_points" />
+    <arg name="trajouttopic" value="/husky_velocity_controller/odom" />
+
+    <arg name="odomtargetframe" default="odom" />
+    <arg name="odomrawframe" default="camera_init" />
+    <arg name="cloudstargetframe" default="odom"/>
+    <arg name="cloudsrawframe" default="camera_init"/>
+
+    <arg name="samplingnumber"  default="1" />
+          
+  </include>
+
+  <!--A node which estimates the ground, obstacle and boundary points using gp-insac algorithm-->
+  <include file="$(find travelable_region)/launch/gpinsac.launch">
+
+    <arg name="outputpath" default="/home/ludy/" />
+    <arg name="txtoutputflag" default="false" />
+
+    <!--input parameters--> 
+    <arg name="samplingnumber" default="5" />
+
+    <arg name="lidartopic" default="/slam_points" />
+    <arg name="trajtopic" default="/odometry/filtered" />
+    <!-- GP-INSAC method parameters-->
+    <!-- getParam does not have float type--> 
+    <arg name="sectornum" default="360"/>
+    <arg name="seedradius" default="4.2"/>
+    <!-- this arrange is arround the height between base_link and base_footprint-->
+    <!-- -0.132 is suggested by using rosrun tf tf_echo base_link base_footprint-->
+    <arg name="seedlower" default="-0.2"/>
+    <arg name="seedupper" default="-0.05"/>
+
+    <arg name="gplscale" default="28.01"/>
+    <arg name="gpsigmaF" default="1.76"/>
+    <arg name="gpsigmaN" default="0.12"/>
+    <arg name="insacmodel" default="0.2"/>
+    <arg name="insacdata" default="0.8"/>
+
+  </include>
+
+  <!--group if="$(arg rviz)">
+    <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find loam_velodyne)/rviz_cfg/loam_velodyne.rviz" />
+  </group-->
+
+</launch>
