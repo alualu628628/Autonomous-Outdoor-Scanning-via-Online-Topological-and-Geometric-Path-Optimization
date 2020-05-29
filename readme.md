@@ -14,15 +14,15 @@ Please follow the following steps in order to install the package along with its
 - Install Husky official package ([guide](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky ))
 
 - Install the grid_map package that can be optionally used for mapping ([guide](https://github.com/ANYbotics/grid_map )):
-'''
+```
 sudo apt-get install ros-indigo-grid-map
-'''
+```
 Please note that this package upon is located in the main server of ubuntu, not in some mirror servers. Alternatively, you can also build it from source.
 
 - Install ROS-Indigo move base package if you need:
-'''
+```
 sudo apt-get install ros-indigo-navigation
-'''
+```
 
 - check whether other dependences of Husky package is need. Assuming Husky package is cloned under `$HUSKY_DIR$`:
 ```
@@ -117,8 +117,8 @@ sudo apt-get install ros-indigo-navigation
 ```
 
 2.CMake 3.1.3 or higher is required. (This is a requirement from LOAM package) 
-Update your cmake, see [CMAKE INSTALL]https://askubuntu.com/questions/829310/how-to-upgrade-cmake-in-ubuntu.
-××WARNING××: this command `sudo apt remove cmake` would also remove ros system from your computer
+Update your cmake, see [CMAKE INSTALL](https://askubuntu.com/questions/829310/how-to-upgrade-cmake-in-ubuntu).
+**WARNING**: this command `sudo apt remove cmake` would also remove ros system from your computer
 
 
 
@@ -172,7 +172,7 @@ insert this sentence at anywhere of toplevel.cmake
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 ```
 5. /usr/include/boost/math/constants/constants.hpp:273:3: error: unable to find numeric literal operator ‘operator"" Q’ 
-This is a requirement from LOAM package, see details in [guide](https://github.com/laboshinl/loam_velodyne/issues/90), type in terminal as below:
+This is a requirement from LOAM package, see details in [Same issue](https://github.com/laboshinl/loam_velodyne/issues/90), type in terminal as below:
 
 ```
 sudo vim /opt/ros/<yourversion>/share/catkin/cmake/toplevel.cmake
