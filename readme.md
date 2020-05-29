@@ -43,12 +43,12 @@ gedit ~/.bashrc
 ```
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
-<br>So far, there should have been two environment variables on the `~/.bashrc` file as shown below:
+&nbsp;&nbsp;&nbsp;&nbsp;So far, there should have been two environment variables on the `~/.bashrc` file as shown below:
 ```
 export HUSKY_GAZEBO_DESCRIPTION=$(rospack find husky_gazebo)/urdf/description.gazebo.xacro
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
-3. Modify HUSKY official file, which would cause a bug when loading customized robot urdf file. (see https://answers.ros.org/question/297415/invalid-param-tag-husky-simulation/) Insert the `--inorder` option in `/husky_gazebo/launch/spawn_husky.launch` as shown below:
+3. Modify HUSKY official file, which would cause a bug when loading customized robot urdf file. (see [Husky_description_issue](https://answers.ros.org/question/297415/invalid-param-tag-husky-simulation/)) Insert the `--inorder` option in `/husky_gazebo/launch/spawn_husky.launch` as shown below:
 ```
 <param name="robot_description" 
        command="$(find xacro)/xacro '$(arg husky_gazebo_description)'
