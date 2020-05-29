@@ -43,7 +43,7 @@ gedit ~/.bashrc
 ```
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
-So far, there should have been two environment variables on the '~/.bashrc' file as shown below:
+--So far, there should have been two environment variables on the '~/.bashrc' file as shown below:
 ```
 export HUSKY_GAZEBO_DESCRIPTION=$(rospack find husky_gazebo)/urdf/description.gazebo.xacro
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
@@ -94,7 +94,7 @@ roslaunch husky_navigation_goals send_goal.launch
 
 
 ## Parameters
-output the result in your own path, please modify below codes in '/simulation_ws/src/topo_confidence_map/launch/mapping.launch'
+Output the result in your own path, please modify below codes in `/topo_confidence_map/launch/mapping.launch`
 ```
 <arg name="fileoutputpath" default="/home/yourname/"/>
 ```
@@ -103,7 +103,7 @@ Mapping parameters are list in 'topo_confidence_map/launch/mapping.launch'
 
 
 ## Issues
-Issues occur mainly because the version of `gcc`, `g++`, or other third-party libraries in customized system are too old. The following env configuration problems and corresponding solutions may be useful: 
+Issues occur mainly because the version of gcc, g++, or other third-party libraries in customized system are too old. The following env configuration problems and corresponding solutions may be useful: 
 
 1.Could not find a package configuration file provided by "move_base_msgs" with any of the following names:
 
@@ -144,9 +144,8 @@ find_package(PCL REQUIRED)
 .....
 ```
 4. MultiScanRegistration.cpp:178:76: error: parameter declared ‘auto’ (This is a requirement from LOAM package) 
-This is because the current `CMake`, `g++` or `gcc` can not automatically recognize the C++ 11/14 standard syntax, which appears in 'loam_velodyne' package
-
-first step, update your gcc and g++ version to support c++11/14 standard. Assuming the current gcc and g++ version is 4.8, type in terminal as below to get a  5.0 version:
+This is because the current CMake, g++ or gcc can not automatically recognize the C++ 11/14 standard syntax, which appears in 'loam_velodyne' package.
+First step, update your gcc and g++ version to support c++11/14 standard. Assuming the current gcc and g++ version is 4.8, type in terminal as below to get a  5.0 version:
 ```
 sudo apt-get install python-software-properties
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
