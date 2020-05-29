@@ -1,6 +1,6 @@
-# Husky Simylation
+# Husky Simulation
 
-This is a simulated system (based on ros gazebo) for outdoor mobile robot Husky to explore the unknown outdoor scenes. This is the implementation of the ROS indigo version. You can also find the implementation on ROS kenetic in another branch of this depository. We recommend that indigo version is more stable because it is consistent with Husky office packages.
+This is a simulated system (based on ros gazebo) for outdoor mobile robot Husky to explore the unknown outdoor scenes. This is the implementation on ROS indigo version. You can also find the implementation on ROS kenetic in another branch of this depository. We recommend that indigo version is more stable because it is consistent with Husky office packages.
 
 ## Installation
 Makesure you have a ubuntu14.04 system with high version cmake(>=3.1.3), gcc(>=5.5), g++(>=5.5), which are to support c++ 14 standard (LOAM needs, see [LOAM](https://github.com/laboshinl/loam_velodyne))
@@ -105,7 +105,7 @@ Mapping parameters are list in `topo_confidence_map/launch/mapping.launch`
 ## Issues
 Issues occur mainly because the version of gcc, g++, or other third-party libraries in customized system are too old. The following env configuration problems and corresponding solutions may be useful: 
 
-1.Could not find a package configuration file provided by "move_base_msgs" with any of the following names:
+<br>1.Could not find a package configuration file provided by "move_base_msgs" with any of the following names:
 
     move_base_msgsConfig.cmake
     move_base_msgs-config.cmake
@@ -116,13 +116,13 @@ solution:
 sudo apt-get install ros-indigo-navigation
 ```
 
-2.CMake 3.1.3 or higher is required. (This is a requirement from LOAM package) 
+<br>2.CMake 3.1.3 or higher is required. (This is a requirement from LOAM package) 
 Update your cmake, see [CMAKE INSTALL](https://askubuntu.com/questions/829310/how-to-upgrade-cmake-in-ubuntu).
 **WARNING**: this command `sudo apt remove cmake` would also remove ros system from your computer
 
 
 
-3.Eigen3 (This is a requirement from LOAM package, project has been updated and this issues seems to be solved) 
+<br>3.Eigen3 (This is a requirement from LOAM package, project has been updated and this issues seems to be solved) 
 Could not find a package configuration file provided by "Eigen3" with any of the following names:
 
     Eigen3Config.cmake
@@ -143,7 +143,7 @@ find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
 .....
 ```
-4. MultiScanRegistration.cpp:178:76: error: parameter declared ‘auto’ (This is a requirement from LOAM package) 
+<br>4. MultiScanRegistration.cpp:178:76: error: parameter declared ‘auto’ (This is a requirement from LOAM package) 
 This is because the current CMake, g++ or gcc can not automatically recognize the C++ 11/14 standard syntax, which appears in 'loam_velodyne' package.
 First step, update your gcc and g++ version to support c++11/14 standard. Assuming the current gcc and g++ version is 4.8, type in terminal as below to get a  5.0 version:
 ```
@@ -171,7 +171,7 @@ insert this sentence at anywhere of toplevel.cmake
 ```
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 ```
-5. /usr/include/boost/math/constants/constants.hpp:273:3: error: unable to find numeric literal operator ‘operator"" Q’ 
+<br>5. /usr/include/boost/math/constants/constants.hpp:273:3: error: unable to find numeric literal operator ‘operator"" Q’ 
 This is a requirement from LOAM package, see details in [Same issue](https://github.com/laboshinl/loam_velodyne/issues/90), type in terminal as below:
 
 ```
