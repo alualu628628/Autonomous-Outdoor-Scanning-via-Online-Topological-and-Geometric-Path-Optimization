@@ -43,7 +43,7 @@ gedit ~/.bashrc
 ```
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
-  So far, there should have been two environment variables on the `~/.bashrc` file as shown below:
+<br>So far, there should have been two environment variables on the `~/.bashrc` file as shown below:
 ```
 export HUSKY_GAZEBO_DESCRIPTION=$(rospack find husky_gazebo)/urdf/description.gazebo.xacro
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
