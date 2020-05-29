@@ -35,11 +35,11 @@ cd $HUSKY_DIR$
 catkin_make -DCMAKE_BUILD_TYPE=Release
 ```
 - Set the environment variables:
-<br>1. set the environment variable at `~/.bashrc` as:
+1. set the environment variable at `~/.bashrc` as:
 ```
 gedit ~/.bashrc 
 ```
-<br>2. set the environment variable of husky_custom_description for your own custom robot model:
+2. set the environment variable of husky_custom_description for your own custom robot model:
 ```
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
@@ -48,9 +48,7 @@ So far, there should have been two environment variables on the `~/.bashrc` file
 export HUSKY_GAZEBO_DESCRIPTION=$(rospack find husky_gazebo)/urdf/description.gazebo.xacro
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
-<br>3. Modify HUSKY official file, which would cause a bug when loading customized robot urdf file. (see https://answers.ros.org/question/297415/invalid-param-tag-husky-simulation/)
-
-Insert the `--inorder` option in `/husky_gazebo/launch/spawn_husky.launch` as shown below:
+3. Modify HUSKY official file, which would cause a bug when loading customized robot urdf file. (see https://answers.ros.org/question/297415/invalid-param-tag-husky-simulation/) Insert the `--inorder` option in `/husky_gazebo/launch/spawn_husky.launch` as shown below:
 ```
 <param name="robot_description" 
        command="$(find xacro)/xacro '$(arg husky_gazebo_description)'
