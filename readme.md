@@ -43,14 +43,14 @@ gedit ~/.bashrc
 ```
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
---So far, there should have been two environment variables on the '~/.bashrc' file as shown below:
+--So far, there should have been two environment variables on the `~/.bashrc` file as shown below:
 ```
 export HUSKY_GAZEBO_DESCRIPTION=$(rospack find husky_gazebo)/urdf/description.gazebo.xacro
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
 3. Modify HUSKY official file, which would cause a bug when loading customized robot urdf file. (see https://answers.ros.org/question/297415/invalid-param-tag-husky-simulation/)
 
-insert the '--inorder' option in '/husky_gazebo/launch/spawn_husky.launch' as shown below:
+insert the `--inorder` option in `/husky_gazebo/launch/spawn_husky.launch` as shown below:
 ```
 <param name="robot_description" 
        command="$(find xacro)/xacro '$(arg husky_gazebo_description)'
@@ -98,8 +98,8 @@ Output the result in your own path, please modify below codes in `/topo_confiden
 ```
 <arg name="fileoutputpath" default="/home/yourname/"/>
 ```
-SLAM and ground detection parameters are list in 'loam_velodyne/launch/loam_velodyne.launch'
-Mapping parameters are list in 'topo_confidence_map/launch/mapping.launch'
+SLAM and ground detection parameters are list in `loam_velodyne/launch/loam_velodyne.launch`
+Mapping parameters are list in `topo_confidence_map/launch/mapping.launch`
 
 
 ## Issues
@@ -117,8 +117,8 @@ sudo apt-get install ros-indigo-navigation
 ```
 
 2.CMake 3.1.3 or higher is required. (This is a requirement from LOAM package) 
-Update your cmake, see https://askubuntu.com/questions/829310/how-to-upgrade-cmake-in-ubuntu.
-WARNING:this command 'sudo apt remove cmake' would also remove ros system from your computer
+Update your cmake, see [CMAKE INSTALL]https://askubuntu.com/questions/829310/how-to-upgrade-cmake-in-ubuntu.
+××WARNING××: this command `sudo apt remove cmake` would also remove ros system from your computer
 
 
 
@@ -135,7 +135,7 @@ locate FindEigen3.cmake
 ```
 copy the FindEigen3.cmake to `Husky_Simulation/loam_velodyne/`
 
-In 'Husky_Simulation/loam_velodyne/CMakeLists.txt' insert sentence `set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})`
+In `Husky_Simulation/loam_velodyne/CMakeLists.txt` insert sentence `set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})`
 ```
 .....
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}) //add this sentence
@@ -163,8 +163,7 @@ sudo update-alternatives --config g++
 sudo update-alternatives --config gcc
 ```
 
-second step, configure catkin_make to automatically compile c++11 as below: 
-type in terminal as below:
+Second step, in order to configure catkin_make for automatically compiling c++11, type in terminal as below:
 ```
 sudo vim /opt/ros/<yourversion>/share/catkin/cmake/toplevel.cmake
 ```
@@ -173,7 +172,7 @@ insert this sentence at anywhere of toplevel.cmake
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 ```
 5. /usr/include/boost/math/constants/constants.hpp:273:3: error: unable to find numeric literal operator ‘operator"" Q’ 
-This is a requirement from LOAM package, see details in (https://github.com/laboshinl/loam_velodyne/issues/90), type in terminal as below:
+This is a requirement from LOAM package, see details in [guide](https://github.com/laboshinl/loam_velodyne/issues/90), type in terminal as below:
 
 ```
 sudo vim /opt/ros/<yourversion>/share/catkin/cmake/toplevel.cmake
