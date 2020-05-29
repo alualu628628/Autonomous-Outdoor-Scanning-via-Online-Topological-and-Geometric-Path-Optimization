@@ -92,16 +92,16 @@ roslaunch husky_navigation_goals send_goal.launch
 
 
 ## Parameters
-Output the result in your own path, please modify below codes in `/topo_confidence_map/launch/mapping.launch`
+Output the result in your own path, please modify below codes in `/topo_confidence_map/launch/mapping.launch`:
 ```
 <arg name="fileoutputpath" default="/home/yourname/"/>
 ```
-SLAM and ground detection parameters are list in `loam_velodyne/launch/loam_velodyne.launch`
-Mapping parameters are list in `topo_confidence_map/launch/mapping.launch`
+<br>SLAM and ground detection parameters are list in `loam_velodyne/launch/loam_velodyne.launch`.
+<br>Mapping parameters are list in `topo_confidence_map/launch/mapping.launch`.
 
 
 ## Issues
-Issues occur mainly because the version of gcc, g++, or other third-party libraries in customized system are too old. The following env configuration problems and corresponding solutions may be useful: 
+Issues occur mainly because the version of gcc, g++, or other third-party libraries in customized system are too old. The following env configuration problems and corresponding solutions may be helpful: 
 
 <br>1. Could not find a package configuration file provided by "move_base_msgs" with any of the following names:
 
@@ -114,13 +114,11 @@ solution:
 sudo apt-get install ros-indigo-navigation
 ```
 
-<br>2. CMake 3.1.3 or higher is required. (This is a requirement from LOAM package) 
+<br>2. CMake 3.1.3 or higher is required (This is a requirement from LOAM package). 
 Update your cmake, see [CMAKE INSTALL](https://askubuntu.com/questions/829310/how-to-upgrade-cmake-in-ubuntu).
-**WARNING**: this command `sudo apt remove cmake` would also remove ros system from your computer
+**WARNING**: this command `sudo apt remove cmake` would also remove ros system from your computer.
 
-
-
-<br>3. Eigen3 (This is a requirement from LOAM package, project has been updated and this issues seems to be solved) 
+<br>3. Eigen3, this is a requirement from LOAM package, project has been updated and this issues seems to be solved. 
 Could not find a package configuration file provided by "Eigen3" with any of the following names:
 
     Eigen3Config.cmake
@@ -131,9 +129,9 @@ Type in the terminal
 ```
 locate FindEigen3.cmake 
 ```
-copy the FindEigen3.cmake to `Husky_Simulation/loam_velodyne/`
+copy the FindEigen3.cmake to `Husky_Simulation/loam_velodyne/`.
 
-In `Husky_Simulation/loam_velodyne/CMakeLists.txt` insert sentence `set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})`
+In `Husky_Simulation/loam_velodyne/CMakeLists.txt` insert sentence `set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})`:
 ```
 .....
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}) //add this sentence
@@ -141,7 +139,7 @@ find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
 .....
 ```
-<br>4. MultiScanRegistration.cpp:178:76: error: parameter declared ‘auto’ (This is a requirement from LOAM package) 
+<br>4. MultiScanRegistration.cpp:178:76: error: parameter declared ‘auto’ (This is a requirement from LOAM package). 
 This is because the current CMake, g++ or gcc can not automatically recognize the C++ 11/14 standard syntax, which appears in 'loam_velodyne' package.
 First step, update your gcc and g++ version to support c++11/14 standard. Assuming the current gcc and g++ version is 4.8, type in terminal as below to get a  5.0 version:
 ```
@@ -169,15 +167,13 @@ insert this sentence at anywhere of toplevel.cmake
 ```
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 ```
-<br>5. /usr/include/boost/math/constants/constants.hpp:273:3: error: unable to find numeric literal operator ‘operator"" Q’ 
-This is a requirement from LOAM package, see details in [Same issue](https://github.com/laboshinl/loam_velodyne/issues/90), type in terminal as below:
+<br>5. /usr/include/boost/math/constants/constants.hpp:273:3: error: unable to find numeric literal operator ‘operator"" Q’. This is a requirement from LOAM package, see details in [Same issue](https://github.com/laboshinl/loam_velodyne/issues/90), type in terminal as below:
 
 ```
 sudo vim /opt/ros/<yourversion>/share/catkin/cmake/toplevel.cmake
 ```
-insert this sentence at anywhere of `toplevel.cmake`
+insert this sentence at anywhere of `toplevel.cmake`:
 ```
 set(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
 ```
-or cover the solution from issue 4, cover `set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")` as
-`set(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")`
+If you follow the solution of issue 4, cover `set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")` as `set(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")`
