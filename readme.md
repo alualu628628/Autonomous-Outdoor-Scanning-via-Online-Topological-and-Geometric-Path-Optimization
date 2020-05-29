@@ -49,7 +49,7 @@ export HUSKY_GAZEBO_DESCRIPTION=$(rospack find husky_gazebo)/urdf/description.ga
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
 3. Modify HUSKY official file, which would cause a bug when loading customized robot urdf file. (see https://answers.ros.org/question/297415/invalid-param-tag-husky-simulation/)
-```
+
 insert the '--inorder' option in '/husky_gazebo/launch/spawn_husky.launch' as shown below:
 ```
 <param name="robot_description" 
@@ -103,7 +103,7 @@ Mapping parameters are list in 'topo_confidence_map/launch/mapping.launch'
 
 
 ## Issues
-Issues occur mainly because the version of gcc, g++, or other third-party libraries in customized system are too old. The following env configuration problems and corresponding solutions may be useful: 
+Issues occur mainly because the version of `gcc`, `g++`, or other third-party libraries in customized system are too old. The following env configuration problems and corresponding solutions may be useful: 
 
 1.Could not find a package configuration file provided by "move_base_msgs" with any of the following names:
 
@@ -117,7 +117,7 @@ sudo apt-get install ros-indigo-navigation
 ```
 
 2.CMake 3.1.3 or higher is required. (This is a requirement from LOAM package) 
-Update your cmake, see https://askubuntu.com/questions/829310/how-to-upgrade-cmake-in-ubuntu
+Update your cmake, see https://askubuntu.com/questions/829310/how-to-upgrade-cmake-in-ubuntu.
 WARNING:this command 'sudo apt remove cmake' would also remove ros system from your computer
 
 
@@ -133,9 +133,9 @@ Type in the terminal
 ```
 locate FindEigen3.cmake 
 ```
-copy the FindEigen3.cmake to 'Husky_Simulation/loam_velodyne/'
+copy the FindEigen3.cmake to `Husky_Simulation/loam_velodyne/`
 
-In 'Husky_Simulation/loam_velodyne/CMakeLists.txt' insert sentence 'set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})'
+In 'Husky_Simulation/loam_velodyne/CMakeLists.txt' insert sentence `set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})`
 ```
 .....
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}) //add this sentence
@@ -143,9 +143,8 @@ find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
 .....
 ```
-
 4. MultiScanRegistration.cpp:178:76: error: parameter declared ‘auto’ (This is a requirement from LOAM package) 
-This is because the current 'CMake', 'g++'' or 'gcc' can not automatically recognize the C++ 11/14 standard syntax, which appears in 'loam_velodyne' package
+This is because the current `CMake`, `g++` or `gcc` can not automatically recognize the C++ 11/14 standard syntax, which appears in 'loam_velodyne' package
 
 first step, update your gcc and g++ version to support c++11/14 standard. Assuming the current gcc and g++ version is 4.8, type in terminal as below to get a  5.0 version:
 ```
@@ -174,17 +173,15 @@ insert this sentence at anywhere of toplevel.cmake
 ```
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 ```
-
-
 5. /usr/include/boost/math/constants/constants.hpp:273:3: error: unable to find numeric literal operator ‘operator"" Q’ 
 This is a requirement from LOAM package, see details in (https://github.com/laboshinl/loam_velodyne/issues/90), type in terminal as below:
 
 ```
 sudo vim /opt/ros/<yourversion>/share/catkin/cmake/toplevel.cmake
 ```
-insert this sentence at anywhere of toplevel.cmake
+insert this sentence at anywhere of `toplevel.cmake`
 ```
 set(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
 ```
-or cover the solution from issue 4, cover 'set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")'as
-'set(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")'
+or cover the solution from issue 4, cover `set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")` as
+`set(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")`
