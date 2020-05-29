@@ -1,6 +1,6 @@
 # Husky Simulation
 
-This is a simulated system (based on ros gazebo) for outdoor mobile robot Husky to explore the unknown outdoor scenes. This is the implementation on ROS indigo version. You can also find the implementation on ROS kenetic in another branch of this depository. We recommend that indigo version is more stable because it is consistent with Husky office packages.
+This is a simulated system (based on ros gazebo) for outdoor mobile robot Husky to explore the unknown outdoor scenes. This implementation is on ROS indigo version, and a ROS kenetic based implementation can be found in another branch of this depository. We believe that indigo version is more stable because it is consistent with Husky office packages.
 
 ## Installation
 Makesure you have a ubuntu14.04 system with high version cmake(>=3.1.3), gcc(>=5.5), g++(>=5.5), which are to support c++ 14 standard (LOAM needs, see [LOAM](https://github.com/laboshinl/loam_velodyne))
@@ -35,22 +35,22 @@ cd $HUSKY_DIR$
 catkin_make -DCMAKE_BUILD_TYPE=Release
 ```
 - Set the environment variables:
-1. set the environment variable at `~/.bashrc` as:
+<br>1. set the environment variable at `~/.bashrc` as:
 ```
 gedit ~/.bashrc 
 ```
-2. set the environment variable of husky_custom_description for your own custom robot model:
+<br>2. set the environment variable of husky_custom_description for your own custom robot model:
 ```
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
---So far, there should have been two environment variables on the `~/.bashrc` file as shown below:
+So far, there should have been two environment variables on the `~/.bashrc` file as shown below:
 ```
 export HUSKY_GAZEBO_DESCRIPTION=$(rospack find husky_gazebo)/urdf/description.gazebo.xacro
 export HUSKY_URDF_EXTRAS=$(rospack find husky_custom_description)/urdf/custom_description.urdf.xacro
 ```
-3. Modify HUSKY official file, which would cause a bug when loading customized robot urdf file. (see https://answers.ros.org/question/297415/invalid-param-tag-husky-simulation/)
+<br>3. Modify HUSKY official file, which would cause a bug when loading customized robot urdf file. (see https://answers.ros.org/question/297415/invalid-param-tag-husky-simulation/)
 
-insert the `--inorder` option in `/husky_gazebo/launch/spawn_husky.launch` as shown below:
+Insert the `--inorder` option in `/husky_gazebo/launch/spawn_husky.launch` as shown below:
 ```
 <param name="robot_description" 
        command="$(find xacro)/xacro '$(arg husky_gazebo_description)'
@@ -105,7 +105,7 @@ Mapping parameters are list in `topo_confidence_map/launch/mapping.launch`
 ## Issues
 Issues occur mainly because the version of gcc, g++, or other third-party libraries in customized system are too old. The following env configuration problems and corresponding solutions may be useful: 
 
-<br>1.Could not find a package configuration file provided by "move_base_msgs" with any of the following names:
+<br>1. Could not find a package configuration file provided by "move_base_msgs" with any of the following names:
 
     move_base_msgsConfig.cmake
     move_base_msgs-config.cmake
@@ -116,13 +116,13 @@ solution:
 sudo apt-get install ros-indigo-navigation
 ```
 
-<br>2.CMake 3.1.3 or higher is required. (This is a requirement from LOAM package) 
+<br>2. CMake 3.1.3 or higher is required. (This is a requirement from LOAM package) 
 Update your cmake, see [CMAKE INSTALL](https://askubuntu.com/questions/829310/how-to-upgrade-cmake-in-ubuntu).
 **WARNING**: this command `sudo apt remove cmake` would also remove ros system from your computer
 
 
 
-<br>3.Eigen3 (This is a requirement from LOAM package, project has been updated and this issues seems to be solved) 
+<br>3. Eigen3 (This is a requirement from LOAM package, project has been updated and this issues seems to be solved) 
 Could not find a package configuration file provided by "Eigen3" with any of the following names:
 
     Eigen3Config.cmake
