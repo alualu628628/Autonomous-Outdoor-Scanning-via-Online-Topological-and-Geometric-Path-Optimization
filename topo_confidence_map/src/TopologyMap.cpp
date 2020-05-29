@@ -57,6 +57,7 @@ TopologyMap::TopologyMap(ros::NodeHandle & node,
 	                     m_bCoverFileFlag(false),
 	                     m_bOutTrajFileFlag(false),
 	                     m_bOutPCFileFlag(false),
+	                     m_bMapFileFlag(false),
 	                     m_bAnchorGoalFlag(false),
 	                     oDisTermDur(0.0),
                          oBoundTermDur(0.0),
@@ -1315,8 +1316,11 @@ void TopologyMap::PublishGridMap(){
 
 	}//end i
 
-    //output cover rate file
-	OutputCoverRateFile(iTravelableNum);
+	//Output test
+	//OutputCoverRateFile(iTravelableNum);
+
+    //output map files
+	//OutputMapFile();
 
 	ros::Time oNowTime = ros::Time::now();
 
@@ -1475,6 +1479,59 @@ void TopologyMap::PublishGoalOdom(pcl::PointXYZ & oGoalPoint){
 
 
 /*************************************************
+Function: OutputMapFile
+Description: output confidence map in a txt file 
+Calls: none
+Called By: ofstream
+Table Accessed: none
+Table Updated: none
+Input: none
+Output: none
+Return: none
+Others: none
+*************************************************/
+
+void TopologyMap::OutputMapFile(){
+
+
+	if(!m_bMapFileFlag){
+
+	    //set the current time stamp as a file name
+        //full name 
+		m_sMapFileName << m_sFileHead << "Map_" << ros::Time::now() << ".txt"; 
+
+		m_bMapFileFlag = true;
+        //print coverage rate evaluation message
+		std::cout << "Attention a map file is created in " << m_sMapFileName.str() << std::endl;
+	}
+
+	//output
+	m_oMapFile.open(m_sMapFileName.str(), std::ios::out | std::ios::ate);
+
+	//output in a txt file
+    //the storage type of output file is x y z time frames right/left_sensor
+    for(int i = 0; i != m_vConfidenceMap.size(); ++i){
+
+    	if(m_vConfidenceMap[i].travelable == 1){
+
+    		m_oMapFile << m_vConfidenceMap[i].oCenterPoint.x << " "
+                     << m_vConfidenceMap[i].oCenterPoint.y << " "
+		             << m_vConfidenceMap[i].oCenterPoint.z << " "
+		             << m_vConfidenceMap[i].travelTerm << " "
+		             << m_vConfidenceMap[i].boundTerm  << " "
+                     << m_vConfidenceMap[i].totalValue << " "//initial each grid as not need to move there
+                     << m_vConfidenceMap[i].visiTerm.value << " "
+                     << m_vConfidenceMap[i].qualTerm.means << " "
+                     << ros::Time::now() << " "
+                     << std::endl;
+        }
+    }
+
+    m_oMapFile.close();
+
+}
+
+/*************************************************
 Function: OutputCoverRateFile
 Description: output a real-time coverage value in a txt file 
 Calls: none
@@ -1486,7 +1543,6 @@ Output: none
 Return: none
 Others: none
 *************************************************/
-
 void TopologyMap::OutputCoverRateFile(const int & iTravelableNum){
 
 
@@ -1519,6 +1575,7 @@ void TopologyMap::OutputCoverRateFile(const int & iTravelableNum){
     m_oCoverFile.close();
 
 }
+
 
 /*************************************************
 Function: OutputTrajectoryFile

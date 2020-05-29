@@ -9,16 +9,26 @@ Please follow the following steps in order to install the package along with its
 
 - Install ROS-Indigo full desktop ([guide](http://wiki.ros.org/indigo/Installation/Ubuntu)).
 
-- Install Husky official package ([guide](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky))
+- Install Husky official package ([guide](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky ))
 
-- Install the grid_map package that can be optionally used for mapping ([guide](https://github.com/ANYbotics/grid_map))(i.e.,sudo apt-get install ros-indigo-grid-map)
+- Install the grid_map package that can be optionally used for mapping ([guide](https://github.com/ANYbotics/grid_map )):
+'''
+sudo apt-get install ros-indigo-grid-map
+'''
+Please note that this package upon is located in the main server of ubuntu, not in some mirror servers, or you can also build it from source
+
+- Install ROS-Indigo move base package if you need:
+'''
+sudo apt-get install ros-indigo-navigation
+'''
+
 
 - check whether other dependences of Husky package is need. Assuming Husky package is cloned under `$HUSKY_DIR$`:
 ```
 cd $HUSKY_DIR$
 rosdep install --from-path src --ignore-src --rosdistro=indigo -y
 ```
-- Install this package:
+- Install this package (this system):
 ```
 cd $HUSKY_DIR$
 catkin_make -DCMAKE_BUILD_TYPE=Release
@@ -89,12 +99,50 @@ output the result in your own path, please modify below codes in '/simulation_ws
 <arg name="fileoutputpath" default="/home/yourname/"/>
 ```
 
+Same issues of env configuration I meet when I test this system in other computers. Here are the references if help: 
+1.Could not find a package configuration file provided by "move_base_msgs" with any of the following names:
+
+    move_base_msgsConfig.cmake
+    move_base_msgs-config.cmake
+
+solution: 
+'''
+sudo apt-get install ros-indigo-navigation
+'''
+
+2.CMake 3.1.3 or higher is required.
+Update your cmake, see https://askubuntu.com/questions/829310/how-to-upgrade-cmake-in-ubuntu
 
 
 
+3.Eigen3
+  Could not find a package configuration file provided by "Eigen3" with any
+  of the following names:
 
+    Eigen3Config.cmake
+    eigen3-config.cmake
 
+solution: 
+'''
+locate FindEigen3.cmake 
+'''
+In loam cmake file
+'''
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}) //add this sentence
+find_package(Eigen3 REQUIRED)
+find_package(PCL REQUIRED)
+'''
 
+4. auto pointer in caused by c++14 standard
+MultiScanRegistration.cpp:178:76: error: parameter declared ‘auto’
+first, make sure your g++ and gcc version supports c++14 (version >= 4.8)
 
-
-
+sudo vim /opt/ros/<yourversion>/share/catkin/cmake/toplevel.cmake
+'''
+set(CMAKE_CXX_FLAGS "-std=c++14 ${CMAKE_CXX_FLAGS}")
+'''
+or
+'''
+set(CMAKE_CXX_FLAGS "-std=c++1y ${CMAKE_CXX_FLAGS}")
+'''
+see https://answers.ros.org/question/246369/the-good-c1114-the-bad-cmake_cxx_flags-and-the-ugly-cmake/

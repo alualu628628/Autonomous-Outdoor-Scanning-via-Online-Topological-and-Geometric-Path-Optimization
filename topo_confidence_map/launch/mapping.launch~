@@ -1,6 +1,6 @@
 <launch>
 
-  <arg name="fileoutputpath" default="/home/vcc/"/>
+  <arg name="fileoutputpath" default="/home/ludy/"/>
   
   <arg name="odomintopic" default="/odometry/filtered"/>
   <arg name="groundpctpc" default="/ground_points" />

@@ -141,6 +141,9 @@ class TopologyMap{
   //output data in file
   void OutputCoverRateFile(const int & iTravelableNum);
 
+  //output confidence map in file
+  void OutputMapFile();
+
   //publish recording odometry file
   void OutputTrajectoryFile(const nav_msgs::Odometry & oTrajectory);
 
@@ -156,6 +159,10 @@ class TopologyMap{
   std::stringstream m_sCoverFileName; ///<full name of output txt that records the point clouds//defind it in the function
   bool m_bCoverFileFlag; //whether the coverage file got a full name or not 
   std::ofstream m_oCoverFile;
+
+  std::stringstream m_sMapFileName; ///<full name of output txt that records the point clouds//defind it in the function
+  bool m_bMapFileFlag; //whether the coverage file got a full name or not 
+  std::ofstream m_oMapFile;
 
   std::stringstream m_sOutTrajFileName;///<full name of output txt that records the trajectory point 
   bool m_bOutTrajFileFlag;//whether the trajectory file got a full name or not 

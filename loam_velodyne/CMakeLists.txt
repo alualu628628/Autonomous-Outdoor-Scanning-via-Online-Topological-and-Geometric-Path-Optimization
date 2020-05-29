@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   pcl_conversions)
 
+
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
 
@@ -31,6 +33,8 @@ catkin_package(
 # set_property(TARGET invz_player PROPERTY CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
 
 add_definitions( -march=native )
 
