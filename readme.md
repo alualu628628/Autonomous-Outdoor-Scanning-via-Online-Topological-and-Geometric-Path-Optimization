@@ -1,7 +1,8 @@
 # Autonomous Outdoor 3D Point Clouds Scanning via Path Planning
 ## Keyword
-Husky Robot; Unmanned vehicle; LiDAR; 3D Point Clouds; Autonomous driving；Logistics vehicles
+Husky robot; Unmanned vehicle; LiDAR; 3D Point Clouds; Autonomous driving；Logistics vehicles
 
+## Introduction
 This is a simple version (based on ros gazebo) for outdoor mobile robot Husky to explore the unknown outdoor scenes. This implementation is on ROS indigo version, and a ROS kenetic based implementation can be found in another branch of this depository. We believe that indigo version is more stable because it is consistent with Husky office packages.
 
 The related work is published in Autonomous Outdoor Scanning via Online Topological and Geometric Path Optimization, IEEE Transactions on Intelligent Transportation Systems, DOI: 10.1109/TITS.2020.3039557. 
