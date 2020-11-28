@@ -1,6 +1,8 @@
 # Husky Simulation
 
-This is a simulated system (based on ros gazebo) for outdoor mobile robot Husky to explore the unknown outdoor scenes. This implementation is on ROS indigo version, and a ROS kenetic based implementation can be found in another branch of this depository. We believe that indigo version is more stable because it is consistent with Husky office packages.
+This is a simple version (based on ros gazebo) for outdoor mobile robot Husky to explore the unknown outdoor scenes. This implementation is on ROS indigo version, and a ROS kenetic based implementation can be found in another branch of this depository. We believe that indigo version is more stable because it is consistent with Husky office packages.
+
+The related work is Autonomous Outdoor Scanning via Online Topological and Geometric Path Optimization, IEEE Transactions on Intelligent Transportation Systems, DOI: 10.1109/TITS.2020.3039557. 
 
 ## Installation
 Makesure you have a ubuntu14.04 system with high version cmake(>=3.1.3), gcc(>=5.5), g++(>=5.5), which are to support c++ 14 standard (LOAM needs, see [LOAM](https://github.com/laboshinl/loam_velodyne))
