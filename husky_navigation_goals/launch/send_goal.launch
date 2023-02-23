@@ -1,0 +1,25 @@
+<launch>
+  
+  <arg name="robotodomtopic" default="/odometry/filtered"/>
+  <arg name="goalodomtopic" default="/topology_map/goal_odom" />
+  
+
+  <!-- Launch the husky goal package -->
+  <node pkg="husky_navigation_goals" type="husky_navigation_goals" name="husky_navigation_goals" output="screen" >
+
+     <!--param name="robotodom_topic" type="string" value="$(arg robotodomtopic)" /-->
+
+     <param name="goalodom_topic" type="string" value="$(arg goalodomtopic)" />
+
+  </node>
+  
+  <!--- Run Move Base -->  
+  <include file="$(find husky_navigation)/launch/move_base.launch">
+    <arg name="no_static_map" value="true"/>
+  </include>
+
+  <!-- Launch the husky navigation package -->
+
+
+  
+</launch>

@@ -1,0 +1,103 @@
+<launch>
+
+  <arg name="fileoutputpath" default="/home/ludy/"/>
+  
+  <arg name="odomintopic" default="/odometry/filtered"/>
+  <arg name="groundpctpc" default="/ground_points" />
+  <arg name="boundarypctpc" default="/boundary_points" />
+  <arg name="obstaclepctpc" default="/obstacle_points" />
+  <!--please enrostopic hz topicname (e.g., /odometry/filtered) to inquire raw frequency of odometry /-->
+
+  <arg name="odometryrawfreq" default="50.0" />
+  <arg name="odomsamplingfreq" default="1.0" />
+  <!--arg name="freshoctomapfreq" default="0.5" /-->
+  <arg name="pointframesmpl" default="5" />
+  <arg name="pastduration" default="8.0" />
+  <arg name="pastviewzoff" default="0.451"/> 
+
+  <arg name="mapmaxrange" default="25" />
+  <arg name="mapminz" default="-5.0" />
+  <arg name="mapmaxz" default="20.0" />
+  <arg name="mapresolution" default="0.2" />
+  <arg name="mapframeid" default="odom" />
+
+  <arg name="robotlocalr" default="6.0"/>
+  <arg name="nodeminirate" default="0.3" />
+  <arg name="initialr" default="6.0" />
+
+  <arg name="shockduration" default="8.0"/>
+
+  <!--parameter of three term travel term, bound term and visible term, respectively-->
+  <!--traversweight + exploreWeight = 1, and disWeight + boundWeight = 1 /-->
+  <arg name="traversweight" default="0.9" /><!--m_fExploreWeight = 1.0 - f_fTraversWeight;/-->
+  <arg name="traversdisweight" default="0.6" /><!-- m_fBoundWeight = 1.0 - f_fDisWeight;/-->
+
+  <!-- Load the octomap -->
+  <!--node pkg="octomap_server" type="octomap_server_node" name="octomap_server"-->
+    <!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
+    <!--param name="frame_id" type="string" value="$(arg mapframeid)" /-->
+    <!--param name="frame_id" type="string" value="/integrated_to_init" /-->
+
+    <!-- maximum range to integrate (speedup!) -->
+    <!--param name="sensor_model/max_range" value="$(arg mapmaxrange)" /-->
+    <!-- max/min height for occupancy map, should be in meters --> 
+    <!--param name="pointcloud_max_z" value="$(arg mapmaxz)" /-->
+    <!--param name="pointcloud_min_z" value="$(arg mapminz)" /--> 
+
+    <!--param name="resolution" value="(arg mapresolution)" /-->
+    <!-- data source to integrate (PointCloud2) -->
+    <!--remap from="cloud_in" to="/velodyne_cloud_registered" /-->
+    <!--remap from="cloud_in" to="/slam_points" /-->
+  <!--/node-->
+
+  <!-- Launch the octomap conversion node -->
+  <node pkg="topo_confidence_map" type="topo_confidence_map" name="topology_map" output="screen" >
+
+    <param name="file_outputpath" type="string" value="$(arg fileoutputpath)" />
+
+    <!--topic input-->
+    <param name="odom_in_topic" type="string" value="$(arg odomintopic)" />
+    <param name="ground_pc_topic" type="string" value="$(arg groundpctpc)" />
+    <param name="boundary_pc_topic" type="string" value="$(arg boundarypctpc)" />
+    <param name="obstacle_pc_topic" type="string" value="$(arg obstaclepctpc)" />
+
+    <!--Sampling of odometry points -->
+    <param name="odometry_rawfreq" type="double" value="$(arg odometryrawfreq)" />
+    <param name="odomsampling_freq" type="double" value="$(arg odomsamplingfreq)" />
+    <!--param name="freshoctomap_freq" type="double" value="$(arg freshoctomapfreq)" /-->
+    <param name="pointframe_smplnum" type="int" value="$(arg pointframesmpl)" />
+
+    <param name="pastview_duration" type="double" value="$(arg pastduration)" /><!--second-->
+    <param name="pastview_zoffset" type="double" value="$(arg pastviewzoff)" />
+
+    <!--parameters of map-->
+    <param name="gridmap_maxrange" type="double" value="$(arg mapmaxrange)" />
+    <param name="gridmap_minz" type="double" value="$(arg mapminz)" />
+    <param name="gridmap_maxz" type="double" value="$(arg mapmaxz)" />
+    <param name="gridmap_resolution" type="double" value="$(arg mapresolution)" />
+    <param name="gridmap_frameid" type="string" value="$(arg mapframeid)" />
+
+    <!--the local neighboring radius of robot to compute local confidence map-->
+    <param name="robot_local_r" type="double" value="$(arg robotlocalr)" />
+    <param name="nodegenerate_rate" type="double" value="$(arg nodeminirate)" />
+    <param name="initial_r" type="double" value="$(arg initialr)" />
+
+    <!--moving action-->
+    <param name="shock_duration" type="double" value="$(arg shockduration)" /><!--second-->
+
+    <!--parameter of three term travel term, bound term and visible term, respectively-->
+    <param name="travers_weight" type="double" value="$(arg traversweight)" />
+    <param name="traversdis_weight" type="double" value="$(arg traversdisweight)" />
+
+  </node>
+
+  <!-- Launch the grid map visualizer -->
+  <!-- node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen" /-->
+
+  <!-- Launch RViz with the demo configuration -->
+  <!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find grid_map_demos)/rviz/octomap_to_gridmap_demo.rviz" /-->
+  
+</launch>
+
+
+

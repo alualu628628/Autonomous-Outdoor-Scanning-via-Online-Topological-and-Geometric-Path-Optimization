@@ -1,0 +1,8 @@
+<launch>
+
+    <!--启动husky的仿真包-->
+  <include file="$(find husky_gazebo)/launch/husky_playpen.launch" >
+        <remap from="/husky_velocity_controller/odom" to="/encoder_odom" />
+  </include>
+
+</launch>
