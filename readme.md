@@ -21,6 +21,8 @@ Please follow the step belows in order to install the package along with its dep
 sudo apt-get install ros-melodic-grid-map
 ```
 cd $HUSKY_DIR$
+
+```
 catkin_make -DCMAKE_BUILD_TYPE=Release
 ```
 - Set the environment variables:
