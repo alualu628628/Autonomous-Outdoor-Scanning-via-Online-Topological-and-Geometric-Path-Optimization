@@ -29,14 +29,9 @@ Please note that this package upon is located in the main server of ubuntu, not 
 sudo apt-get install ros-indigo-navigation
 ```
 
-- check whether other dependences of Husky package is need. Assuming Husky package is cloned under `$HUSKY_DIR$`:
+- check whether other dependences of Husky package is need. cd your own ros work space where this package is placed or cloned:
+
 ```
-cd $HUSKY_DIR$
-rosdep install --from-path src --ignore-src --rosdistro=indigo -y
-```
-- Install this package (this system):
-```
-cd $HUSKY_DIR$
 catkin_make -DCMAKE_BUILD_TYPE=Release
 ```
 - Set the environment variables:
