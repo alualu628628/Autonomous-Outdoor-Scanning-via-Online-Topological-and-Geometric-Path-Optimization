@@ -3,7 +3,7 @@
 Husky robot; Unmanned vehicle; LiDAR; 3D Point Clouds; Autonomous driving; Logistics vehicles
 
 ## Introduction
-This is a simple version (based on ros gazebo) for outdoor mobile robot Husky to explore the unknown outdoor scenes. This implementation is on ROS melodic version. This version has not been fully tested, but I think it will work fine.
+This is a simple version (based on ros gazebo) for outdoor mobile robot Husky to explore the unknown outdoor scenes. This implementation is on ROS melodic version. 
 
 The related work is published in Autonomous Outdoor Scanning via Online Topological and Geometric Path Optimization, IEEE Transactions on Intelligent Transportation Systems, DOI: 10.1109/TITS.2020.3039557. 
 
@@ -20,7 +20,7 @@ Please follow the step belows in order to install the package along with its dep
 ```
 sudo apt-get install ros-melodic-grid-map
 ```
-cd $HUSKY_DIR$
+cd your own ros work space where this package is placed
 
 ```
 catkin_make -DCMAKE_BUILD_TYPE=Release
@@ -30,7 +30,7 @@ catkin_make -DCMAKE_BUILD_TYPE=Release
 ```
 gedit ~/.bashrc 
 ```
-2. set the environment of husky for your own custom robot model:
+2. set the environment variable of husky (custom already embedded in our melodic verison):
 ```
 export HUSKY_GAZEBO_DESCRIPTION=$(rospack find husky_gazebo)/urdf/description.gazebo.xacro
 ```
